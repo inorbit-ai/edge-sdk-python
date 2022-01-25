@@ -30,7 +30,7 @@ jobs:
         pip install .[test]
     - name: Test with pytest
       run: |
-        pytest --cov-report xml --cov=inorbit_edge edge-sdk-python/tests/
+        pytest --cov-report xml --cov=inorbit_edge inorbit_edge/tests/
     - name: Upload codecov
       uses: codecov/codecov-action@v1
 
