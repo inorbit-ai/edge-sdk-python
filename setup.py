@@ -66,11 +66,6 @@ setup(
         "Programming Language :: Python :: 3.9",
     ],
     description="InOrbit Python Edge SDK",
-    entry_points={
-        "console_scripts": [
-            "my_example=inorbit_edge.bin.my_example:main"
-        ],
-    },
     install_requires=requirements,
     long_description=readme,
     long_description_content_type="text/markdown",
