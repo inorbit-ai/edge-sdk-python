@@ -37,7 +37,10 @@ dev_requirements = [
     "wheel>=0.34.2",
 ]
 
-requirements = []
+requirements = [
+    "requests>=2.26.0",
+    "paho_mqtt>=1.6.1"
+]
 
 extra_requirements = {
     "setup": setup_requirements,
@@ -78,7 +81,7 @@ setup(
     test_suite="inorbit_edge/tests",
     tests_require=test_requirements,
     extras_require=extra_requirements,
-    url="https://github.com/lpineda/inorbit_edge",
+    url="https://github.com/inorbit-ai/edge-sdk-python",
     # Do not edit this string manually, always use bumpversion
     # Details in CONTRIBUTING.rst
     version="0.0.0",

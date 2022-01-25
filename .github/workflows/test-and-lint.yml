@@ -22,7 +22,7 @@ jobs:
         pip install .[test]
     - name: Test with pytest
       run: |
-        pytest inorbit_edge/tests/
+        pytest edge-sdk-python/tests/
     - name: Upload codecov
       uses: codecov/codecov-action@v1
 
