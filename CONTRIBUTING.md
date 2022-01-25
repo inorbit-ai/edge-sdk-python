@@ -19,6 +19,8 @@ Ready to contribute? Here's how to set up `edge-sdk-python` for local developmen
 
     ```bash
     cd edge-sdk-python/
+    virtualenv venv
+    . venv/bin/activate
     pip install -e .[dev]
     ```
 
