@@ -5,7 +5,7 @@ from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool
 
 
 def test_robot_session_pool_get_session():
-    factory = RobotSessionFactory(app_key="appkey_123")
+    factory = RobotSessionFactory(api_key="apikey_123")
     pool = RobotSessionPool(factory)
 
     robot1 = pool.get_session("id_1", "name_1")
@@ -23,7 +23,7 @@ def test_robot_session_pool_get_session():
 
 
 def test_robot_session_pool_free():
-    factory = RobotSessionFactory(app_key="appkey_123")
+    factory = RobotSessionFactory(api_key="apikey_123")
     pool = RobotSessionPool(factory)
 
     pool.get_session("id_1", "name_1")
@@ -40,7 +40,7 @@ def test_robot_session_pool_free():
 
 
 def test_robot_session_pool_tear_down():
-    factory = RobotSessionFactory(app_key="appkey_123")
+    factory = RobotSessionFactory(api_key="apikey_123")
     pool = RobotSessionPool(factory)
 
     pool.get_session("id_1", "name_1")
