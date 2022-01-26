@@ -19,7 +19,7 @@ def test_robot_session_init(monkeypatch):
             robot_session.agent_version.endswith("edgesdk_py"),
             robot_session.endpoint == INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL,
             robot_session.use_ssl,
-            not robot_session.use_websocket,
+            not robot_session.use_websockets,
             robot_session.client._transport == "tcp",
             robot_session.http_proxy is None,
         ]
@@ -34,7 +34,7 @@ def test_robot_session_init(monkeypatch):
 
         assert all(
             [
-                robot_session.use_websocket,
+                robot_session.use_websockets,
                 robot_session.client._transport == "websockets",
                 robot_session.http_proxy == "http://foo_bar.com:1234",
             ]

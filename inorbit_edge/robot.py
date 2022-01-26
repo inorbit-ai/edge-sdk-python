@@ -39,7 +39,7 @@ class RobotSession:
 
         # Use TCP transport by default. The client will use websockets
         # transport if the environment variable HTTP_PROXY is set.
-        self.use_websocket = kwargs.get("use_websockets", False)
+        self.use_websockets = kwargs.get("use_websockets", False)
 
         # Read optional proxy configuration from environment variables
         # We use ``self.http_proxy`` to indicate if proxy configuration should be used.
@@ -53,10 +53,10 @@ class RobotSession:
                 "Found HTTP_PROXY environment configuration = {:}. "
                 "Will use WebSockets transport.".format(self.http_proxy)
             )
-            self.use_websocket = True
+            self.use_websockets = True
 
         # Create mqtt client
-        if self.use_websocket:
+        if self.use_websockets:
             self.client = mqtt.Client(protocol=mqtt.MQTTv311, transport="websockets")
             self.logger.debug("MQTT client created using websockets transport")
         else:
@@ -185,7 +185,7 @@ class RobotSession:
         hostname = robot_config["hostname"]
         port = (
             robot_config["websockets_port"]
-            if self.use_websocket
+            if self.use_websockets
             else robot_config["port"]
         )
         self.client.connect_async(hostname, port, keepalive=10)
@@ -193,18 +193,14 @@ class RobotSession:
 
         self.logger.info(
             "MQTT connection initiated. {}:{} ({})".format(
-                hostname, port, "websocket" if self.use_websocket else "MQTT"
+                hostname, port, "websockets" if self.use_websockets else "MQTT"
             )
         )
 
     def disconnect(self):
         """Ends session, disconnecting from cloud services"""
         self.logger.info("Ending robot session")
-        # Send robot offline status.
-        # This method is blocking so do it on a separate thread just in case.
-        threading.Thread(
-            target=self.send_robot_status, kwargs={"robot_status": "0"}
-        ).start()
+        self.send_robot_status(robot_status="0")
 
     def publish(self, topic, message, qos=0, retain=False):
         return self.client.publish(topic=topic, payload=message, qos=qos, retain=retain)
