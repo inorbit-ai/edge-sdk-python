@@ -90,6 +90,44 @@ class RobotSession:
         # Register callbacks
         self.client.on_connect = self.on_connect
 
+        self.use_ssl = kwargs.get("use_ssl", True)
+
+        self.use_websocket = False
+
+        # Read optional proxy configuration from the environment
+        # We use self.http_proxy == None to indicate if proxy configuration should be used
+        self.http_proxy = os.getenv("HTTP_PROXY")
+        if self.http_proxy == "":
+            self.logger.warn("Found empty HTTP_PROXY variable. Ignoring.")
+            self.http_proxy = None
+        if self.http_proxy is not None:
+            self.logger.info(
+                "Found HTTP_PROXY environment configuration = {:}. "
+                "Will use WebSockets transport.".format(self.http_proxy)
+            )
+            self.use_websocket = True
+
+        # Create mqtt client
+        if self.use_websocket:
+            self.client = mqtt.Client(protocol=mqtt.MQTTv311, transport="websockets")
+        else:
+            self.client = mqtt.Client(protocol=mqtt.MQTTv311)
+
+        # Configure proxy hostname and port if necessary
+        if self.http_proxy is not None:
+            parts = urlsplit(self.http_proxy)
+            proxy_hostname = parts.hostname
+            proxy_port = parts.port
+
+            self.logger.debug("Configuring client proxy: {}:{}".format(proxy_hostname, proxy_port))
+            self.client.proxy_set(
+                proxy_type=socks.HTTP, proxy_addr=proxy_hostname, proxy_port=proxy_port
+            )
+
+        # Register callbacks
+        self.client.on_connect = self.on_connect
+
+
     def _fetch_robot_config(self):
         """Gets robot config by posting appkey and robot/agent info.
         All params are provided on the RobotSession constructor
@@ -193,6 +231,43 @@ class RobotSession:
         raise RuntimeError(
             "Connection state never reached: {}".format(state_func.__name__)
         )
+
+    def on_connect(self, client, userdata, flags, rc):
+        # Only assume that the robot is connected if return code is 0.
+        # Other values are taken as errors (check here:
+        # http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718035)
+        # so connection process needs to be aborted.
+        if rc == 0:
+            self.logger.info("Connected to MQTT")
+        else:
+            self.logger.warn("Unable to connect. rc = {:d}.".format(rc))
+            return
+
+        # Send online status.
+        # This method is blocking so do it on a separate thread just in case.
+        threading.Thread(target=self.send_online_status).start()
+
+        self.logger.debug("Connection thread executed")
+
+
+    def send_online_status(self):
+        """
+        Sends online status message.
+        NOTE: This method blocks until either the message is sent or
+        the client errors out.
+        """
+
+        # Every time we connect to the service, send updated status,
+        # including online bit
+        status_message = "1|%s|%s|%s" % (self.app_key, self.agent_version, self.robot_name)
+        ret = self.publish("r/%s/state" % self.robot_id, status_message, qos=1, retain=True)
+        self.logger.info("Publishing online status. ret = {}.".format(ret))
+
+        ret.wait_for_publish()
+        published = ret.is_published()
+
+        self.logger.info("Online status published: {:b}.".format(published))
+
 
     def connect(self):
         """Configures MQTT client and connect to the service."""

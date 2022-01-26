@@ -10,7 +10,10 @@ from time import sleep
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.FileHandler("debug.log"), logging.StreamHandler()],
+    handlers=[
+        logging.FileHandler("debug.log"),
+        logging.StreamHandler()
+    ]
 )
 
 log = logging.getLogger(__name__)
@@ -36,5 +39,6 @@ robot_session.publish_pose(0, 0, 3)
 sleep(1)
 robot_session.publish_pose(0, 0, 4)
 sleep(20)
-
+log.info(robot_session)
+sleep(10)
 robot_session.disconnect()
