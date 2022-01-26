@@ -69,6 +69,9 @@ class RobotSession:
             proxy_hostname = parts.hostname
             proxy_port = parts.port
 
+            if not proxy_port:
+                self.logger.warn("Empty proxy port. Is 'HTTP_PROXY' correct?")
+
             self.logger.debug(
                 "Configuring client proxy: {}:{}".format(proxy_hostname, proxy_port)
             )
