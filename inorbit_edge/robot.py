@@ -160,8 +160,8 @@ class RobotSession:
             "protocol": "mqtt://",
             "websocket_port": 9001,
             "websocket_protocol": "ws://",
-            "username": "sezonoquku",
-            "password": "hDVop5dtN7MXkkY7",
+            "username": "zuyimawasu",
+            "password": "BOst0Ow1B4joPTiv",
             "robotApiKey": "H_2QCEQz6pD7i7xF",
         }
 
@@ -201,6 +201,8 @@ class RobotSession:
         """Ends session, disconnecting from cloud services"""
         self.logger.info("Ending robot session")
         self.send_robot_status(robot_status="0")
+        self.client.disconnect()
+        self.logger.info("Disconnected from MQTT broker")
 
     def publish(self, topic, message, qos=0, retain=False):
         return self.client.publish(topic=topic, payload=message, qos=qos, retain=retain)
