@@ -17,13 +17,13 @@ INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot
 
 
 class RobotSession:
-    def __init__(self, robot_id, robot_name, app_key, **kwargs) -> None:
+    def __init__(self, robot_id, robot_name, api_key, **kwargs) -> None:
         """Initialize a robot session.
 
         Args:
             robot_id (str): ID of the robot.
             robot_name (str): Robot name.
-            app_key (str): Application key for authenticating against InOrbit.
+            api_key (str): API key for authenticating against InOrbit Cloud services.
             endpoint (str): InOrbit URL. Defaults: INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL.
             use_ssl (bool): Configures MQTT client to use SSL. Defaults: True.
         """
@@ -32,7 +32,7 @@ class RobotSession:
 
         self.robot_id = robot_id
         self.robot_name = robot_name
-        self.app_key = app_key
+        self.api_key = api_key
         # The agent version is generated based on the InOrbit Edge SDK version
         self.agent_version = f"{inorbit_edge_version}.edgesdk_py"
         self.endpoint = kwargs.get("endpoint", INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL)
@@ -42,7 +42,7 @@ class RobotSession:
 
         # Use TCP transport by default. The client will use websockets
         # transport if the environment variable HTTP_PROXY is set.
-        self.use_websocket = kwargs.get("use_websockets", False)
+        self.use_websockets = kwargs.get("use_websockets", False)
 
         # Read optional proxy configuration from environment variables
         # We use ``self.http_proxy`` to indicate if proxy configuration should be used.
@@ -56,10 +56,10 @@ class RobotSession:
                 "Found HTTP_PROXY environment configuration = {:}. "
                 "Will use WebSockets transport.".format(self.http_proxy)
             )
-            self.use_websocket = True
+            self.use_websockets = True
 
         # Create mqtt client
-        if self.use_websocket:
+        if self.use_websockets:
             self.client = mqtt.Client(protocol=mqtt.MQTTv311, transport="websockets")
             self.logger.debug("MQTT client created using websockets transport")
         else:
@@ -138,7 +138,7 @@ class RobotSession:
         # Every time we connect or disconnect to the service, send
         # updated status including online/offline bit
         status_message = "{}|{}|{}|{}".format(
-            robot_status, self.app_key, self.agent_version, self.robot_name
+            robot_status, self.api_key, self.agent_version, self.robot_name
         )
         ret = self.publish(
             "r/{}/state".format(self.robot_id), status_message, qos=1, retain=True
@@ -174,7 +174,7 @@ class RobotSession:
         # Configure "will" message to ensure the robot state
         # is set to offline if connection is interrupted
         will_topic = "r/{}/state".format(self.robot_id)
-        will_payload = "0|{}".format(self.app_key)
+        will_payload = "0|{}".format(self.api_key)
         self.client.will_set(will_topic, will_payload, qos=1, retain=True)
 
         # TODO: add support for user-provided CA certificate file.
@@ -188,7 +188,7 @@ class RobotSession:
         hostname = robot_config["hostname"]
         port = (
             robot_config["websockets_port"]
-            if self.use_websocket
+            if self.use_websockets
             else robot_config["port"]
         )
         self.client.connect_async(hostname, port, keepalive=10)
@@ -196,18 +196,14 @@ class RobotSession:
 
         self.logger.info(
             "MQTT connection initiated. {}:{} ({})".format(
-                hostname, port, "websocket" if self.use_websocket else "MQTT"
+                hostname, port, "websockets" if self.use_websockets else "MQTT"
             )
         )
 
     def disconnect(self):
         """Ends session, disconnecting from cloud services"""
         self.logger.info("Ending robot session")
-        # Send robot offline status.
-        # This method is blocking so do it on a separate thread just in case.
-        threading.Thread(
-            target=self.send_robot_status, kwargs={"robot_status": "0"}
-        ).start()
+        self.send_robot_status(robot_status="0")
 
     def publish(self, topic, message, qos=0, retain=False):
         return self.client.publish(topic=topic, payload=message, qos=qos, retain=retain)
