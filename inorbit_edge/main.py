@@ -10,10 +10,7 @@ from time import sleep
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler("debug.log"),
-        logging.StreamHandler()
-    ]
+    handlers=[logging.FileHandler("debug.log"), logging.StreamHandler()],
 )
 
 log = logging.getLogger(__name__)
