@@ -108,10 +108,10 @@ class RobotSession:
                 "Found HTTP_PROXY environment configuration = {:}. "
                 "Will use WebSockets transport.".format(self.http_proxy)
             )
-            self.use_websocket = True
+            self.use_websockets = True
 
         # Create mqtt client
-        if self.use_websocket:
+        if self.use_websockets:
             self.client = mqtt.Client(protocol=mqtt.MQTTv311, transport="websockets")
             self.logger.debug("MQTT client created using websockets transport")
         else:
