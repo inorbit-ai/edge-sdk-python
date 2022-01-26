@@ -9,11 +9,14 @@ from urllib.parse import urlsplit
 import socks
 import ssl
 import threading
-from inorbit_edge.inorbit_pb2 import PoseMessageData
-from inorbit_edge.inorbit_pb2 import PoseMessage
+from inorbit_edge.inorbit_pb2 import LocationAndPoseMessage
+from time import time
+from time import sleep
 
 
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
+
+MQTT_POSE_TOPIC = "ros/loc/data2"
 
 
 class RobotSession:
@@ -163,9 +166,8 @@ class RobotSession:
             "protocol": "mqtt://",
             "websocket_port": 9001,
             "websocket_protocol": "ws://",
-            "username": "sezonoquku",
-            "password": "hDVop5dtN7MXkkY7",
-            "robotApiKey": "H_2QCEQz6pD7i7xF",
+            "username": "zuyimawasu",
+            "password": "BOst0Ow1B4joPTiv",
         }
 
         # Use username and password authentication
@@ -194,6 +196,11 @@ class RobotSession:
         self.client.connect_async(hostname, port, keepalive=10)
         self.client.loop_start()
 
+        # TODO: cap retries to 10 or so
+        while not self.client.is_connected():
+            sleep(1)
+            self.logger.debug("Waiting for connection...")
+
         self.logger.info(
             "MQTT connection initiated. {}:{} ({})".format(
                 hostname, port, "websockets" if self.use_websockets else "MQTT"
@@ -208,5 +215,18 @@ class RobotSession:
     def publish(self, topic, message, qos=0, retain=False):
         return self.client.publish(topic=topic, payload=message, qos=qos, retain=retain)
 
-    def publish_pose(self, x, y, yaw, frameId, ts=None):
-        pass
+    def publish_protobuf(self, subtopic, message, qos=0, retain=False):
+        topic = "r/{}/{}".format(self.robot_id, subtopic)
+        self.logger.debug("Publishing to topic {}".format(topic))
+        self.publish(
+            topic, bytearray(message.SerializeToString()), qos=qos, retain=retain
+        )
+
+    def publish_pose(self, x, y, yaw, frame_id="map", ts=None):
+        message = LocationAndPoseMessage()
+        message.ts = ts if ts else int(time() * 1000)
+        message.pos_x = x
+        message.pos_y = y
+        message.yaw = yaw
+        message.frame_id = frame_id
+        self.publish_protobuf(MQTT_POSE_TOPIC, message)
