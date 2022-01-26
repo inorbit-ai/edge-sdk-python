@@ -140,19 +140,25 @@ class RobotSession:
         #  robotId: id from robot inherited by the robot session
         #  hostname: hostname inherited from robot session
         #  agentVersion: version of the agent used for this session
-        self.logger.info("Fetching config for robot {} for appKey {}".format(self.robot_id, self.app_key))
+        self.logger.info(
+            "Fetching config for robot {} for appKey {}".format(
+                self.robot_id, self.app_key
+            )
+        )
 
         params = {
             "appKey": self.app_key,
             "robotId": self.robot_id,
             "hostname": self.robot_name,
-            "agentVersion": self.agent_version
+            "agentVersion": self.agent_version,
         }
 
-        response = requests.post( self.endpoint, data=params)
+        response = requests.post(self.endpoint, data=params)
 
         if response.status_code != 200 or response.content is None:
-            self.logger.error("Failed to fetch config for robot {}".format(self.robot_id))
+            self.logger.error(
+                "Failed to fetch config for robot {}".format(self.robot_id)
+            )
         # TODO: validate fetched config
         return response.json()
 

@@ -21,7 +21,7 @@ robot_session = RobotSession(
     robot_name="edgesdk_python_robot",
     app_key="t7WbNVmRZxVZSxcZ",
     endpoint="http://localdev.com:3000/cloud_sdk_robot_config",
-    use_ssl=False
+    use_ssl=False,
 )
 
 robot_session.connect()
