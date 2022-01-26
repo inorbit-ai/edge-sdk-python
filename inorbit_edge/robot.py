@@ -9,6 +9,9 @@ from urllib.parse import urlsplit
 import socks
 import ssl
 import threading
+from inorbit_edge.inorbit_pb2 import PoseMessageData
+from inorbit_edge.inorbit_pb2 import PoseMessage
+
 
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
 
@@ -208,3 +211,6 @@ class RobotSession:
 
     def publish(self, topic, message, qos=0, retain=False):
         return self.client.publish(topic=topic, payload=message, qos=qos, retain=retain)
+
+    def publish_pose(self, x, y, yaw, frameId, ts=None):
+        pass

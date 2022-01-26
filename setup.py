@@ -40,9 +40,10 @@ dev_requirements = [
 ]
 
 requirements = [
-    "requests>=2.26.0",
-    "paho_mqtt>=1.6.1",
-    "PySocks>=1.7.1"
+    "requests==2.26.0",
+    "paho_mqtt==1.6.1",
+    "PySocks==1.7.1",
+    "protobuf==3.19.3"
 ]
 
 extra_requirements = {
