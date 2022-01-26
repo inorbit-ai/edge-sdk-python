@@ -14,13 +14,13 @@ INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot
 
 
 class RobotSession:
-    def __init__(self, robot_id, robot_name, app_key, **kwargs) -> None:
+    def __init__(self, robot_id, robot_name, api_key, **kwargs) -> None:
         """Initialize a robot session.
 
         Args:
             robot_id (str): ID of the robot.
             robot_name (str): Robot name.
-            app_key (str): Application key for authenticating against InOrbit.
+            api_key (str): API key for authenticating against InOrbit Cloud services.
             endpoint (str): InOrbit URL. Defaults: INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL.
             use_ssl (bool): Configures MQTT client to use SSL. Defaults: True.
         """
@@ -29,7 +29,7 @@ class RobotSession:
 
         self.robot_id = robot_id
         self.robot_name = robot_name
-        self.app_key = app_key
+        self.api_key = api_key
         # The agent version is generated based on the InOrbit Edge SDK version
         self.agent_version = f"{inorbit_edge_version}.edgesdk_py"
         self.endpoint = kwargs.get("endpoint", INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL)
@@ -135,7 +135,7 @@ class RobotSession:
         # Every time we connect or disconnect to the service, send
         # updated status including online/offline bit
         status_message = "{}|{}|{}|{}".format(
-            robot_status, self.app_key, self.agent_version, self.robot_name
+            robot_status, self.api_key, self.agent_version, self.robot_name
         )
         ret = self.publish(
             "r/{}/state".format(self.robot_id), status_message, qos=1, retain=True
@@ -171,7 +171,7 @@ class RobotSession:
         # Configure "will" message to ensure the robot state
         # is set to offline if connection is interrupted
         will_topic = "r/{}/state".format(self.robot_id)
-        will_payload = "0|{}".format(self.app_key)
+        will_payload = "0|{}".format(self.api_key)
         self.client.will_set(will_topic, will_payload, qos=1, retain=True)
 
         # TODO: add support for user-provided CA certificate file.
