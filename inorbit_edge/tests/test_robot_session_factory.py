@@ -4,7 +4,7 @@
 from inorbit_edge.robot import RobotSessionFactory
 
 
-def test_robot_factory_build():
+def test_robot_factory_build(mock_connection):
     robot_session_factory = RobotSessionFactory(api_key="apikey_123",
                                                 endpoint="http://myendpoint/")
     robot_session = robot_session_factory.build("id_123", "name_123")
