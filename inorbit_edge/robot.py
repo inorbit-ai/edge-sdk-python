@@ -14,6 +14,9 @@ from time import sleep
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
 
 
+INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
+
+
 class RobotSession:
     def __init__(self, robot_id, robot_name, api_key, **kwargs) -> None:
         """Initialize a robot session.
@@ -83,12 +86,16 @@ class RobotSession:
         # Register callbacks
         self.client.on_connect = self.on_connect
 
+        # Use SSL by default
         self.use_ssl = kwargs.get("use_ssl", True)
 
-        self.use_websocket = False
+        # Use TCP transport by default. The client will use websockets
+        # transport if the environment variable HTTP_PROXY is set.
+        self.use_websocket = kwargs.get("use_websockets", False)
 
-        # Read optional proxy configuration from the environment
-        # We use self.http_proxy == None to indicate if proxy configuration should be used
+        # Read optional proxy configuration from environment variables
+        # We use ``self.http_proxy`` to indicate if proxy configuration should be used.
+        # TODO: enable explicit proxy configuration on ``RobotSession`` constructor.
         self.http_proxy = os.getenv("HTTP_PROXY")
         if self.http_proxy == "":
             self.logger.warn("Found empty HTTP_PROXY variable. Ignoring.")
@@ -103,8 +110,10 @@ class RobotSession:
         # Create mqtt client
         if self.use_websocket:
             self.client = mqtt.Client(protocol=mqtt.MQTTv311, transport="websockets")
+            self.logger.debug("MQTT client created using websockets transport")
         else:
-            self.client = mqtt.Client(protocol=mqtt.MQTTv311)
+            self.client = mqtt.Client(protocol=mqtt.MQTTv311, transport="tcp")
+            self.logger.debug("MQTT client created using tcp transport")
 
         # Configure proxy hostname and port if necessary
         if self.http_proxy is not None:
@@ -112,14 +121,15 @@ class RobotSession:
             proxy_hostname = parts.hostname
             proxy_port = parts.port
 
-            self.logger.debug("Configuring client proxy: {}:{}".format(proxy_hostname, proxy_port))
+            self.logger.debug(
+                "Configuring client proxy: {}:{}".format(proxy_hostname, proxy_port)
+            )
             self.client.proxy_set(
                 proxy_type=socks.HTTP, proxy_addr=proxy_hostname, proxy_port=proxy_port
             )
 
         # Register callbacks
         self.client.on_connect = self.on_connect
-
 
     def _fetch_robot_config(self):
         raise NotImplementedError()
