@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from asyncio import sleep
 from inorbit_edge import __version__ as inorbit_edge_version
 import os
 import logging
@@ -9,10 +10,7 @@ from urllib.parse import urlsplit
 import socks
 import ssl
 import threading
-from time import sleep
-
-INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
-
+import requests
 
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
 
@@ -135,7 +133,28 @@ class RobotSession:
         self.client.on_connect = self.on_connect
 
     def _fetch_robot_config(self):
-        raise NotImplementedError()
+        #  Gets robot config by posting appkey.
+        #  and robot/agent info
+        #  All params are stored in self
+        #  appkey: API_KEY taken from InOrbit console
+        #  robotId: id from robot inherited by the robot session
+        #  hostname: hostname inherited from robot session
+        #  agentVersion: version of the agent used for this session
+        self.logger.info("Fetching config for robot {} for appKey {}".format(self.robot_id, self.app_key))
+
+        params = {
+            "appKey": self.app_key,
+            "robotId": self.robot_id,
+            "hostname": self.robot_name,
+            "agentVersion": self.agent_version
+        }
+
+        response = requests.post( self.endpoint, data=params)
+
+        if response.status_code != 200 or response.content is None:
+            self.logger.error("Failed to fetch config for robot {}".format(self.robot_id))
+        # TODO: validate fetched config
+        return response.json()
 
     def on_connect(self, client, userdata, flags, rc):
         """MQTT client connect callback.
@@ -224,16 +243,7 @@ class RobotSession:
     def connect(self):
         """Configures MQTT client and connect to the service."""
         # TODO: call _fetch_robot_config. Assuming it returns a dict
-        robot_config = {
-            "hostname": "localdev.com",
-            "port": 1883,
-            "protocol": "mqtt://",
-            "websocket_port": 9001,
-            "websocket_protocol": "ws://",
-            "username": "xajaratiqu",
-            "password": "VAlXvj57BFAO7qHU",
-            "robotApiKey": "H_2QCEQz6pD7i7xF",
-        }
+        robot_config = self._fetch_robot_config()
 
         # Use username and password authentication
         self.client.username_pw_set(robot_config["username"], robot_config["password"])
