@@ -291,7 +291,7 @@ class RobotSession:
         # Every time we connect or disconnect to the service, send
         # updated status including online/offline bit
         status_message = "{}|{}|{}|{}".format(
-            robot_status, self.app_key, self.agent_version, self.robot_name
+            robot_status, self.api_key, self.agent_version, self.robot_name
         )
         ret = self.publish(
             "r/{}/state".format(self.robot_id), status_message, qos=1, retain=True
