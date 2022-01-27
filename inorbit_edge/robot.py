@@ -87,18 +87,9 @@ class RobotSession:
 
     def _fetch_robot_config(self):
         """Gets robot config by posting appkey and robot/agent info.
-           All params are stored in self
-        Args:
-            appkey:         API_KEY taken from InOrbit console
-            robotId:        id from robot inherited by the robot session
-            hostname:       hostname inherited from robot session
-            agentVersion:   version of the agent used for this session
+        All params are provided on the RobotSession constructor
         """
-        self.logger.info(
-            "Fetching config for robot {} for appKey {}".format(
-                self.robot_id, self.api_key
-            )
-        )
+        self.logger.info("Fetching config for robot {}".format(self.robot_id))
         # get params from self
         params = {
             "appKey": self.api_key,
