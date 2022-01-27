@@ -9,6 +9,7 @@ from urllib.parse import urlsplit
 import socks
 import ssl
 import threading
+from time import sleep
 
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
 
@@ -188,8 +189,14 @@ class RobotSession:
             if self.use_websockets
             else robot_config["port"]
         )
-        self.client.connect_async(hostname, port, keepalive=10)
+        self.client.connect(hostname, port, keepalive=10)
         self.client.loop_start()
+        
+        for _ in range(5):
+            if self.client.is_connected():
+                break
+            self.logger.info("Waiting for MQTT connection...")
+            sleep(1)
 
         self.logger.info(
             "MQTT connection initiated. {}:{} ({})".format(
@@ -202,6 +209,13 @@ class RobotSession:
         self.logger.info("Ending robot session")
         self.send_robot_status(robot_status="0")
         self.client.disconnect()
+
+        for _ in range(5):
+            if not self.client.is_connected():
+                break
+            self.logger.info("Waiting for MQTT disconnection...")
+            sleep(1)
+
         self.logger.info("Disconnected from MQTT broker")
 
     def publish(self, topic, message, qos=0, retain=False):

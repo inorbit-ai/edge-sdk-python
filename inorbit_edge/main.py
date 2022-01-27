@@ -24,6 +24,6 @@ robot_session = RobotSession(
 
 robot_session.connect()
 
-sleep(10)
+# sleep(10)
 
 robot_session.disconnect()
