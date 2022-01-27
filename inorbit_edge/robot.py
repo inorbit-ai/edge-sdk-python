@@ -342,6 +342,12 @@ class RobotSession:
         )
         self.client.connect(hostname, port, keepalive=10)
         self.client.loop_start()
+        
+        for _ in range(5):
+            if self.client.is_connected():
+                break
+            self.logger.info("Waiting for MQTT connection...")
+            sleep(1)
 
         # TODO: cap retries to 10 or so
         while not self.client.is_connected():
