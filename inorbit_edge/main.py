@@ -5,7 +5,8 @@
 
 import logging
 from inorbit_edge.robot import RobotSession
-from time import sleep
+
+# from time import sleep
 
 logging.basicConfig(
     level=logging.DEBUG,
