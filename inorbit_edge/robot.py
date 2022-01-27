@@ -133,19 +133,20 @@ class RobotSession:
         self.client.on_connect = self.on_connect
 
     def _fetch_robot_config(self):
-        #  Gets robot config by posting appkey.
-        #  and robot/agent info
-        #  All params are stored in self
-        #  appkey: API_KEY taken from InOrbit console
-        #  robotId: id from robot inherited by the robot session
-        #  hostname: hostname inherited from robot session
-        #  agentVersion: version of the agent used for this session
+        """Gets robot config by posting appkey and robot/agent info.
+           All params are stored in self
+        Args:
+            appkey:         API_KEY taken from InOrbit console
+            robotId:        id from robot inherited by the robot session
+            hostname:       hostname inherited from robot session
+            agentVersion:   version of the agent used for this session
+        """
         self.logger.info(
             "Fetching config for robot {} for appKey {}".format(
                 self.robot_id, self.app_key
             )
         )
-
+        # get params from self
         params = {
             "appKey": self.app_key,
             "robotId": self.robot_id,
@@ -153,8 +154,10 @@ class RobotSession:
             "agentVersion": self.agent_version,
         }
 
+        # post request to fetch robot config
         response = requests.post(self.endpoint, data=params)
 
+        # log error if there is no data
         if response.status_code != 200 or response.content is None:
             self.logger.error(
                 "Failed to fetch config for robot {}".format(self.robot_id)
