@@ -4,6 +4,7 @@
 # IMPORTANT: this file will be removed. Only used during initial development phase.
 
 import logging
+from time import sleep
 from inorbit_edge.robot import RobotSession
 
 # from time import sleep
