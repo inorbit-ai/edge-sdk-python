@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from asyncio import sleep
+
+from time import sleep
 from inorbit_edge import __version__ as inorbit_edge_version
 import os
 import logging
