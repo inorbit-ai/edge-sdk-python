@@ -40,7 +40,7 @@ DATABASE = {
 def test_get_robot_config_from_session():
     # test required parameters only
     robot_session = RobotSession(
-        robot_id="id_123", robot_name="name_123", app_key="appkey_123"
+        robot_id="id_123", robot_name="name_123", api_key="appkey_123"
     )
 
     with requests_mock.Mocker() as mock:
@@ -68,7 +68,7 @@ def test_get_robot_config_from_session():
 def test_bad_request_error():
     # test required parameters only
     robot_session = RobotSession(
-        robot_id="id_123", robot_name="name_123", app_key="appkey_123"
+        robot_id="id_123", robot_name="name_123", api_key="appkey_123"
     )
 
     with requests_mock.Mocker() as mock:
