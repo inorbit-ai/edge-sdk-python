@@ -184,8 +184,8 @@ class RobotSession:
             "protocol": "mqtt://",
             "websocket_port": 9001,
             "websocket_protocol": "ws://",
-            "username": "xajaratiqu",
-            "password": "VAlXvj57BFAO7qHU",
+            "username": "xurumedilo",
+            "password": "h2yTsgvMA9QptugF",
         }
 
         # Use username and password authentication
@@ -238,9 +238,10 @@ class RobotSession:
     def publish_protobuf(self, subtopic, message, qos=0, retain=False):
         topic = "r/{}/{}".format(self.robot_id, subtopic)
         self.logger.debug("Publishing to topic {}".format(topic))
-        self.publish(
+        ret = self.publish(
             topic, bytearray(message.SerializeToString()), qos=qos, retain=retain
         )
+        self.logger.debug(ret)
 
     def publish_pose(self, x, y, yaw, frame_id="map", ts=None):
         message = LocationAndPoseMessage()

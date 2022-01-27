@@ -16,7 +16,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 robot_session = RobotSession(
-    robot_id="edgesdk_python_robot_1",
+    robot_id="edgesdk_python_robot_2",
     robot_name="edgesdk_python_robot",
     api_key="dM2hJtKebPYJmbgz",
     use_ssl=False,
@@ -33,6 +33,6 @@ sleep(1)
 robot_session.publish_pose(0, 0, 0)
 sleep(1)
 robot_session.publish_pose(0, 0, 0)
-sleep(10)
+sleep(1)
 
 robot_session.disconnect()
