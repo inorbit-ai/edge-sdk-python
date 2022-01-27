@@ -21,7 +21,7 @@ robot_session = RobotSession(
     robot_name="edgesdk_python_robot",
     api_key="t7WbNVmRZxVZSxcZ",
     # add this endpoint if you want to target local
-    endpoint="http://localdev.com:3000/cloud_sdk_robot_config",
+    #endpoint="http://localdev.com:3000/cloud_sdk_robot_config",
     use_ssl=False,
 )
 
