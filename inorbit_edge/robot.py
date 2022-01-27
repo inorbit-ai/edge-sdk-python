@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
+from time import sleep
 from inorbit_edge import __version__ as inorbit_edge_version
 import os
 import logging
@@ -12,6 +14,7 @@ import threading
 from inorbit_edge.inorbit_pb2 import LocationAndPoseMessage
 from time import time
 from time import sleep
+import requests
 
 
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
@@ -89,7 +92,24 @@ class RobotSession:
         self.client.on_connect = self.on_connect
 
     def _fetch_robot_config(self):
-        raise NotImplementedError()
+        """Gets robot config by posting appkey and robot/agent info.
+        All params are provided on the RobotSession constructor
+        """
+        self.logger.info("Fetching config for robot {}".format(self.robot_id))
+        # get params from self
+        params = {
+            "appKey": self.api_key,
+            "robotId": self.robot_id,
+            "hostname": self.robot_name,
+            "agentVersion": self.agent_version,
+        }
+
+        # post request to fetch robot config
+        response = requests.post(self.endpoint, data=params)
+        response.raise_for_status()
+
+        # TODO: validate fetched config
+        return response.json()
 
     def on_connect(self, client, userdata, flags, rc):
         """MQTT client connect callback.
@@ -177,16 +197,13 @@ class RobotSession:
 
     def connect(self):
         """Configures MQTT client and connect to the service."""
-        # TODO: call _fetch_robot_config. Assuming it returns a dict
-        robot_config = {
-            "hostname": "localdev.com",
-            "port": 1883,
-            "protocol": "mqtt://",
-            "websocket_port": 9001,
-            "websocket_protocol": "ws://",
-            "username": "foletolece",
-            "password": "dvoBJmNUpoZAUeRC",
-        }
+        try:
+            robot_config = self._fetch_robot_config()
+        except Exception:
+            self.logger.error(
+                "Failed to fetch config for robot {}".format(self.robot_id)
+            )
+            raise
 
         # Use username and password authentication
         self.client.username_pw_set(robot_config["username"], robot_config["password"])

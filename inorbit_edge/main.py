@@ -18,7 +18,9 @@ log = logging.getLogger(__name__)
 robot_session = RobotSession(
     robot_id="edgesdk_python_robot_2",
     robot_name="edgesdk_python_robot",
-    api_key="dM2hJtKebPYJmbgz",
+    api_key="t7WbNVmRZxVZSxcZ",
+    # add this endpoint if you want to target local
+    # endpoint="http://localdev.com:3000/cloud_sdk_robot_config",
     use_ssl=False,
 )
 
