@@ -13,7 +13,7 @@ import ssl
 import threading
 import requests
 
-INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "http://localdev.com:3000/cloud_sdk_robot_config"
+INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "http:///control.inorbit.ai/cloud_sdk_robot_config"
 
 
 class RobotSession:
