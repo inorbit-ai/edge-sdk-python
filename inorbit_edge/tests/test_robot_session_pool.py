@@ -31,12 +31,7 @@ def test_robot_session_pool_free(mock_connection):
 
     pool.free_robot_session("id_1")
 
-    assert all(
-        [
-            not pool.has_robot("id_1"),
-            pool.has_robot("id_2")
-        ]
-    )
+    assert all([not pool.has_robot("id_1"), pool.has_robot("id_2")])
 
 
 def test_robot_session_pool_tear_down(mock_connection):
@@ -48,9 +43,4 @@ def test_robot_session_pool_tear_down(mock_connection):
 
     pool.tear_down()
 
-    assert all(
-        [
-            not pool.has_robot("id_1"),
-            not pool.has_robot("id_2")
-        ]
-    )
+    assert all([not pool.has_robot("id_1"), not pool.has_robot("id_2")])

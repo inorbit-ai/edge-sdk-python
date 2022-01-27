@@ -208,6 +208,7 @@ class RobotSession:
 
 class RobotSessionFactory:
     """Builds RobotSession objects using provided"""
+
     def __init__(self, **robot_session_kw_args):
         """Configures this factory with the arguments to pass to the
         constructor of instances.
@@ -225,6 +226,7 @@ class RobotSessionFactory:
 class RobotSessionPool:
     """Pool of robot sessions that handles connections for many robots in an
     efficient way"""
+
     def __init__(self, robot_session_factory):
         """Creates the pool
         Args:
@@ -242,8 +244,9 @@ class RobotSessionPool:
             # mutext to avoid the case of asking for the same robot twice and
             # opening 2 connections
             if not self.has_robot(robot_id):
-                self.robot_sessions[robot_id] = \
-                    self.robot_session_factory.build(robot_id, robot_name)
+                self.robot_sessions[robot_id] = self.robot_session_factory.build(
+                    robot_id, robot_name
+                )
                 self.robot_sessions[robot_id].connect()
             return self.robot_sessions[robot_id]
         finally:
