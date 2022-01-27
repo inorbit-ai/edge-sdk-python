@@ -184,8 +184,8 @@ class RobotSession:
             "protocol": "mqtt://",
             "websocket_port": 9001,
             "websocket_protocol": "ws://",
-            "username": "xurumedilo",
-            "password": "h2yTsgvMA9QptugF",
+            "username": "foletolece",
+            "password": "dvoBJmNUpoZAUeRC",
         }
 
         # Use username and password authentication
