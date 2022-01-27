@@ -85,54 +85,6 @@ class RobotSession:
         # Register callbacks
         self.client.on_connect = self.on_connect
 
-        # Use SSL by default
-        self.use_ssl = kwargs.get("use_ssl", True)
-
-        # Use TCP transport by default. The client will use websockets
-        # transport if the environment variable HTTP_PROXY is set.
-        self.use_websocket = kwargs.get("use_websockets", False)
-
-        # Read optional proxy configuration from environment variables
-        # We use ``self.http_proxy`` to indicate if proxy configuration should be used.
-        # TODO: enable explicit proxy configuration on ``RobotSession`` constructor.
-        self.http_proxy = os.getenv("HTTP_PROXY")
-        if self.http_proxy == "":
-            self.logger.warn("Found empty HTTP_PROXY variable. Ignoring.")
-            self.http_proxy = None
-        if self.http_proxy is not None:
-            self.logger.info(
-                "Found HTTP_PROXY environment configuration = {:}. "
-                "Will use WebSockets transport.".format(self.http_proxy)
-            )
-            self.use_websocket = True
-
-        # Create mqtt client
-        if self.use_websocket:
-            self.client = mqtt.Client(protocol=mqtt.MQTTv311, transport="websockets")
-            self.logger.debug("MQTT client created using websockets transport")
-        else:
-            self.client = mqtt.Client(protocol=mqtt.MQTTv311, transport="tcp")
-            self.logger.debug("MQTT client created using tcp transport")
-
-        # Configure proxy hostname and port if necessary
-        if self.http_proxy is not None:
-            parts = urlsplit(self.http_proxy)
-            proxy_hostname = parts.hostname
-            proxy_port = parts.port
-
-            if not proxy_port:
-                self.logger.warn("Empty proxy port. Is 'HTTP_PROXY' correct?")
-
-            self.logger.debug(
-                "Configuring client proxy: {}:{}".format(proxy_hostname, proxy_port)
-            )
-            self.client.proxy_set(
-                proxy_type=socks.HTTP, proxy_addr=proxy_hostname, proxy_port=proxy_port
-            )
-
-        # Register callbacks
-        self.client.on_connect = self.on_connect
-
     def _fetch_robot_config(self):
         """Gets robot config by posting appkey and robot/agent info.
            All params are stored in self
