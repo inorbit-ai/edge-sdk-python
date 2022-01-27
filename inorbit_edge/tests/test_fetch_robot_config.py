@@ -15,6 +15,7 @@ Docs: https://docs.pytest.org/en/latest/
 from inorbit_edge.robot import RobotSession
 from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL
 import requests_mock
+import pytest
 
 # Dummy database sample for testing
 DATABASE = {
@@ -33,6 +34,7 @@ DATABASE = {
         "bucket": "inorbit-data-other",
     },
 }
+
 
 # path where the robot session can fetch the robot config properly
 def test_get_robot_config_from_session():
@@ -60,3 +62,17 @@ def test_get_robot_config_from_session():
                 robot_config["awsUploadCredentials"] is not None,
             ]
         )
+
+
+# path where the robot session cannot fetch the robot config properly
+def test_bad_request_error():
+    # test required parameters only
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", app_key="appkey_123"
+    )
+
+    with requests_mock.Mocker() as mock:
+        mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, status_code=500)
+
+        with pytest.raises(Exception):
+            robot_session._fetch_robot_config()

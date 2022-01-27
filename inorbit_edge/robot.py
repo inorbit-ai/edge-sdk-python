@@ -156,12 +156,8 @@ class RobotSession:
 
         # post request to fetch robot config
         response = requests.post(self.endpoint, data=params)
+        response.raise_for_status()
 
-        # log error if there is no data
-        if response.status_code != 200 or response.content is None:
-            self.logger.error(
-                "Failed to fetch config for robot {}".format(self.robot_id)
-            )
         # TODO: validate fetched config
         return response.json()
 
@@ -252,7 +248,13 @@ class RobotSession:
     def connect(self):
         """Configures MQTT client and connect to the service."""
         # TODO: call _fetch_robot_config. Assuming it returns a dict
-        robot_config = self._fetch_robot_config()
+        try:
+            robot_config = self._fetch_robot_config()
+        except Exception:
+            self.logger.error(
+                "Failed to fetch config for robot {}".format(self.robot_id)
+            )
+            raise
 
         # Use username and password authentication
         self.client.username_pw_set(robot_config["username"], robot_config["password"])
