@@ -12,7 +12,7 @@ import ssl
 import threading
 import requests
 
-INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
+INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "http://localdev.com:3000/cloud_sdk_robot_config"
 
 
 class RobotSession:
@@ -143,12 +143,12 @@ class RobotSession:
         """
         self.logger.info(
             "Fetching config for robot {} for appKey {}".format(
-                self.robot_id, self.app_key
+                self.robot_id, self.api_key
             )
         )
         # get params from self
         params = {
-            "appKey": self.app_key,
+            "appKey": self.api_key,
             "robotId": self.robot_id,
             "hostname": self.robot_name,
             "agentVersion": self.agent_version,
@@ -247,7 +247,6 @@ class RobotSession:
 
     def connect(self):
         """Configures MQTT client and connect to the service."""
-        # TODO: call _fetch_robot_config. Assuming it returns a dict
         try:
             robot_config = self._fetch_robot_config()
         except Exception:
