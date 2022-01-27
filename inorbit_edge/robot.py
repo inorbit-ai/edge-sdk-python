@@ -9,6 +9,7 @@ from urllib.parse import urlsplit
 import socks
 import ssl
 import threading
+from time import sleep
 
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
 
@@ -151,6 +152,24 @@ class RobotSession:
             "Robot status '{}' published: {:b}.".format(robot_status, published)
         )
 
+    def _is_connected(self):
+        return self.client.is_connected()
+
+    def _is_disconnected(self):
+        return not self.client.is_connected()
+
+    def _wait_for_connection_state(self, state_func):
+        for _ in range(5):
+            self.logger.info(
+                "Waiting for MQTT connection state '{}' ...".format(state_func.__name__)
+            )
+            sleep(1)
+            if state_func():
+                return
+        raise RuntimeError(
+            "Connection state never reached: {}".format(state_func.__name__)
+        )
+
     def connect(self):
         """Configures MQTT client and connect to the service."""
         # TODO: call _fetch_robot_config. Assuming it returns a dict
@@ -160,8 +179,8 @@ class RobotSession:
             "protocol": "mqtt://",
             "websocket_port": 9001,
             "websocket_protocol": "ws://",
-            "username": "sezonoquku",
-            "password": "hDVop5dtN7MXkkY7",
+            "username": "xajaratiqu",
+            "password": "VAlXvj57BFAO7qHU",
             "robotApiKey": "H_2QCEQz6pD7i7xF",
         }
 
@@ -188,8 +207,10 @@ class RobotSession:
             if self.use_websockets
             else robot_config["port"]
         )
-        self.client.connect_async(hostname, port, keepalive=10)
+        self.client.connect(hostname, port, keepalive=10)
         self.client.loop_start()
+
+        self._wait_for_connection_state(self._is_connected)
 
         self.logger.info(
             "MQTT connection initiated. {}:{} ({})".format(
@@ -201,6 +222,11 @@ class RobotSession:
         """Ends session, disconnecting from cloud services"""
         self.logger.info("Ending robot session")
         self.send_robot_status(robot_status="0")
+        self.client.disconnect()
+
+        self._wait_for_connection_state(self._is_disconnected)
+
+        self.logger.info("Disconnected from MQTT broker")
 
     def publish(self, topic, message, qos=0, retain=False):
         return self.client.publish(topic=topic, payload=message, qos=qos, retain=retain)

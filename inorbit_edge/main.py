@@ -5,7 +5,8 @@
 
 import logging
 from inorbit_edge.robot import RobotSession
-from time import sleep
+
+# from time import sleep
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -24,6 +25,6 @@ robot_session = RobotSession(
 
 robot_session.connect()
 
-sleep(10)
+# sleep(10)
 
 robot_session.disconnect()
