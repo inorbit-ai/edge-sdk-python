@@ -191,7 +191,7 @@ class RobotSession:
         )
         self.client.connect(hostname, port, keepalive=10)
         self.client.loop_start()
-        
+
         for _ in range(5):
             if self.client.is_connected():
                 break
