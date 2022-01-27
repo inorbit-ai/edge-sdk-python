@@ -22,6 +22,7 @@ test_requirements = [
     "pytest-raises>=0.11",
     "pyyaml>=6.0",
     "lark>=1.0.0"
+    "requests_mock>=1.0.0"
 ]
 
 dev_requirements = [
