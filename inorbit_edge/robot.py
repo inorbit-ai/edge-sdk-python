@@ -185,7 +185,7 @@ class RobotSession:
             "websocket_port": 9001,
             "websocket_protocol": "ws://",
             "username": "xajaratiqu",
-            "password": "VAlXvj57BFAO7qHU"
+            "password": "VAlXvj57BFAO7qHU",
         }
 
         # Use username and password authentication
