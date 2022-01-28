@@ -10,17 +10,21 @@ from urllib.parse import urlsplit
 import socks
 import ssl
 import threading
-from inorbit_edge.inorbit_pb2 import CustomDataMessage, KeyValueCustomElement, KeyValuePairs, LocationAndPoseMessage
+from inorbit_edge.inorbit_pb2 import (
+    CustomDataMessage,
+    KeyValueCustomElement,
+    LocationAndPoseMessage,
+)
 from time import time
 from time import sleep
 import requests
-
 
 
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
 
 MQTT_POSE_TOPIC = "ros/loc/data2"
 MQTT_TOPIC_CUSTOM_DATA = "custom"
+
 
 class RobotSession:
     def __init__(self, robot_id, robot_name, api_key, **kwargs) -> None:
@@ -268,12 +272,14 @@ class RobotSession:
         message.yaw = yaw
         message.frame_id = frame_id
         self.publish_protobuf(MQTT_POSE_TOPIC, message)
-    
-    def publish_key_values(self,key_values, custom_field="0"):
-        self.logger.info("Publishing custom data key-values for robot {}".format(self.robot_id))
+
+    def publish_key_values(self, key_values, custom_field="0"):
+        self.logger.info(
+            "Publishing custom data key-values for robot {}".format(self.robot_id)
+        )
 
         def convert_value(value):
-            if isinstance(value,object):
+            if isinstance(value, object):
                 return json.dumps(value)
             else:
                 return str(value)
@@ -286,10 +292,8 @@ class RobotSession:
 
         msg = CustomDataMessage()
         msg.custom_field = custom_field
-        
-        msg.key_value_payload.pairs.extend(
-            map(set_pairs, key_values.keys())
-        )
+
+        msg.key_value_payload.pairs.extend(map(set_pairs, key_values.keys()))
 
         self.publish_protobuf(MQTT_TOPIC_CUSTOM_DATA, msg)
 

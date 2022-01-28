@@ -6,7 +6,6 @@
 import logging
 from time import sleep
 from inorbit_edge.robot import RobotSession
-from time import sleep
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -36,6 +35,6 @@ sleep(1)
 robot_session.publish_pose(0, 0, 4)
 sleep(20)
 log.info(robot_session)
-robot_session.publish_key_values({'k1': '1', 'k2': 'my_value'})
+robot_session.publish_key_values({"k1": "1", "k2": "my_value"})
 sleep(10)
 robot_session.disconnect()
