@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import json
 from inorbit_edge import __version__ as inorbit_edge_version
 import os
 import logging
@@ -403,6 +404,30 @@ class RobotSession:
         message.yaw = yaw
         message.frame_id = frame_id
         self.publish_protobuf(MQTT_POSE_TOPIC, message)
+    
+    def publish_key_values(self,key_values, custom_field="0"):
+        self.logger.info("Publishing custom data key-values for robot {}".format(self.robot_id))
+
+        def convert_value(value):
+            if isinstance(value,object):
+                return json.dumps(value)
+            else:
+                return str(value)
+
+        def set_pairs(key):
+            item = KeyValueCustomElement()
+            item.key = key
+            item.value = convert_value(key_values[key])
+            return item
+
+        msg = CustomDataMessage()
+        msg.custom_field = custom_field
+        
+        msg.key_value_payload.pairs.extend(
+            map(set_pairs, key_values.keys())
+        )
+
+        self.publish_protobuf(MQTT_TOPIC_CUSTOM_DATA, msg)
 
 
 class RobotSessionFactory:
