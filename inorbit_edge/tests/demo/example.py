@@ -23,12 +23,13 @@ MAX_YAW = 2 * pi
 
 NUM_ROBOTS_LOCATION = 10
 
+
 # TODO: integrate this into the Edge SDK ``RobotSession`` class
 def publish_robot_map(inorbit_api_url, inorbit_api_key, robot_id, map_file):
     url = inorbit_api_url + "/robots/" + robot_id + "/maps"
 
     payload = {
-        "metadata": '{"mapId":"map", "label": "map", "resolution": 0.1, "x": -15, "y": -15}'
+        "metadata": '{"mapId":"map", "label": "map", "resolution": 0.1, "x": -15, "y": -15}'  # noqa: E501
     }
     files = [
         (
