@@ -195,90 +195,6 @@ class RobotSession:
             "Connection state never reached: {}".format(state_func.__name__)
         )
 
-    def on_connect(self, client, userdata, flags, rc):
-        """MQTT client connect callback.
-
-        Args:
-            client:     the client instance for this callback
-            userdata:   the private user data as set in Client() or userdata_set()
-            flags:      response flags sent by the broker
-            rc:         the connection result
-        """
-
-        # Only assume that the robot is connected if return code is 0.
-        # Other values are taken as errors (check here:
-        # http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718035)
-        # so connection process needs to be aborted.
-        if rc == 0:
-            self.logger.info("Connected to MQTT")
-        else:
-            self.logger.warn("Unable to connect. rc = {:d}.".format(rc))
-            return
-
-        # Send robot online status.
-        # This method is blocking so do it on a separate thread just in case.
-        threading.Thread(
-            target=self.send_robot_status, kwargs={"robot_status": "1"}
-        ).start()
-
-    def send_robot_status(self, robot_status):
-        """Sends robot online/offline status message.
-
-        This method blocks until either the message
-        is sent or the client errors out.
-
-        Args:
-            robot_status (Union[bool,str]): Connection status
-                It supports ``bool`` and ``str`` values ("0" or "1")
-
-        Raises:
-            ValueError: on invalid ``robot_status``
-        """
-
-        # Validate ``robot_status`` parameter.
-        if isinstance(robot_status, bool):
-            robot_status = "1" if robot_status else "0"
-
-        if robot_status not in ["0", "1"]:
-            raise ValueError("Robot status must be boolean, '0' or '1'")
-
-        # Every time we connect or disconnect to the service, send
-        # updated status including online/offline bit
-        status_message = "{}|{}|{}|{}".format(
-            robot_status, self.api_key, self.agent_version, self.robot_name
-        )
-        ret = self.publish(
-            "r/{}/state".format(self.robot_id), status_message, qos=1, retain=True
-        )
-        self.logger.info("Publishing status {}. ret = {}.".format(robot_status, ret))
-
-        # TODO: handle errors while waiting for publish. Consider that
-        # this method would tipically run on a separate thread.
-        ret.wait_for_publish()
-        published = ret.is_published()
-
-        self.logger.info(
-            "Robot status '{}' published: {:b}.".format(robot_status, published)
-        )
-
-    def _is_connected(self):
-        return self.client.is_connected()
-
-    def _is_disconnected(self):
-        return not self.client.is_connected()
-
-    def _wait_for_connection_state(self, state_func):
-        for _ in range(5):
-            self.logger.info(
-                "Waiting for MQTT connection state '{}' ...".format(state_func.__name__)
-            )
-            sleep(1)
-            if state_func():
-                return
-        raise RuntimeError(
-            "Connection state never reached: {}".format(state_func.__name__)
-        )
-
     def connect(self):
         """Configures MQTT client and connect to the service."""
         try:
@@ -316,11 +232,6 @@ class RobotSession:
         self.client.loop_start()
 
         self._wait_for_connection_state(self._is_connected)
-
-        # TODO: cap retries to 10 or so
-        while not self.client.is_connected():
-            sleep(1)
-            self.logger.debug("Waiting for connection...")
 
         self.logger.info(
             "MQTT connection initiated. {}:{} ({})".format(
