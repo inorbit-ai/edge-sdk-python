@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
 from inorbit_edge import __version__ as inorbit_edge_version
 import os
 import logging
@@ -10,7 +9,7 @@ from urllib.parse import urlsplit
 import socks
 import ssl
 import threading
-from inorbit_edge.inorbit_pb2 import LocationAndPoseMessage
+from inorbit_edge.inorbit_pb2 import CustomDataMessage, KeyValueCustomElement, KeyValuePairs, LocationAndPoseMessage
 from time import time
 from time import sleep
 import requests
@@ -19,6 +18,7 @@ import requests
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
 
 MQTT_POSE_TOPIC = "ros/loc/data2"
+MQTT_TOPIC_CUSTOM_DATA = "custom"
 
 class RobotSession:
     def __init__(self, robot_id, robot_name, api_key, **kwargs) -> None:
