@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import json
 from inorbit_edge import __version__ as inorbit_edge_version
 import os
 import logging
@@ -9,7 +10,7 @@ from urllib.parse import urlsplit
 import socks
 import ssl
 import threading
-from inorbit_edge.inorbit_pb2 import LocationAndPoseMessage
+from inorbit_edge.inorbit_pb2 import CustomDataMessage, KeyValueCustomElement, KeyValuePairs, LocationAndPoseMessage
 from time import time
 from time import sleep
 
@@ -17,6 +18,7 @@ from time import sleep
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
 
 MQTT_POSE_TOPIC = "ros/loc/data2"
+MQTT_TOPIC_CUSTOM_DATA = "custom"
 
 
 class RobotSession:
@@ -184,8 +186,8 @@ class RobotSession:
             "protocol": "mqtt://",
             "websocket_port": 9001,
             "websocket_protocol": "ws://",
-            "username": "foletolece",
-            "password": "dvoBJmNUpoZAUeRC",
+            "username": "foveyafuce",
+            "password": "oIzb6i6YGBFbzzP9",
         }
 
         # Use username and password authentication
@@ -251,3 +253,30 @@ class RobotSession:
         message.yaw = yaw
         message.frame_id = frame_id
         self.publish_protobuf(MQTT_POSE_TOPIC, message)
+
+    def publish_key_values(self,key_values, custom_field=0):
+        self.logger.info("Publishing custom data key-values for robot {}".format(self.robot_id))
+
+        def convert_value(value):
+            if isinstance(value,object):
+                return json.dumps(value)
+            else:
+                return str(value)
+
+        def set_pairs(key):
+            item = KeyValueCustomElement()
+            item.key = key
+            item.value = convert_value(key_values[key])
+
+        msg = CustomDataMessage()
+        # msg.custom_field = custom_field
+        
+        payload = KeyValuePairs()
+        msg.key_value_payload.pairs.extend(
+            map(set_pairs,key_values.keys())
+        )
+
+        msg.key_value_payload = payload
+
+        self.publish_protobuf(MQTT_TOPIC_CUSTOM_DATA, msg)
+
