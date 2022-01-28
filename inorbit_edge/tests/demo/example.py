@@ -6,6 +6,7 @@ from time import sleep
 from random import randint, uniform, random
 from math import pi
 import os
+import requests
 
 from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool
 
@@ -21,6 +22,23 @@ MAX_Y = 20
 MAX_YAW = 2 * pi
 
 NUM_ROBOTS_LOCATION = 10
+
+# TODO: integrate this into the Edge SDK ``RobotSession`` class
+def publish_robot_map(inorbit_api_url, inorbit_api_key, robot_id, map_file):
+    url = inorbit_api_url + "/robots/" + robot_id + "/maps"
+
+    payload = {
+        "metadata": '{"mapId":"map", "label": "map", "resolution": 0.1, "x": -15, "y": -15}'
+    }
+    files = [
+        (
+            "image",
+            ("map.png", open(map_file, "rb"), "image/png"),
+        )
+    ]
+    headers = {"x-auth-inorbit-app-key": inorbit_api_key}
+
+    requests.request("POST", url, headers=headers, data=payload, files=files)
 
 
 class FakeRobot:
@@ -76,15 +94,19 @@ class FakeRobot:
 if __name__ == "__main__":
 
     inorbit_api_endpoint = os.environ.get("INORBIT_URL")
+    inorbit_api_url = os.environ.get("INORBIT_API_URL")
     inorbit_api_key = os.environ.get("INORBIT_API_KEY")
+    inorbit_api_use_ssl = os.environ.get("INORBIT_API_USE_SSL")
 
     assert inorbit_api_endpoint, "Environment variable INORBIT_URL not specified"
+    assert inorbit_api_url, "Environment variable INORBIT_API_URL not specified"
     assert inorbit_api_key, "Environment variable INORBIT_API_KEY not specified"
 
     # Create robot session factory and session pool
     robot_session_factory = RobotSessionFactory(
         endpoint=inorbit_api_endpoint,
         api_key=inorbit_api_key,
+        use_ssl=False if inorbit_api_use_ssl == "false" else True,
     )
     robot_session_pool = RobotSessionPool(robot_session_factory)
 
@@ -98,6 +120,14 @@ if __name__ == "__main__":
             robot_id=robot_id, robot_name=robot_id
         )
         fake_robot_pool[robot_id] = FakeRobot(robot_id=robot_id, robot_name=robot_id)
+        publish_robot_map(
+            inorbit_api_url=inorbit_api_url,
+            inorbit_api_key=inorbit_api_key,
+            robot_id=robot_id,
+            map_file=os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), "map.png"
+            ),
+        )
 
     for i in range(NUM_ROBOTS_LOCATION):
         robot_id = "edgesdk_py_loc2_{}".format(i)
@@ -105,6 +135,14 @@ if __name__ == "__main__":
             robot_id=robot_id, robot_name=robot_id
         )
         fake_robot_pool[robot_id] = FakeRobot(robot_id=robot_id, robot_name=robot_id)
+        publish_robot_map(
+            inorbit_api_url=inorbit_api_url,
+            inorbit_api_key=inorbit_api_key,
+            robot_id=robot_id,
+            map_file=os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), "map.png"
+            ),
+        )
 
     # Go through every fake robot and simulate robot movement
     while True:
