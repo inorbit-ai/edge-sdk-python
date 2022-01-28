@@ -1,135 +1,80 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Imports should be grouped into:
-# Standard library imports
-# Related third party imports
-# Local application / relative imports
-# in that order
-
-# Standard library
 import logging
-from typing import Any, Tuple
+from time import sleep
+from random import uniform
+from math import pi
+from inorbit_edge import robot
 
-# Third party
+from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool
 
-# Relative
-
-###############################################################################
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.FileHandler("debug.log"), logging.StreamHandler()],
+)
 
 log = logging.getLogger(__name__)
 
-###############################################################################
+
+MAX_X = 20
+MAX_Y = 20
+MAX_YAW = 2*pi
+
+class FakeRobot:
+    def __init__(self, robot_id, robot_name) -> None:
+        self.logger = logging.getLogger(__class__.__name__)
+        self.robot_id = robot_id
+        self.robot_name = robot_name
+
+        self.x = uniform(-MAX_X/4, MAX_X/4)
+        self.y = uniform(-MAX_Y/4, MAX_Y/4)
+
+        self.yaw = uniform(0, MAX_YAW/2)
+    
+    def move(self):
+        x_delta = uniform(-2, 2)
+        y_delta = uniform(-2, 2)
+        yaw_delta = uniform(-pi/2, pi/2)
+
+        if self.x + x_delta < MAX_X and self.x + x_delta > 0:
+            self.x = self.x + x_delta
+
+        if self.y + y_delta < MAX_Y and self.y + y_delta > 0:
+            self.y = self.y + y_delta
+
+        if self.yaw + yaw_delta < MAX_YAW and self.yaw + yaw_delta > 0:
+            self.yaw = self.yaw - yaw_delta
+
+        self.logger.debug("New position x={}, y={}, yaw={}".format(self.x, self.y, self.yaw))
+
+robot_session_factory = RobotSessionFactory(
+    endpoint="http://localdev.com:3000/cloud_sdk_robot_config",
+    api_key="dM2hJtKebPYJmbgz",
+    use_ssl=False
+)
+
+robot_session_pool = RobotSessionPool(robot_session_factory)
+
+fake_robot_pool = dict()
+
+for i in range(10):
+    robot_id = "edgesdk_py_loc1_{}".format(i)
+    log.info("Creating robot session for '{}'".format(robot_id))
+    robot_session = robot_session_pool.get_session(robot_id=robot_id, robot_name=robot_id)
+    fake_robot_pool[robot_id] = FakeRobot(robot_id=robot_id, robot_name=robot_id)
+
+    robot_id = "edgesdk_py_loc2_{}".format(i)
+    log.info("Creating robot session for '{}'".format(robot_id))
+    robot_session = robot_session_pool.get_session(robot_id=robot_id, robot_name=robot_id)
+    fake_robot_pool[robot_id] = FakeRobot(robot_id=robot_id, robot_name=robot_id)
 
 
-class Example(object):
-    """
-    This is an example object. Use this example for ideas on how to write doc strings,
-    use logging, construct objects. This is not an exhaustive example but a decent
-    start.
+while True:
+    for robot_id, fake_robot in fake_robot_pool.items():
+        fake_robot.move()
+        robot_session = robot_session_pool.get_session(robot_id=robot_id)
+        robot_session.publish_pose(x=fake_robot.x, y=fake_robot.y, yaw=fake_robot.yaw)
 
-    Parameters
-    ----------
-    init_value: int
-        An integer value to initialize the object with.
-    """
-
-    # Static methods are available to the user regardless of if they have initialized
-    # an instance of the class. They are useful when you have small portions of code
-    # that while relevant to the class may not depend on entire class state.
-    # In this case, this function isn't incredibly valuable outside of the usage of
-    # this class and therefore we use the "Python" standard of prefixing the method
-    # with an underscore.
-    @staticmethod
-    def _check_value(val: Any):
-        """
-        Check that the value is an integer. If not, raises a ValueError.
-        """
-        if not isinstance(val, int):
-            raise ValueError(
-                f"Provided value: {val} (type: {type(val)}, is not an integer.)"
-            )
-
-    def __init__(self, init_value: int = 10):
-        # Check initial value
-        self._check_value(init_value)
-
-        # Set values
-        self.current_value = init_value
-        self.old_value = None
-
-    def update_value(self, new_value: int) -> int:
-        """
-        Save old value and set new value.
-
-        Parameters
-        ----------
-        new_value: int
-            The new value to assign to the object.
-
-        Returns
-        -------
-        old_value: int
-            The previous value stored in the object.
-        """
-        # Check new value before assign
-        self._check_value(new_value)
-
-        # Passed, now assign
-        self.old_value = self.current_value
-        self.current_value = new_value
-        log.info(f"Updating value from {self.old_value} to {self.current_value}")
-        return self.old_value
-
-    def get_value(self) -> int:
-        """
-        Get the current value.
-
-        Returns
-        -------
-        current_value: int
-            The current value stored in the object.
-        """
-        return self.current_value
-
-    def get_previous_value(self) -> int:
-        """
-        Get the previous value.
-
-        Returns
-        -------
-        previous_value: int
-            The previous value stored in the object.
-        """
-        return self.old_value
-
-    # And example of a property accessor
-    # When using this object, this "function" can be called using attribute style
-    # These are useful when you want to hide that computation or IO is happening from
-    # the user. Usually, these are used when you need to lazy load something or have
-    # "immutability" of an object property.
-    # ```
-    # e = Example(10)
-    # stored = e.values
-    # ```
-    @property
-    def values(self) -> Tuple[int]:
-        """
-        Get both values stored in the object as a tuple of integers.
-
-        Returns
-        -------
-        values: Tuple[int]
-            The current and old values stored in a tuple in (current_value, old_value)
-            order.
-        """
-        return (self.current_value, self.old_value)
-
-    def __str__(self):
-        return f"<Example [current: {self.current_value}, previous: {self.old_value}]>"
-
-    # Representation's (reprs) are useful when using interactive Python sessions or
-    # when you log an object. They are the shorthand of the object state. In this case,
-    # our string method provides a good representation.
-    def __repr__(self):
-        return str(self)
+    sleep(1)
