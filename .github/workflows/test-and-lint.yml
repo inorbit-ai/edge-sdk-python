@@ -44,4 +44,4 @@ jobs:
         flake8 inorbit_edge --count --verbose --show-source --statistics
     - name: Check with black
       run: |
-        black --check inorbit_edge
+        black --check inorbit_edge --exclude inorbit_edge/inorbit_pb2.py

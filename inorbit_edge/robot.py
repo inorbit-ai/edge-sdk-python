@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-from time import sleep
 from inorbit_edge import __version__ as inorbit_edge_version
 import os
 import logging
@@ -11,9 +10,15 @@ from urllib.parse import urlsplit
 import socks
 import ssl
 import threading
+from inorbit_edge.inorbit_pb2 import LocationAndPoseMessage
+from time import time
+from time import sleep
 import requests
 
+
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
+
+MQTT_POSE_TOPIC = "ros/loc/data2"
 
 
 class RobotSession:
@@ -245,6 +250,23 @@ class RobotSession:
 
     def publish(self, topic, message, qos=0, retain=False):
         return self.client.publish(topic=topic, payload=message, qos=qos, retain=retain)
+
+    def publish_protobuf(self, subtopic, message, qos=0, retain=False):
+        topic = "r/{}/{}".format(self.robot_id, subtopic)
+        self.logger.debug("Publishing to topic {}".format(topic))
+        ret = self.publish(
+            topic, bytearray(message.SerializeToString()), qos=qos, retain=retain
+        )
+        self.logger.debug(ret)
+
+    def publish_pose(self, x, y, yaw, frame_id="map", ts=None):
+        message = LocationAndPoseMessage()
+        message.ts = ts if ts else int(time() * 1000)
+        message.pos_x = x
+        message.pos_y = y
+        message.yaw = yaw
+        message.frame_id = frame_id
+        self.publish_protobuf(MQTT_POSE_TOPIC, message)
 
 
 class RobotSessionFactory:
