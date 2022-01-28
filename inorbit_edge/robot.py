@@ -268,6 +268,7 @@ class RobotSession:
         message.frame_id = frame_id
         self.publish_protobuf(MQTT_POSE_TOPIC, message)
 
+
 class RobotSessionFactory:
     """Builds RobotSession objects using provided"""
 
