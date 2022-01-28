@@ -22,6 +22,8 @@ from typing import Dict
 
 import pytest
 
+from inorbit_edge.robot import RobotSession
+
 
 @pytest.fixture
 def data_dir() -> Path:
@@ -35,3 +37,9 @@ def data_dir() -> Path:
 def loaded_example_values(data_dir) -> Dict[str, int]:
     with open(data_dir / "example_values.json", "r") as read_in:
         return json.load(read_in)
+
+
+@pytest.fixture
+def mock_connection(monkeypatch):
+    monkeypatch.setattr(RobotSession, "connect", lambda s: 0)
+    monkeypatch.setattr(RobotSession, "disconnect", lambda s: 0)

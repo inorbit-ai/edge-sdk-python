@@ -267,3 +267,67 @@ class RobotSession:
         message.yaw = yaw
         message.frame_id = frame_id
         self.publish_protobuf(MQTT_POSE_TOPIC, message)
+
+class RobotSessionFactory:
+    """Builds RobotSession objects using provided"""
+
+    def __init__(self, **robot_session_kw_args):
+        """Configures this factory with the arguments to pass to the
+        constructor of instances.
+        """
+        self.robot_session_kw_args = robot_session_kw_args
+
+    def build(self, robot_id, robot_name):
+        """Builds a RobotSession object using the provided id and name.
+        It also passes the  robot_session_kw_args set when creating the factory to the
+        RobotSession constructor.
+        """
+        return RobotSession(robot_id, robot_name, **self.robot_session_kw_args)
+
+
+class RobotSessionPool:
+    """Pool of robot sessions that handles connections for many robots in an
+    efficient way"""
+
+    def __init__(self, robot_session_factory):
+        """Creates the pool
+        Args:
+          - robot_session_factory: factory used to build individual RobotSession
+          objects
+        """
+        self.robot_session_factory = robot_session_factory
+        self.robot_sessions = {}
+        self.getting_session_mutex = threading.Lock()
+
+    def get_session(self, robot_id, robot_name=""):
+        """Returns a connected RobotSession for the specified robot"""
+        self.getting_session_mutex.acquire()
+        try:
+            # mutext to avoid the case of asking for the same robot twice and
+            # opening 2 connections
+            if not self.has_robot(robot_id):
+                self.robot_sessions[robot_id] = self.robot_session_factory.build(
+                    robot_id, robot_name
+                )
+                self.robot_sessions[robot_id].connect()
+            return self.robot_sessions[robot_id]
+        finally:
+            self.getting_session_mutex.release()
+
+    def tear_down(self):
+        """Destroys all RobotSession in this pool"""
+        for rs in self.robot_sessions.values():
+            rs.disconnect()
+        self.robot_sessions = {}
+
+    def has_robot(self, robot_id):
+        """Checks if a RobotSession for a specific robot exists in this pool"""
+        return robot_id in self.robot_sessions
+
+    def free_robot_session(self, robot_id):
+        """Destroys a RobotSession in this pool"""
+        if not self.has_robot(robot_id):
+            return
+        sess = self.get_session(robot_id)
+        sess.disconnect()
+        del self.robot_sessions[robot_id]
