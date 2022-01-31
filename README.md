@@ -10,16 +10,25 @@ InOrbit Python Edge SDK
 
 ## Features
 
--   Store values and retain the prior value in memory
--   ... some other functionality
+- Robot session handling through a `RobotSessionPool`.
+- Publish key-values.
+- Publish robot poses.
+- Publish robot odometry.
 
 ## Quick Start
 
 ```python
-from inorbit_edge import Example
+from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool
 
-a = Example()
-a.get_value()  # 10
+robot_session_factory = RobotSessionFactory(api_key="<YOUR_API_KEY>")
+
+robot_session_pool = RobotSessionPool(robot_session_factory)
+
+robot_session = robot_session_pool.get_session(
+    robot_id="my_robot_id_123", robot_name="Python SDK Quick Start Robot"
+)
+
+robot_session.publish_pose(x=0.0, y=0.0, yaw=0.0)
 ```
 
 ## Installation
