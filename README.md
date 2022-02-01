@@ -1,7 +1,6 @@
 # InOrbit Python Edge SDK
 
 [![Build Status](https://github.com/inorbit-ai/edge-sdk-python/workflows/Build%20Main/badge.svg)](https://github.com/inorbit-ai/edge-sdk-python/actions)
-[![Documentation](https://github.com/inorbit-ai/edge-sdk-python/workflows/Documentation/badge.svg)](https://inorbit.github.io/edge-sdk-python/)
 [![Code Coverage](https://codecov.io/gh/inorbit/edge-sdk-python/branch/main/graph/badge.svg)](https://codecov.io/gh/inorbit/edge-sdk-python)
 
 The `InOrbit Edge SDK` allows Python programs to communicate with `InOrbit` platform on behalf of robots - providing robot data and handling robot actions. It's goal is to ease the integration between `InOrbit` and any other software that handles robot data.
