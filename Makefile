@@ -1,4 +1,4 @@
-.PHONY: clean build docs help
+.PHONY: clean build help
 .DEFAULT_GOAL := help
 
 define BROWSER_PYSCRIPT
@@ -47,13 +47,3 @@ clean:  ## clean all build, python, and testing files
 
 build: ## run tox / run tests and lint
 	tox
-
-gen-docs: ## generate Sphinx HTML documentation, including API docs
-	rm -f docs/inorbit_edge*.rst
-	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ inorbit_edge **/tests/
-	$(MAKE) -C docs html
-
-docs: ## generate Sphinx HTML documentation, including API docs, and serve to browser
-	make gen-docs
-	$(BROWSER) docs/_build/html/index.html

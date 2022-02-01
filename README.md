@@ -1,10 +1,9 @@
 # InOrbit Python Edge SDK
 
 [![Build Status](https://github.com/inorbit-ai/edge-sdk-python/workflows/Build%20Main/badge.svg)](https://github.com/inorbit-ai/edge-sdk-python/actions)
-[![Documentation](https://github.com/inorbit-ai/edge-sdk-python/workflows/Documentation/badge.svg)](https://inorbit.github.io/edge-sdk-python/)
 [![Code Coverage](https://codecov.io/gh/inorbit/edge-sdk-python/branch/main/graph/badge.svg)](https://codecov.io/gh/inorbit/edge-sdk-python)
 
-InOrbit Python Edge SDK
+The `InOrbit Edge SDK` allows Python programs to communicate with `InOrbit` platform on behalf of robots - providing robot data and handling robot actions. It's goal is to ease the integration between `InOrbit` and any other software that handles robot data.
 
 ---
 
@@ -38,13 +37,13 @@ robot_session.publish_pose(x=0.0, y=0.0, yaw=0.0)
 
 ## Documentation
 
-For full package documentation please visit [inorbit.github.io/edge-sdk-python](https://inorbit.github.io/edge-sdk-python).
+For full package documentation please visit [InOrbit Developer Portal](https://developer.inorbit.ai/docs?hsLang=en#edge-sdk).
 
 ## Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for information related to developing the code.
 
-## The Four Commands You Need To Know
+## The Three Commands You Need To Know
 
 1. `pip install -e .[dev]`
 
@@ -60,8 +59,3 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for information related to developing the
 
     This will clean up various Python and build generated files so that you can ensure
     that you are working in a clean environment.
-
-4. `make docs`
-
-    This will generate and launch a web browser to view the most up-to-date
-    documentation for your Python package.
