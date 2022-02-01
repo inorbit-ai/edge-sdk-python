@@ -262,7 +262,7 @@ class RobotSession:
         ret = self.publish(
             topic, bytearray(message.SerializeToString()), qos=qos, retain=retain
         )
-        self.logger.debug(ret)
+        self.logger.debug("Return code: {}".format(ret))
 
     def publish_pose(self, x, y, yaw, frame_id="map", ts=None):
         message = LocationAndPoseMessage()
