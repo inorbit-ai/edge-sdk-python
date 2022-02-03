@@ -11,7 +11,7 @@ export INORBIT_URL="https://control.inorbit.ai"
 export INORBIT_API_URL="https://api.inorbit.ai"
 export INORBIT_API_KEY="foobar123"
 # Disable SSL for local development only
-export INORBIT_USE_SSL="true"
+export INORBIT_API_USE_SSL="true"
 
 python example.py
 ```

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import datetime
 from time import sleep
 from random import randint, uniform, random
 from math import pi
@@ -59,6 +60,12 @@ class FakeRobot:
         self.cpu = 0
         self.battery = 0
         self.status = "Idle"
+
+        # Initialize odometry data
+        self.linear_distance = 0
+        self.angular_distance = 0
+        self.linear_speed = 0
+        self.angular_speed = 0
 
     def move(self):
         """Modifies robot data using values generated randomly"""
@@ -161,6 +168,17 @@ if __name__ == "__main__":
                     "status": fake_robot.status,
                     "cpu": fake_robot.cpu,
                 }
+            )
+            fake_robot.linear_speed = random() * 10
+            fake_robot.angular_speed = random() * pi
+            ct_ts = int(round(datetime.datetime.now().timestamp()))
+            robot_session.publish_odometry(
+                ts_start=ct_ts,
+                ts=ct_ts,
+                linear_distance=fake_robot.linear_distance,
+                angular_distance=fake_robot.angular_distance,
+                linear_speed=fake_robot.linear_speed,
+                angular_speed=fake_robot.angular_speed,
             )
 
         sleep(1)

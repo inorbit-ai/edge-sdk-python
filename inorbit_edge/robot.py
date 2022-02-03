@@ -14,6 +14,7 @@ from inorbit_edge.inorbit_pb2 import (
     CustomDataMessage,
     KeyValueCustomElement,
     LocationAndPoseMessage,
+    OdometryDataMessage,
 )
 from time import time
 from time import sleep
@@ -24,6 +25,7 @@ INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot
 
 MQTT_POSE_TOPIC = "ros/loc/data2"
 MQTT_TOPIC_CUSTOM_DATA = "custom"
+MQTT_TOPIC_ODOMETRY = "ros/odometry/data"
 
 
 class RobotSession:
@@ -297,6 +299,38 @@ class RobotSession:
 
         self.publish_protobuf(MQTT_TOPIC_CUSTOM_DATA, msg)
 
+    def publish_odometry(
+        self,
+        ts_start,
+        ts,
+        linear_distance=0,
+        angular_distance=0,
+        linear_speed=0,
+        angular_speed=0,
+    ):
+        self.logger.info(
+            "Publishing odometry {}".format(
+                json.dumps(
+                    {
+                        "ts_start": ts_start,
+                        "ts": ts,
+                        "linear_distance": linear_distance,
+                        "angular_distance": angular_distance,
+                        "linear_speed": linear_speed,
+                        "angular_speed": angular_speed,
+                    }
+                )
+            )
+        )
+
+        msg = OdometryDataMessage()
+        msg.ts_start = ts_start
+        msg.ts = ts
+        msg.linear_distance = linear_distance
+        msg.angular_distance = angular_distance
+        msg.linear_speed = linear_speed
+        msg.angular_speed = angular_speed
+        self.publish_protobuf(MQTT_TOPIC_ODOMETRY, msg)
 
 class RobotSessionFactory:
     """Builds RobotSession objects using provided"""
