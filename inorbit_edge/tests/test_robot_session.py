@@ -61,7 +61,8 @@ def test_robot_session_connect(monkeypatch):
         monkeypatch.setattr(robot_session, "publish", publish_mock)
         # connect robot_session so it populates properties with API response data
         robot_session.connect()
-        # manually execute on_connect callback to send robot status
+        # manually execute send_robot_status simulating on_connect
+        # callback execution so robot status is sent
         robot_session.send_robot_status("1")
         assert robot_session.api_key == "apikey_123"
         assert robot_session.robot_api_key == "robot_apikey_123"
