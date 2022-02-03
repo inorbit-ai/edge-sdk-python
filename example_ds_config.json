@@ -1,0 +1,208 @@
+[
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "agentOnline"
+    },
+    "apiVersion": "v0.1",
+    "spec": {
+      "label": "Online",
+      "internal": false,
+      "timeline": {}
+    },
+    "kind": "DataSourceDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "ramUsagePercentage"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "DataSourceDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "networkTotalRate"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "DataSourceDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "sJT6w045bgItulOU"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "DataSourceDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "cpuLoadPercentage"
+    },
+    "apiVersion": "v0.1",
+    "spec": {
+      "enabledModes": null,
+      "options": {
+        "source": {
+          "key": "cpu",
+          "source": "key-value"
+        }
+      }
+    },
+    "kind": "DataSourceDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "I5pX-Au_gjG9OHze"
+    },
+    "apiVersion": "v0.1",
+    "spec": {
+      "label": "status",
+      "timeline": {},
+      "modeId": "mode::0",
+      "options": {
+        "source": {
+          "source": "key-value",
+          "key": "status",
+          "attributeId": "I5pX-Au_gjG9OHze"
+        }
+      }
+    },
+    "kind": "DataSourceDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "GJXbMRrQoIsqpXVu"
+    },
+    "apiVersion": "v0.1",
+    "spec": {
+      "label": "Battery",
+      "unit": "%",
+      "timeline": {},
+      "enabledModes": null,
+      "options": {
+        "source": {
+          "source": "key-value",
+          "key": "battery",
+          "attributeId": "GJXbMRrQoIsqpXVu"
+        }
+      }
+    },
+    "kind": "DataSourceDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "Ek0adCgsnSlYvwwE"
+    },
+    "apiVersion": "v0.1",
+    "spec": {
+      "label": "Network",
+      "unit": "GBPS",
+      "timeline": {},
+      "enabledModes": null,
+      "options": {
+        "source": {
+          "source": "key-value",
+          "key": "network",
+          "attributeId": "Ek0adCgsnSlYvwwE"
+        }
+      }
+    },
+    "kind": "DataSourceDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "diskUsagePercentage"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "DataSourceDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "1cMxxo7CU2mMW9zP"
+    },
+    "apiVersion": "v0.1",
+    "spec": {
+      "label": "Disk Usage",
+      "unit": "GB",
+      "timeline": {},
+      "enabledModes": null,
+      "options": {
+        "source": {
+          "source": "key-value",
+          "key": "disk_usage",
+          "attributeId": "1cMxxo7CU2mMW9zP"
+        }
+      }
+    },
+    "kind": "DataSourceDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "p__MbLmQwxvp2ASL"
+    },
+    "apiVersion": "v0.1",
+    "spec": {
+      "label": "manufacturer",
+      "timeline": {},
+      "options": {
+        "source": {
+          "source": "key-value",
+          "key": "manufacturer",
+          "attributeId": "p__MbLmQwxvp2ASL"
+        }
+      }
+    },
+    "kind": "DataSourceDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "z1goaIO_DlcGe6AZ"
+    },
+    "apiVersion": "v0.1",
+    "spec": {
+      "label": "model",
+      "timeline": {},
+      "options": {
+        "source": {
+          "source": "key-value",
+          "key": "model",
+          "attributeId": "z1goaIO_DlcGe6AZ"
+        }
+      }
+    },
+    "kind": "DataSourceDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "OJeSVjPg1PI8Kd4J"
+    },
+    "apiVersion": "v0.1",
+    "spec": {
+      "label": "version",
+      "timeline": {},
+      "options": {
+        "source": {
+          "source": "key-value",
+          "key": "version",
+          "attributeId": "OJeSVjPg1PI8Kd4J"
+        }
+      }
+    },
+    "kind": "DataSourceDefinition"
+  }
+]

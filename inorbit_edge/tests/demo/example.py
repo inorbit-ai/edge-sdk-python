@@ -21,7 +21,7 @@ MAX_X = 20
 MAX_Y = 20
 MAX_YAW = 2 * pi
 
-NUM_ROBOTS_LOCATION = 10
+NUM_ROBOTS_LOCATION = 1
 
 
 # TODO: integrate this into the Edge SDK ``RobotSession`` class
@@ -58,7 +58,14 @@ class FakeRobot:
         # Initialize other robot data
         self.cpu = 0
         self.battery = 0
+        self.network=0
+        self.disk_usage=0
         self.status = "Idle"
+
+        # robot basic data
+        self.manufacturer="Hooli Robotics"
+        self.version="1.0"
+        self.model= robot_id + "_1.0.11"
 
     def move(self):
         """Modifies robot data using values generated randomly"""
@@ -80,12 +87,17 @@ class FakeRobot:
         if self.yaw + yaw_delta < MAX_YAW and self.yaw + yaw_delta > 0:
             self.yaw = self.yaw - yaw_delta
 
+
         # Generate a random integer value for battery
         self.battery = randint(0, 100)
         # Generate random status
         self.status = "Mission" if random() > 0.5 else "Idle"
         # Generate a random float value for cpu usage
         self.cpu = random() * 100
+        # Generate a random int value for network
+        self.network = randint(0, 50)
+        # Generate a random int value for disk usage
+        self.disk_usage = randint(0, 200)
 
         self.logger.debug(
             "New position x={}, y={}, yaw={}".format(self.x, self.y, self.yaw)
@@ -116,7 +128,8 @@ if __name__ == "__main__":
 
     # Create fake robots and populate `fake_robot_pool` dictionary
     for i in range(NUM_ROBOTS_LOCATION):
-        robot_id = "edgesdk_py_loc1_{}".format(i)
+        robot_id = "Seth"
+        #robot_id = "edgesdk_py_loc1_{}".format(i)
         robot_session = robot_session_pool.get_session(
             robot_id=robot_id, robot_name=robot_id
         )
@@ -131,7 +144,8 @@ if __name__ == "__main__":
         )
 
     for i in range(NUM_ROBOTS_LOCATION):
-        robot_id = "edgesdk_py_loc2_{}".format(i)
+        robot_id= "Venus"
+        #robot_id = "edgesdk_py_loc2_{}".format(i)
         robot_session = robot_session_pool.get_session(
             robot_id=robot_id, robot_name=robot_id
         )
@@ -160,6 +174,11 @@ if __name__ == "__main__":
                     "battery": fake_robot.battery,
                     "status": fake_robot.status,
                     "cpu": fake_robot.cpu,
+                    "network": fake_robot.network,
+                    "disk_usage": fake_robot.disk_usage,
+                    "manufacturer": fake_robot.manufacturer,
+                    "version": fake_robot.version,
+                    "model": fake_robot.model
                 }
             )
 

@@ -1,0 +1,448 @@
+[
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "D0FITScQABdS0Rsx"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "networkTotalRate"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "cpuLoadPercentage"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "rosMasterStatus"
+    },
+    "apiVersion": "v0.1",
+    "spec": {
+      "label": "ROS Status",
+      "error": {
+        "severity": "SEV 1",
+        "notificationChannels": [
+          "app"
+        ]
+      },
+      "warning": {
+        "severity": "SEV 2",
+        "notificationChannels": [
+          "app"
+        ]
+      }
+    },
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "rosDiagnosticsStatus"
+    },
+    "apiVersion": "v0.1",
+    "spec": {
+      "label": "ROS Diagnostics",
+      "error": {
+        "severity": "SEV 1",
+        "notificationChannels": [
+          "app"
+        ]
+      },
+      "warning": {
+        "severity": "SEV 2",
+        "notificationChannels": [
+          "app"
+        ]
+      }
+    },
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "diskUsagePercentage"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "QeGNE5BWrfmPkM9CA"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "aaa"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "aaabb"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "aaab"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "datasource"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "datasource2"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "mnrl6DLgBEPPH_hc"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "datasource3"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "datasource4"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "datasource5"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "agentOnline"
+    },
+    "apiVersion": "v0.1",
+    "spec": {
+      "label": "Online",
+      "error": {
+        "severity": "SEV 1",
+        "notificationChannels": [
+          "app"
+        ]
+      },
+      "warning": {
+        "severity": "SEV 2",
+        "notificationChannels": [
+          "app"
+        ]
+      }
+    },
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "mbps_lan"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "mbps_lan2"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "mbps_lan3"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "5w1DaPaitk-Sl43V"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "ramUsagePercentage"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "mbps_lan4"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "mbps_eth"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "mbps_eth0"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "kbps_eth"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "sJT6w045bgItulOU"
+    },
+    "apiVersion": "v0.1",
+    "spec": null,
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "I5pX-Au_gjG9OHze"
+    },
+    "apiVersion": "v0.1",
+    "spec": {
+      "label": "status",
+      "error": {
+        "severity": "SEV 1",
+        "notificationChannels": [
+          "app"
+        ]
+      },
+      "warning": {
+        "severity": "SEV 2",
+        "notificationChannels": [
+          "app"
+        ]
+      }
+    },
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "GJXbMRrQoIsqpXVu"
+    },
+    "apiVersion": "v0.1",
+    "spec": {
+      "label": "battery",
+      "error": {
+        "severity": "SEV 1",
+        "notificationChannels": [
+          "app"
+        ]
+      },
+      "warning": {
+        "severity": "SEV 2",
+        "notificationChannels": [
+          "app"
+        ]
+      }
+    },
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "Ek0adCgsnSlYvwwE"
+    },
+    "apiVersion": "v0.1",
+    "spec": {
+      "label": "network",
+      "error": {
+        "severity": "SEV 1",
+        "notificationChannels": [
+          "app"
+        ]
+      },
+      "warning": {
+        "severity": "SEV 2",
+        "notificationChannels": [
+          "app"
+        ]
+      }
+    },
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "1cMxxo7CU2mMW9zP"
+    },
+    "apiVersion": "v0.1",
+    "spec": {
+      "label": "disk_usage",
+      "error": {
+        "severity": "SEV 1",
+        "notificationChannels": [
+          "app"
+        ]
+      },
+      "warning": {
+        "severity": "SEV 2",
+        "notificationChannels": [
+          "app"
+        ]
+      }
+    },
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "p__MbLmQwxvp2ASL"
+    },
+    "apiVersion": "v0.1",
+    "spec": {
+      "label": "manufacturer",
+      "error": {
+        "severity": "SEV 1",
+        "notificationChannels": [
+          "app"
+        ]
+      },
+      "warning": {
+        "severity": "SEV 2",
+        "notificationChannels": [
+          "app"
+        ]
+      }
+    },
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "z1goaIO_DlcGe6AZ"
+    },
+    "apiVersion": "v0.1",
+    "spec": {
+      "label": "model",
+      "error": {
+        "severity": "SEV 1",
+        "notificationChannels": [
+          "app"
+        ]
+      },
+      "warning": {
+        "severity": "SEV 2",
+        "notificationChannels": [
+          "app"
+        ]
+      }
+    },
+    "kind": "IncidentDefinition"
+  },
+  {
+    "metadata": {
+      "scope": "account/QeGNE5BWrfmPkM9CA",
+      "id": "OJeSVjPg1PI8Kd4J"
+    },
+    "apiVersion": "v0.1",
+    "spec": {
+      "label": "version",
+      "error": {
+        "severity": "SEV 1",
+        "notificationChannels": [
+          "app"
+        ]
+      },
+      "warning": {
+        "severity": "SEV 2",
+        "notificationChannels": [
+          "app"
+        ]
+      }
+    },
+    "kind": "IncidentDefinition"
+  }
+]
