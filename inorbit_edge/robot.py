@@ -332,6 +332,7 @@ class RobotSession:
         msg.angular_speed = angular_speed
         self.publish_protobuf(MQTT_TOPIC_ODOMETRY, msg)
 
+
 class RobotSessionFactory:
     """Builds RobotSession objects using provided"""
 
