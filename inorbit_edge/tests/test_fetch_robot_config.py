@@ -17,8 +17,8 @@ from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL
 import requests_mock
 import pytest
 
-# Dummy database sample for testing
-DATABASE = {
+# Dummy cloud_sdk_robot_config sample response for testing
+ROBOT_CONFIG_MOCK_RESPONSE = {
     "hostname": "localdev.com",
     "port": 1883,
     "protocol": "mqtt://",
@@ -26,7 +26,7 @@ DATABASE = {
     "websocket_protocol": "ws://",
     "username": "test",
     "password": "mytest123",
-    "robotApiKey": "appkey_123",
+    "robotApiKey": "robot_apikey_123",
     "awsUploadCredentials": {
         "secretKey": "secret_key",
         "accessKey": "access_key",
@@ -40,11 +40,11 @@ DATABASE = {
 def test_get_robot_config_from_session():
     # test required parameters only
     robot_session = RobotSession(
-        robot_id="id_123", robot_name="name_123", api_key="appkey_123"
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
     )
 
     with requests_mock.Mocker() as mock:
-        mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, json=DATABASE)
+        mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, json=ROBOT_CONFIG_MOCK_RESPONSE)
         robot_config = robot_session._fetch_robot_config()
 
         assert robot_config is not None
@@ -58,7 +58,7 @@ def test_get_robot_config_from_session():
                 robot_config["websocket_protocol"] == "ws://",
                 robot_config["username"] == "test",
                 robot_config["password"] == "mytest123",
-                robot_config["robotApiKey"] == "appkey_123",
+                robot_config["robotApiKey"] == "robot_apikey_123",
                 robot_config["awsUploadCredentials"] is not None,
             ]
         )

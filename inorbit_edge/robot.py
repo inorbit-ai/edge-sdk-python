@@ -165,7 +165,7 @@ class RobotSession:
         # Every time we connect or disconnect to the service, send
         # updated status including online/offline bit
         status_message = "{}|{}|{}|{}".format(
-            robot_status, self.api_key, self.agent_version, self.robot_name
+            robot_status, self.robot_api_key, self.agent_version, self.robot_name
         )
         ret = self.publish(
             "r/{}/state".format(self.robot_id), status_message, qos=1, retain=True
@@ -209,13 +209,15 @@ class RobotSession:
             )
             raise
 
+        self.robot_api_key = robot_config["robotApiKey"]
+
         # Use username and password authentication
         self.client.username_pw_set(robot_config["username"], robot_config["password"])
 
         # Configure "will" message to ensure the robot state
         # is set to offline if connection is interrupted
         will_topic = "r/{}/state".format(self.robot_id)
-        will_payload = "0|{}".format(self.api_key)
+        will_payload = "0|{}".format(self.robot_api_key)
         self.client.will_set(will_topic, will_payload, qos=1, retain=True)
 
         # TODO: add support for user-provided CA certificate file.
