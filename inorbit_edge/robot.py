@@ -303,8 +303,8 @@ class RobotSession:
 
     def publish_odometry(
         self,
-        ts_start,
-        ts,
+        ts_start=None,
+        ts=None,
         linear_distance=0,
         angular_distance=0,
         linear_speed=0,
@@ -326,8 +326,8 @@ class RobotSession:
         )
 
         msg = OdometryDataMessage()
-        msg.ts_start = ts_start
-        msg.ts = ts
+        msg.ts_start = ts_start if ts_start else int(time() * 1000)
+        msg.ts = ts if ts else int(time() * 1000)
         msg.linear_distance = linear_distance
         msg.angular_distance = angular_distance
         msg.linear_speed = linear_speed
