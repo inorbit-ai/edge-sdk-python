@@ -63,7 +63,7 @@ def test_robot_session_connect(monkeypatch):
         robot_session.connect()
         # manually execute send_robot_status simulating on_connect
         # callback execution so robot status is sent
-        robot_session.send_robot_status("1")
+        robot_session._send_robot_status("1")
         assert robot_session.api_key == "apikey_123"
         assert robot_session.robot_api_key == "robot_apikey_123"
         # check publish state was called with the correct API key

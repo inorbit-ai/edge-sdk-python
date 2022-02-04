@@ -145,7 +145,7 @@ class RobotSession:
         # Send robot online status.
         # This method is blocking so do it on a separate thread just in case.
         threading.Thread(
-            target=self.send_robot_status, kwargs={"robot_status": "1"}
+            target=self._send_robot_status, kwargs={"robot_status": "1"}
         ).start()
 
         # Configure custom command callback if provided
@@ -188,7 +188,7 @@ class RobotSession:
         self.logger.debug("Subscribing to topic '{}'".format(topic))
         self.client.subscribe(topic=topic)
 
-    def send_robot_status(self, robot_status):
+    def _send_robot_status(self, robot_status):
         """Sends robot online/offline status message.
 
         This method blocks until either the message
@@ -295,7 +295,7 @@ class RobotSession:
     def disconnect(self):
         """Ends session, disconnecting from cloud services"""
         self.logger.info("Ending robot session")
-        self.send_robot_status(robot_status="0")
+        self._send_robot_status(robot_status="0")
 
         if self.custom_command_callback:
             topic = self._get_custom_command_topic()
@@ -315,7 +315,7 @@ class RobotSession:
             topic (str): Topic where the message will be published.
             message (str): The actual message to send.
             qos (int, optional): The quality of service level to use. Defaults to 0.
-            retain (bool, optional): If set to true, the message will be set as 
+            retain (bool, optional): If set to true, the message will be set as
                 the "last known good"/retained message for the topic. Defaults to False.
         Returns:
             MQTTMessageInfo: Returns a MQTTMessageInfo class
@@ -331,7 +331,7 @@ class RobotSession:
             subtopic (str): Robot subtopic, without leading ``/``.
             message (protobuf.Message): Protobuf message.
             qos (int, optional): The quality of service level to use. Defaults to 0.
-            retain (bool, optional): If set to true, the message will be set as 
+            retain (bool, optional): If set to true, the message will be set as
                 the "last known good"/retained message for the topic. Defaults to False.
         """
         topic = "r/{}/{}".format(self.robot_id, subtopic)
@@ -347,17 +347,17 @@ class RobotSession:
         Args:
             x (float): Robot pose x coordinate.
             y (float): Robot pose y coordinate.
-            yaw (float): Robot yaw (in radians).
+            yaw (float): Robot yaw (radians).
             frame_id (str, optional): Robot map frame identifier. Defaults to "map".
             ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
         """
-        message = LocationAndPoseMessage()
-        message.ts = ts
-        message.pos_x = x
-        message.pos_y = y
-        message.yaw = yaw
-        message.frame_id = frame_id
-        self.publish_protobuf(MQTT_POSE_TOPIC, message)
+        msg = LocationAndPoseMessage()
+        msg.ts = ts
+        msg.pos_x = x
+        msg.pos_y = y
+        msg.yaw = yaw
+        msg.frame_id = frame_id
+        self.publish_protobuf(MQTT_POSE_TOPIC, msg)
 
     def publish_key_values(self, key_values, custom_field="0"):
         """Publish key value pairs
@@ -366,7 +366,7 @@ class RobotSession:
             key_values (dict): Key value mappings to publish
             custom_field (str, optional): ID of the CustomData element. Defaults to "0".
         """
-        
+
         def convert_value(value):
             if isinstance(value, object):
                 return json.dumps(value)
@@ -388,31 +388,30 @@ class RobotSession:
 
     def publish_odometry(
         self,
-        ts_start=None,
-        ts=None,
+        ts_start=int(time() * 1000),
+        ts=int(time() * 1000),
         linear_distance=0,
         angular_distance=0,
         linear_speed=0,
         angular_speed=0,
     ):
-        self.logger.info(
-            "Publishing odometry {}".format(
-                json.dumps(
-                    {
-                        "ts_start": ts_start,
-                        "ts": ts,
-                        "linear_distance": linear_distance,
-                        "angular_distance": angular_distance,
-                        "linear_speed": linear_speed,
-                        "angular_speed": angular_speed,
-                    }
-                )
-            )
-        )
+        """Publish odometry data
 
+        Args:
+            ts_start (int, optional): Timestamp (milliseconds) when the started to
+                accumulate odometry. Defaults to int(time() * 1000).
+            ts (int, optional): Timestamp (milliseconds) of the last time odometry
+                accumulator was updated. Defaults to int(time() * 1000).
+            linear_distance (int, optional): Accumulated displacement (meters).
+                Defaults to 0.
+            angular_distance (int, optional): Accumulated rotation (radians).
+                Defaults to 0.
+            linear_speed (int, optional): Linear speed (m/s). Defaults to 0.
+            angular_speed (int, optional): Angular speed (rad/s). Defaults to 0.
+        """
         msg = OdometryDataMessage()
-        msg.ts_start = ts_start if ts_start else int(time() * 1000)
-        msg.ts = ts if ts else int(time() * 1000)
+        msg.ts_start = ts_start
+        msg.ts = ts
         msg.linear_distance = linear_distance
         msg.angular_distance = angular_distance
         msg.linear_speed = linear_speed

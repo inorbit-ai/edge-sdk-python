@@ -112,7 +112,11 @@ def my_callback(robot_session, message):
             on InOrbit Custom Defined action and ``ts``.
     """
 
-    print("Robot '{}' received command '{}'".format(robot_session.robot_id, message["cmd"]))
+    print(
+        "Robot '{}' received command '{}'".format(
+            robot_session.robot_id, message["cmd"]
+        )
+    )
 
 
 if __name__ == "__main__":
@@ -131,7 +135,7 @@ if __name__ == "__main__":
         endpoint=inorbit_api_endpoint,
         api_key=inorbit_api_key,
         use_ssl=False if inorbit_api_use_ssl == "false" else True,
-        custom_command_callback=my_callback
+        custom_command_callback=my_callback,
     )
     robot_session_pool = RobotSessionPool(robot_session_factory)
 
