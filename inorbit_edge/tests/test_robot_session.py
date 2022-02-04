@@ -73,3 +73,34 @@ def test_robot_session_connect(monkeypatch):
             qos=1,
             retain=True,
         )
+
+
+def test_robot_session_custom_command_callback(monkeypatch):
+    def my_test_callback(robot_session, msg):
+        pass
+
+    robot_session = RobotSession(
+        robot_id="id_123",
+        robot_name="name_123",
+        api_key="apikey_123",
+        custom_command_callback=my_test_callback,
+    )
+
+    with requests_mock.Mocker() as mock:
+        mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, json=ROBOT_CONFIG_MOCK_RESPONSE)
+        # mock mqtt client
+        mqtt_client_mock = MagicMock()
+        mqtt_client_mock.subscribe.return_value = (0, 0)
+        monkeypatch.setattr(robot_session, "client", mqtt_client_mock)
+        # mock publish and is_published so it always returns True
+        is_published_mock = MagicMock()
+        is_published_mock.is_published.return_value = True
+        publish_mock = MagicMock(return_value=is_published_mock)
+        monkeypatch.setattr(robot_session, "publish", publish_mock)
+        # connect robot_session so it populates properties with API response data
+        robot_session.connect()
+        # manually execute on_connect callback so callback gets registered
+        robot_session._on_connect(..., ..., ..., 0)
+
+        assert robot_session.custom_command_callback == my_test_callback
+        mqtt_client_mock.subscribe.assert_called_with(topic="r/id_123/custom_command")

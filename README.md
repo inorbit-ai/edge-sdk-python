@@ -13,6 +13,7 @@ The `InOrbit Edge SDK` allows Python programs to communicate with `InOrbit` plat
 - Publish key-values.
 - Publish robot poses.
 - Publish robot odometry.
+- Execute callbacks on Custom Action execution.
 
 ## Quick Start
 
@@ -31,7 +32,12 @@ def my_callback(robot_session, message):
         message (dict): Message with the ``cmd`` string as defined
             on InOrbit Custom Defined action and ``ts``.
     """
-    print("Robot '{}' received command '{}'".format(robot_session.robot_id, message["cmd"]))
+
+    print(
+        "Robot '{}' received command '{}'".format(
+            robot_session.robot_id, message["cmd"]
+        )
+    )
 
 
 robot_session_factory = RobotSessionFactory(
