@@ -99,7 +99,8 @@ def test_robot_session_custom_command_callback(monkeypatch):
         monkeypatch.setattr(robot_session, "publish", publish_mock)
         # connect robot_session so it populates properties with API response data
         robot_session.connect()
-        # manually execute on_connect callback so callback gets registered
+        # manually execute on_connect callback so the ``custom_command_callback``
+        # callback gets registered
         robot_session._on_connect(..., ..., ..., 0)
 
         assert robot_session.custom_command_callback == my_test_callback

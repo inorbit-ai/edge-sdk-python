@@ -2,17 +2,17 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import datetime
 from time import sleep
 from random import randint, uniform, random
 from math import pi
 import os
 import requests
+import sys
 
 from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[logging.StreamHandler()],
 )
@@ -87,16 +87,17 @@ class FakeRobot:
         if self.yaw + yaw_delta < MAX_YAW and self.yaw + yaw_delta > 0:
             self.yaw = self.yaw - yaw_delta
 
+        self.linear_distance = random() * 10
+        self.angular_distance = random() * 2
+        self.linear_speed = uniform(-1, 1)
+        self.angular_speed = uniform(-pi / 4, pi / 4)
+
         # Generate a random integer value for battery
         self.battery = randint(0, 100)
         # Generate random status
         self.status = "Mission" if random() > 0.5 else "Idle"
         # Generate a random float value for cpu usage
         self.cpu = random() * 100
-
-        self.logger.debug(
-            "New position x={}, y={}, yaw={}".format(self.x, self.y, self.yaw)
-        )
 
 
 def my_callback(robot_session, message):
@@ -160,31 +161,31 @@ if __name__ == "__main__":
 
     # Go through every fake robot and simulate robot movement
     while True:
-        for robot_id, fake_robot in fake_robot_pool.items():
-            fake_robot.move()
+        try:
+            for robot_id, fake_robot in fake_robot_pool.items():
+                fake_robot.move()
 
-            # Get the corresponding robot session and publish robot data
-            robot_session = robot_session_pool.get_session(robot_id=robot_id)
-            robot_session.publish_pose(
-                x=fake_robot.x, y=fake_robot.y, yaw=fake_robot.yaw
-            )
-            robot_session.publish_key_values(
-                {
-                    "battery": fake_robot.battery,
-                    "status": fake_robot.status,
-                    "cpu": fake_robot.cpu,
-                }
-            )
-            fake_robot.linear_speed = random() * 10
-            fake_robot.angular_speed = random() * pi
-            ct_ts = int(round(datetime.datetime.now().timestamp()))
-            robot_session.publish_odometry(
-                ts_start=ct_ts,
-                ts=ct_ts,
-                linear_distance=fake_robot.linear_distance,
-                angular_distance=fake_robot.angular_distance,
-                linear_speed=fake_robot.linear_speed,
-                angular_speed=fake_robot.angular_speed,
-            )
+                # Get the corresponding robot session and publish robot data
+                robot_session = robot_session_pool.get_session(robot_id=robot_id)
+                robot_session.publish_pose(
+                    x=fake_robot.x, y=fake_robot.y, yaw=fake_robot.yaw
+                )
+                robot_session.publish_key_values(
+                    {
+                        "battery": fake_robot.battery,
+                        "status": fake_robot.status,
+                        "cpu": fake_robot.cpu,
+                    }
+                )
+                robot_session.publish_odometry(
+                    linear_distance=fake_robot.linear_distance,
+                    angular_distance=fake_robot.angular_distance,
+                    linear_speed=fake_robot.linear_speed,
+                    angular_speed=fake_robot.angular_speed,
+                )
 
-        sleep(1)
+            sleep(1)
+        except KeyboardInterrupt:
+            robot_session_pool.tear_down()
+            sys.exit()
+

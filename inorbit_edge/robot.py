@@ -341,7 +341,7 @@ class RobotSession:
         )
         self.logger.debug("Return code: {}".format(ret))
 
-    def publish_pose(self, x, y, yaw, frame_id="map", ts=int(time() * 1000)):
+    def publish_pose(self, x, y, yaw, frame_id="map", ts=None):
         """Publish robot pose
 
         Args:
@@ -352,7 +352,7 @@ class RobotSession:
             ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
         """
         msg = LocationAndPoseMessage()
-        msg.ts = ts
+        msg.ts = ts if ts else int(time() * 1000)
         msg.pos_x = x
         msg.pos_y = y
         msg.yaw = yaw
@@ -388,8 +388,8 @@ class RobotSession:
 
     def publish_odometry(
         self,
-        ts_start=int(time() * 1000),
-        ts=int(time() * 1000),
+        ts_start=None,
+        ts=None,
         linear_distance=0,
         angular_distance=0,
         linear_speed=0,
@@ -410,12 +410,13 @@ class RobotSession:
             angular_speed (int, optional): Angular speed (rad/s). Defaults to 0.
         """
         msg = OdometryDataMessage()
-        msg.ts_start = ts_start
-        msg.ts = ts
+        msg.ts_start = ts_start if ts_start else int(time() * 1000)
+        msg.ts = ts if ts else int(time() * 1000)
         msg.linear_distance = linear_distance
         msg.angular_distance = angular_distance
         msg.linear_speed = linear_speed
         msg.angular_speed = angular_speed
+        msg.speed_available = True
         self.publish_protobuf(MQTT_TOPIC_ODOMETRY, msg)
 
 
