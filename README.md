@@ -19,7 +19,25 @@ The `InOrbit Edge SDK` allows Python programs to communicate with `InOrbit` plat
 ```python
 from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool
 
-robot_session_factory = RobotSessionFactory(api_key="<YOUR_API_KEY>")
+def my_callback(robot_session, message):
+    """Callback for custom actions.
+
+    Callback method executed for messages published on the ``custom_command``
+    topic. It recieves the RobotSession object and the message that contains
+    the ``cmd`` and ``ts`` fields.
+
+    Args:
+        robot_session (RobotSession): RobotSession object
+        message (dict): Message with the ``cmd`` string as defined
+            on InOrbit Custom Defined action and ``ts``.
+    """
+    print("Robot '{}' received command '{}'".format(robot_session.robot_id, message["cmd"]))
+
+
+robot_session_factory = RobotSessionFactory(
+    api_key="<YOUR_API_KEY>",
+    custom_command_callback=my_callback
+)
 
 robot_session_pool = RobotSessionPool(robot_session_factory)
 
@@ -32,7 +50,7 @@ robot_session.publish_pose(x=0.0, y=0.0, yaw=0.0)
 
 ## Installation
 
-**Stable Release:** `pip install edge-sdk-python`<br>
+**Stable Release:** `pip install inorbit-edge`<br>
 **Development Head:** `pip install git+https://github.com/inorbit-ai/edge-sdk-python.git`
 
 ## Documentation

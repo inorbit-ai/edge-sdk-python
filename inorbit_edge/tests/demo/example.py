@@ -21,7 +21,7 @@ MAX_X = 20
 MAX_Y = 20
 MAX_YAW = 2 * pi
 
-NUM_ROBOTS_LOCATION = 10
+NUM_ROBOTS = 2
 
 
 # TODO: integrate this into the Edge SDK ``RobotSession`` class
@@ -92,6 +92,22 @@ class FakeRobot:
         )
 
 
+def my_callback(robot_session, message):
+    """Callback for custom actions.
+
+    Callback method executed for messages published on the ``custom_command``
+    topic. It recieves the RobotSession object and the message that contains
+    the ``cmd`` and ``ts`` fields.
+
+    Args:
+        robot_session (RobotSession): RobotSession object
+        message (dict): Message with the ``cmd`` string as defined
+            on InOrbit Custom Defined action and ``ts``.
+    """
+
+    print("Robot '{}' received command '{}'".format(robot_session.robot_id, message["cmd"]))
+
+
 if __name__ == "__main__":
 
     inorbit_api_endpoint = os.environ.get("INORBIT_URL")
@@ -108,6 +124,7 @@ if __name__ == "__main__":
         endpoint=inorbit_api_endpoint,
         api_key=inorbit_api_key,
         use_ssl=False if inorbit_api_use_ssl == "false" else True,
+        custom_command_callback=my_callback
     )
     robot_session_pool = RobotSessionPool(robot_session_factory)
 
@@ -115,23 +132,8 @@ if __name__ == "__main__":
     fake_robot_pool = dict()
 
     # Create fake robots and populate `fake_robot_pool` dictionary
-    for i in range(NUM_ROBOTS_LOCATION):
-        robot_id = "edgesdk_py_loc1_{}".format(i)
-        robot_session = robot_session_pool.get_session(
-            robot_id=robot_id, robot_name=robot_id
-        )
-        fake_robot_pool[robot_id] = FakeRobot(robot_id=robot_id, robot_name=robot_id)
-        publish_robot_map(
-            inorbit_api_url=inorbit_api_url,
-            inorbit_api_key=inorbit_api_key,
-            robot_id=robot_id,
-            map_file=os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "map.png"
-            ),
-        )
-
-    for i in range(NUM_ROBOTS_LOCATION):
-        robot_id = "edgesdk_py_loc2_{}".format(i)
+    for i in range(NUM_ROBOTS):
+        robot_id = "edgesdk_py_{}".format(i)
         robot_session = robot_session_pool.get_session(
             robot_id=robot_id, robot_name=robot_id
         )
