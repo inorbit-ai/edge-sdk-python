@@ -188,4 +188,3 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             robot_session_pool.tear_down()
             sys.exit()
-
