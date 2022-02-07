@@ -110,12 +110,14 @@ def test_robot_session_custom_command_callback(monkeypatch):
         mqtt_client_mock.subscribe.assert_called_with(topic="r/id_123/custom_command")
 
 
-@pytest.mark.parametrize("msg_payload, log_string", [
-    (b"\x8f\xac\x93\x87 \x8fG\x95v", "Failed to decode message, ignoring."),
-    (b"{\"msg\":\"foobar\"}}}}}}}", "Failed to parse JSON message, ignoring."),
-])
+@pytest.mark.parametrize(
+    "msg_payload, log_string",
+    [
+        (b"\x8f\xac\x93\x87 \x8fG\x95v", "Failed to decode message, ignoring."),
+        (b'{"msg":"foobar"}}}}}}}', "Failed to parse JSON message, ignoring."),
+    ],
+)
 def test_robot_session_on_message_callback(caplog, msg_payload, log_string):
-
     def my_custom_command_handler(robot_session, msg):
         pass
 

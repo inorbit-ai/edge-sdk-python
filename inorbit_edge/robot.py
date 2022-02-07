@@ -168,14 +168,18 @@ class RobotSession:
                 parsed_msg = json.loads(msg.payload.decode("utf-8"))
                 self.custom_command_callback(self, parsed_msg)
             except json.decoder.JSONDecodeError:
-                self.logger.error("Failed to parse JSON message, ignoring. {}".format(msg.payload))
+                self.logger.error(
+                    "Failed to parse JSON message, ignoring. {}".format(msg.payload)
+                )
             except UnicodeDecodeError:
-                self.logger.error("Failed to decode message, ignoring. {}".format(msg.payload))
+                self.logger.error(
+                    "Failed to decode message, ignoring. {}".format(msg.payload)
+                )
             except Exception:
                 # Re-raise any other error
                 self.logger.error("Unexpected error while processing message.")
                 raise
-    
+
     def _get_custom_command_topic(self):
         return "r/{}/custom_command".format(self.robot_id)
 
