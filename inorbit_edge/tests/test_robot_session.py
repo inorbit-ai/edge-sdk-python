@@ -129,8 +129,26 @@ def test_robot_session_on_message_callback(caplog, msg_payload, log_string):
             custom_command_callback=my_custom_command_handler,
         )
 
-        mqtt_message = MQTTMessage(topic=b"/foo")
+        mqtt_message = MQTTMessage(topic=b"r/id_123/custom_command")
         mqtt_message.payload = msg_payload
 
         robot_session._on_message(..., ..., mqtt_message)
         assert log_string in caplog.text
+
+
+def test_robot_session_on_unsupported_topic(caplog):
+    def my_custom_command_handler(robot_session, msg):
+        pass
+
+    with caplog.at_level(logging.WARN, logger=RobotSession.__name__):
+        robot_session = RobotSession(
+            robot_id="id_123",
+            robot_name="name_123",
+            api_key="apikey_123",
+            custom_command_callback=my_custom_command_handler,
+        )
+
+        mqtt_message = MQTTMessage(topic=b"r/foobar_789/random_topic")
+
+        robot_session._on_message(..., ..., mqtt_message)
+        assert "Ignoring message from unsupported topic" in caplog.text

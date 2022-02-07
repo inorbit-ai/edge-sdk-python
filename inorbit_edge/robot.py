@@ -164,6 +164,15 @@ class RobotSession:
 
         # Parse message and execute custom command callback
         if self.custom_command_callback:
+            # Check if the message is coming from the custom command topic
+            # TODO(lean): generalize to support subscribing multiple topics.
+            #   Now it only supports the custom command topic.
+            if msg.topic != self._get_custom_command_topic():
+                self.logger.warn(
+                    "Ignoring message from unsupported topic: {}".format(msg.topic)
+                )
+                return
+
             try:
                 parsed_msg = json.loads(msg.payload.decode("utf-8"))
                 self.custom_command_callback(self, parsed_msg)
