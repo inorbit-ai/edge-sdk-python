@@ -100,7 +100,7 @@ class FakeRobot:
         self.cpu = random() * 100
 
 
-def my_callback(robot_session, message):
+def my_custom_command_handler(robot_session, message):
     """Callback for custom actions.
 
     Callback method executed for messages published on the ``custom_command``
@@ -136,7 +136,7 @@ if __name__ == "__main__":
         endpoint=inorbit_api_endpoint,
         api_key=inorbit_api_key,
         use_ssl=False if inorbit_api_use_ssl == "false" else True,
-        custom_command_callback=my_callback,
+        custom_command_callback=my_custom_command_handler,
     )
     robot_session_pool = RobotSessionPool(robot_session_factory)
 

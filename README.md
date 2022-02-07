@@ -20,7 +20,7 @@ The `InOrbit Edge SDK` allows Python programs to communicate with `InOrbit` plat
 ```python
 from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool
 
-def my_callback(robot_session, message):
+def my_custom_command_handler(robot_session, message):
     """Callback for custom actions.
 
     Callback method executed for messages published on the ``custom_command``
@@ -42,7 +42,7 @@ def my_callback(robot_session, message):
 
 robot_session_factory = RobotSessionFactory(
     api_key="<YOUR_API_KEY>",
-    custom_command_callback=my_callback
+    custom_command_callback=my_custom_command_handler
 )
 
 robot_session_pool = RobotSessionPool(robot_session_factory)
