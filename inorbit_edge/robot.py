@@ -36,6 +36,8 @@ class RobotSession:
             robot_id (str): ID of the robot.
             robot_name (str): Robot name.
             api_key (str): API key for authenticating against InOrbit Cloud services.
+            custom_command_callback (callable): callback method for messages published
+                on ``custom_command`` topic.
             endpoint (str): InOrbit URL. Defaults: INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL.
             use_ssl (bool): Configures MQTT client to use SSL. Defaults: True.
         """
@@ -94,8 +96,11 @@ class RobotSession:
                 proxy_type=socks.HTTP, proxy_addr=proxy_hostname, proxy_port=proxy_port
             )
 
-        # Register callbacks
-        self.client.on_connect = self.on_connect
+        self.custom_command_callback = kwargs.get("custom_command_callback")
+
+        # Register MQTT client callbacks
+        self.client.on_connect = self._on_connect
+        self.client.on_message = self._on_message
 
     def _fetch_robot_config(self):
         """Gets robot config by posting appkey and robot/agent info.
@@ -117,7 +122,7 @@ class RobotSession:
         # TODO: validate fetched config
         return response.json()
 
-    def on_connect(self, client, userdata, flags, rc):
+    def _on_connect(self, client, userdata, flags, rc):
         """MQTT client connect callback.
 
         Args:
@@ -140,10 +145,72 @@ class RobotSession:
         # Send robot online status.
         # This method is blocking so do it on a separate thread just in case.
         threading.Thread(
-            target=self.send_robot_status, kwargs={"robot_status": "1"}
+            target=self._send_robot_status, kwargs={"robot_status": "1"}
         ).start()
 
-    def send_robot_status(self, robot_status):
+        # Configure custom command callback if provided
+        if self.custom_command_callback:
+            self.register_custom_command_callback(self.custom_command_callback)
+
+    def _on_message(self, client, userdata, msg):
+        """MQTT client connect callback.
+
+        Args:
+            client:     the client instance for this callback
+            userdata:   the private user data as set in Client() or userdata_set()
+            msg:        an instance of MQTTMessage. This is a class with
+                        members topic, payload, qos, retain.
+        """
+
+        # Parse message and execute custom command callback
+        if self.custom_command_callback:
+            # Check if the message is coming from the custom command topic
+            # TODO(lean): generalize to support subscribing multiple topics.
+            #   Now it only supports the custom command topic.
+            if msg.topic != self._get_custom_command_topic():
+                self.logger.warn(
+                    "Ignoring message from unsupported topic: {}".format(msg.topic)
+                )
+                return
+
+            try:
+                parsed_msg = json.loads(msg.payload.decode("utf-8"))
+                self.custom_command_callback(self, parsed_msg)
+            except json.decoder.JSONDecodeError:
+                self.logger.error(
+                    "Failed to parse JSON message, ignoring. {}".format(msg.payload)
+                )
+            except UnicodeDecodeError:
+                self.logger.error(
+                    "Failed to decode message, ignoring. {}".format(msg.payload)
+                )
+            except Exception:
+                # Re-raise any other error
+                self.logger.error("Unexpected error while processing message.")
+                raise
+
+    def _get_custom_command_topic(self):
+        return "r/{}/custom_command".format(self.robot_id)
+
+    def register_custom_command_callback(self, func):
+        """Register custom command callback method and subscribes to
+        custom command topic.
+
+        Args:
+            func (callable): callback method for messages published
+                on ``custom_command`` topic.
+        """
+
+        self.logger.info(
+            "Registering callback '{}' for robot '{}'".format(
+                func.__name__, self.robot_id
+            )
+        )
+        topic = self._get_custom_command_topic()
+        self.logger.debug("Subscribing to topic '{}'".format(topic))
+        self.client.subscribe(topic=topic)
+
+    def _send_robot_status(self, robot_status):
         """Sends robot online/offline status message.
 
         This method blocks until either the message
@@ -250,7 +317,13 @@ class RobotSession:
     def disconnect(self):
         """Ends session, disconnecting from cloud services"""
         self.logger.info("Ending robot session")
-        self.send_robot_status(robot_status="0")
+        self._send_robot_status(robot_status="0")
+
+        if self.custom_command_callback:
+            topic = self._get_custom_command_topic()
+            self.logger.info("Unsubscribing from topic '{}'".format(topic))
+            self.client.unsubscribe(topic=topic)
+
         self.client.disconnect()
 
         self._wait_for_connection_state(self._is_disconnected)
@@ -258,9 +331,31 @@ class RobotSession:
         self.logger.info("Disconnected from MQTT broker")
 
     def publish(self, topic, message, qos=0, retain=False):
+        """MQTT client wrapper method for publishing messages
+
+        Args:
+            topic (str): Topic where the message will be published.
+            message (str): The actual message to send.
+            qos (int, optional): The quality of service level to use. Defaults to 0.
+            retain (bool, optional): If set to true, the message will be set as
+                the "last known good"/retained message for the topic. Defaults to False.
+        Returns:
+            MQTTMessageInfo: Returns a MQTTMessageInfo class
+        """
         return self.client.publish(topic=topic, payload=message, qos=qos, retain=retain)
 
     def publish_protobuf(self, subtopic, message, qos=0, retain=False):
+        """Publish protobuf messages to this robot session subtopic.
+
+        The protobuf ``message`` is serialized and published to the robot ``subtopic``.
+
+        Args:
+            subtopic (str): Robot subtopic, without leading ``/``.
+            message (protobuf.Message): Protobuf message.
+            qos (int, optional): The quality of service level to use. Defaults to 0.
+            retain (bool, optional): If set to true, the message will be set as
+                the "last known good"/retained message for the topic. Defaults to False.
+        """
         topic = "r/{}/{}".format(self.robot_id, subtopic)
         self.logger.debug("Publishing to topic {}".format(topic))
         ret = self.publish(
@@ -269,18 +364,30 @@ class RobotSession:
         self.logger.debug("Return code: {}".format(ret))
 
     def publish_pose(self, x, y, yaw, frame_id="map", ts=None):
-        message = LocationAndPoseMessage()
-        message.ts = ts if ts else int(time() * 1000)
-        message.pos_x = x
-        message.pos_y = y
-        message.yaw = yaw
-        message.frame_id = frame_id
-        self.publish_protobuf(MQTT_POSE_TOPIC, message)
+        """Publish robot pose
+
+        Args:
+            x (float): Robot pose x coordinate.
+            y (float): Robot pose y coordinate.
+            yaw (float): Robot yaw (radians).
+            frame_id (str, optional): Robot map frame identifier. Defaults to "map".
+            ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
+        """
+        msg = LocationAndPoseMessage()
+        msg.ts = ts if ts else int(time() * 1000)
+        msg.pos_x = x
+        msg.pos_y = y
+        msg.yaw = yaw
+        msg.frame_id = frame_id
+        self.publish_protobuf(MQTT_POSE_TOPIC, msg)
 
     def publish_key_values(self, key_values, custom_field="0"):
-        self.logger.info(
-            "Publishing custom data key-values for robot {}".format(self.robot_id)
-        )
+        """Publish key value pairs
+
+        Args:
+            key_values (dict): Key value mappings to publish
+            custom_field (str, optional): ID of the CustomData element. Defaults to "0".
+        """
 
         def convert_value(value):
             if isinstance(value, object):
@@ -310,21 +417,20 @@ class RobotSession:
         linear_speed=0,
         angular_speed=0,
     ):
-        self.logger.info(
-            "Publishing odometry {}".format(
-                json.dumps(
-                    {
-                        "ts_start": ts_start,
-                        "ts": ts,
-                        "linear_distance": linear_distance,
-                        "angular_distance": angular_distance,
-                        "linear_speed": linear_speed,
-                        "angular_speed": angular_speed,
-                    }
-                )
-            )
-        )
+        """Publish odometry data
 
+        Args:
+            ts_start (int, optional): Timestamp (milliseconds) when the started to
+                accumulate odometry. Defaults to int(time() * 1000).
+            ts (int, optional): Timestamp (milliseconds) of the last time odometry
+                accumulator was updated. Defaults to int(time() * 1000).
+            linear_distance (int, optional): Accumulated displacement (meters).
+                Defaults to 0.
+            angular_distance (int, optional): Accumulated rotation (radians).
+                Defaults to 0.
+            linear_speed (int, optional): Linear speed (m/s). Defaults to 0.
+            angular_speed (int, optional): Angular speed (rad/s). Defaults to 0.
+        """
         msg = OdometryDataMessage()
         msg.ts_start = ts_start if ts_start else int(time() * 1000)
         msg.ts = ts if ts else int(time() * 1000)
@@ -332,6 +438,7 @@ class RobotSession:
         msg.angular_distance = angular_distance
         msg.linear_speed = linear_speed
         msg.angular_speed = angular_speed
+        msg.speed_available = True
         self.publish_protobuf(MQTT_TOPIC_ODOMETRY, msg)
 
 
