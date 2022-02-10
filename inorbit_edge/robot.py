@@ -15,10 +15,12 @@ from inorbit_edge.inorbit_pb2 import (
     KeyValueCustomElement,
     LocationAndPoseMessage,
     OdometryDataMessage,
+    LaserMessage,
 )
 from time import time
 from time import sleep
 import requests
+import math
 
 
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
@@ -440,6 +442,95 @@ class RobotSession:
         msg.angular_speed = angular_speed
         msg.speed_available = True
         self.publish_protobuf(MQTT_TOPIC_ODOMETRY, msg)
+
+    def publish_laser(self, x, y, yaw, ranges, frame_id="map", ts=None):
+        """Publish robot pose
+
+        Args:
+            x (float): Robot pose x coordinate.
+            y (float): Robot pose y coordinate.
+            yaw (float): Robot yaw (radians).
+            frame_id (str, optional): Robot map frame identifier. Defaults to "map".
+            ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
+        """
+
+        def encode_floating_point_list(fp_list, ranges):
+            """
+            Encodes a list of float numbers (which may contain infinite values) into a
+            FloatingPointList which has a compact representation for runs of
+            consecutive inf and non-inf values.
+            """
+
+            # Encode the numbers in runs of infinite and non-infinite sequences
+            last_was_infinite = True
+            current_run_length = 0
+            values = []
+            runs = []
+            for r in ranges:
+                if (r == math.inf) == last_was_infinite:
+                    # Current and last were both infinite, or both non-infinite
+                    current_run_length += 1
+                else:
+                    # Current=inf, last was not inf; switch and output the last run
+                    runs.append(current_run_length)
+                    current_run_length = 1
+                    last_was_infinite = r == math.inf
+                # Now process the number (if not infinite)
+                if r != math.inf:
+                    values.append(r)
+            # Finally output the last run length
+            runs.append(current_run_length)
+            fp_list.runs.extend(runs)
+            fp_list.values.extend(values)
+            # Tricky code above... Do some validations for invariants
+            # (see declaration of FloatingPointList)
+            if sum(runs) != len(ranges):
+                raise Exception(
+                    "Sum of encoded runs is {:d}, must be equal to original list "
+                    "length {:d}".format(sum(runs), len(ranges))
+                )
+            # Only the first element can be 0
+            if len(list(filter(lambda x: x <= 0, runs[1:]))) > 0:
+                raise Exception("There are zero or negative elements in runs!")
+            if sum(runs[1::2]) != len(values):
+                raise Exception(
+                    "Sum of non-inf runs is {:d}, must be equal to number of "
+                    "encoded values {:d}".format(sum(runs[1::2]), len(values))
+                )
+
+
+        pb_lasers_message = LaserMessage()
+        pb_lasers_message.name = "0"
+
+        encode_floating_point_list(pb_lasers_message.ranges, ranges)
+
+        msg = LocationAndPoseMessage()
+        msg.ts = ts if ts else int(time() * 1000)
+        msg.pos_x = x
+        msg.pos_y = y
+        msg.yaw = yaw
+        msg.frame_id = frame_id
+        msg.lasers.append(pb_lasers_message)
+
+        self.publish(
+            topic="r/{}/ros/loc/config/{:d}".format(self.robot_id, 0),
+            message="{:d}|{:.4g}|{:.4g}|{:.6g}|{:.6g}|{:.6g}|{:.4g}|{:.4g}|{:d}".format(
+                int(time() * 1000),
+                0,
+                0,
+                0,
+                0,
+                2*math.pi,
+                min(pb_lasers_message.ranges.values),
+                max(pb_lasers_message.ranges.values)+1,
+                len(ranges),
+            ),
+            qos=1,
+            retain=True,
+        )
+
+        self.publish_protobuf(MQTT_POSE_TOPIC, msg)
+        
 
 
 class RobotSessionFactory:

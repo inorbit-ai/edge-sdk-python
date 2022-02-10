@@ -8,6 +8,7 @@ from math import pi
 import os
 import requests
 import sys
+from math import inf
 
 from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool
 
@@ -85,7 +86,7 @@ class FakeRobot:
 
         # Ignore orientation update if the new yaw exceeds yaw limits
         if self.yaw + yaw_delta < MAX_YAW and self.yaw + yaw_delta > 0:
-            self.yaw = self.yaw - yaw_delta
+            self.yaw = self.yaw + yaw_delta
 
         self.linear_distance = random() * 10
         self.angular_distance = random() * 2
@@ -182,6 +183,14 @@ if __name__ == "__main__":
                     angular_distance=fake_robot.angular_distance,
                     linear_speed=fake_robot.linear_speed,
                     angular_speed=fake_robot.angular_speed,
+                )
+                lidar = [max(2, random()*2.5) for _ in range(700)]
+                lidar = [inf if r >= 2.4 else r for r in lidar]
+                robot_session.publish_laser(
+                    x=fake_robot.x,
+                    y=fake_robot.y,
+                    yaw=fake_robot.yaw,
+                    ranges=lidar
                 )
 
             sleep(1)
