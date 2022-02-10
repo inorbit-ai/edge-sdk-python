@@ -15,6 +15,9 @@ from inorbit_edge.inorbit_pb2 import (
     KeyValueCustomElement,
     LocationAndPoseMessage,
     OdometryDataMessage,
+    PathPoint,
+    RobotPath,
+    PathDataMessage,
 )
 from time import time
 from time import sleep
@@ -26,6 +29,7 @@ INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot
 MQTT_POSE_TOPIC = "ros/loc/data2"
 MQTT_TOPIC_CUSTOM_DATA = "custom"
 MQTT_TOPIC_ODOMETRY = "ros/odometry/data"
+MQTT_TOPIC_PATH = "ros/loc/path"
 
 
 class RobotSession:
@@ -441,6 +445,33 @@ class RobotSession:
         msg.speed_available = True
         self.publish_protobuf(MQTT_TOPIC_ODOMETRY, msg)
 
+    def publish_path(self, path_points, path_id="0", ts=None):
+        """Publish robot path
+
+        Args:
+            path_points ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """
+
+        pb_path_points = []
+        for path_point in path_points:
+            pb_path_point = PathPoint()
+            pb_path_point.x = path_point[0]
+            pb_path_point.y = path_point[1]
+            pb_path_points.append(pb_path_point)
+        
+        pb_robot_path = RobotPath()
+        pb_robot_path.ts = ts if ts else int(time() * 1000)
+        pb_robot_path.path_id = path_id
+        pb_robot_path.points.extend(pb_path_points)
+
+        msg = PathDataMessage()
+        msg.ts = ts if ts else int(time() * 1000)
+        msg.paths.extend([pb_robot_path])
+
+        self.publish_protobuf(MQTT_TOPIC_PATH, msg)
 
 class RobotSessionFactory:
     """Builds RobotSession objects using provided"""
