@@ -31,6 +31,8 @@ MQTT_TOPIC_CUSTOM_DATA = "custom"
 MQTT_TOPIC_ODOMETRY = "ros/odometry/data"
 MQTT_TOPIC_PATH = "ros/loc/path"
 
+ROBOT_PATH_POINTS_LIMIT = 1000
+
 
 class RobotSession:
     def __init__(self, robot_id, robot_name, api_key, **kwargs) -> None:
@@ -458,10 +460,17 @@ class RobotSession:
                 the robot would go through.
         """
 
+        if len(path_points) > ROBOT_PATH_POINTS_LIMIT:
+            self.logger.warn(
+                "Path has {} points. Only the first {} points will be used.".format(
+                    len(path_points), ROBOT_PATH_POINTS_LIMIT
+                )
+            )
+
         # Generate ``PathPoint`` protobuf messages
         # from the list of path point tuples
         pb_path_points = []
-        for path_point in path_points:
+        for path_point in path_points[:ROBOT_PATH_POINTS_LIMIT]:
             pb_path_point = PathPoint()
             pb_path_point.x = path_point[0]
             pb_path_point.y = path_point[1]
