@@ -85,7 +85,7 @@ class FakeRobot:
 
         # Ignore orientation update if the new yaw exceeds yaw limits
         if self.yaw + yaw_delta < MAX_YAW and self.yaw + yaw_delta > 0:
-            self.yaw = self.yaw - yaw_delta
+            self.yaw = self.yaw + yaw_delta
 
         self.linear_distance = random() * 10
         self.angular_distance = random() * 2
