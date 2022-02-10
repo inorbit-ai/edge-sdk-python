@@ -448,30 +448,39 @@ class RobotSession:
     def publish_path(self, path_points, path_id="0", ts=None):
         """Publish robot path
 
-        Args:
-            path_points ([type]): [description]
+        Send a list of points representing the path the robot
+        is traversing. This method only sends the data to InOrbit
+        for displaying purposes, meaning that the path provided
+        here won't make the robot to move
 
-        Returns:
-            [type]: [description]
+        Args:
+            path_points (List[Tuple[int. int]]): List of x, y points
+                the robot would go through.
         """
 
+        # Generate ``PathPoint`` protobuf messages
+        # from the list of path point tuples
         pb_path_points = []
         for path_point in path_points:
             pb_path_point = PathPoint()
             pb_path_point.x = path_point[0]
             pb_path_point.y = path_point[1]
             pb_path_points.append(pb_path_point)
-        
+
+        # Generate a ``RobotPath`` protobuf message and
+        # add the list of ``PathPoint`` created above
         pb_robot_path = RobotPath()
         pb_robot_path.ts = ts if ts else int(time() * 1000)
         pb_robot_path.path_id = path_id
         pb_robot_path.points.extend(pb_path_points)
 
+        # Publish ``PathDataMessage``
         msg = PathDataMessage()
         msg.ts = ts if ts else int(time() * 1000)
-        msg.paths.extend([pb_robot_path])
+        msg.paths.append(pb_robot_path)
 
         self.publish_protobuf(MQTT_TOPIC_PATH, msg)
+
 
 class RobotSessionFactory:
     """Builds RobotSession objects using provided"""

@@ -183,12 +183,11 @@ if __name__ == "__main__":
                     linear_speed=fake_robot.linear_speed,
                     angular_speed=fake_robot.angular_speed,
                 )
-
                 robot_session.publish_path(
                     path_points=[
                         (fake_robot.x, fake_robot.y),
                         (fake_robot.x + 10, fake_robot.y + 10),
-                        (fake_robot.x + 20, fake_robot.y + 10)
+                        (fake_robot.x + 20, fake_robot.y + 10),
                     ]
                 )
 
