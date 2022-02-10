@@ -469,12 +469,10 @@ class RobotSession:
 
         # Generate ``PathPoint`` protobuf messages
         # from the list of path point tuples
-        pb_path_points = []
-        for path_point in path_points[:ROBOT_PATH_POINTS_LIMIT]:
-            pb_path_point = PathPoint()
-            pb_path_point.x = path_point[0]
-            pb_path_point.y = path_point[1]
-            pb_path_points.append(pb_path_point)
+        pb_path_points = [
+            PathPoint(x=path_point[0], y=path_point[1])
+            for path_point in path_points[:ROBOT_PATH_POINTS_LIMIT]
+        ]
 
         # Generate a ``RobotPath`` protobuf message and
         # add the list of ``PathPoint`` created above
