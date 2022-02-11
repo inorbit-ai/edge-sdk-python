@@ -23,6 +23,8 @@ MAX_X = 20
 MAX_Y = 20
 MAX_YAW = 2 * pi
 
+LIDAR_RANGES = 700
+
 NUM_ROBOTS = 2
 
 
@@ -184,13 +186,16 @@ if __name__ == "__main__":
                     linear_speed=fake_robot.linear_speed,
                     angular_speed=fake_robot.angular_speed,
                 )
-                lidar = [max(2, random()*2.5) for _ in range(700)]
-                lidar = [inf if r >= 2.4 else r for r in lidar]
+                # Generate random lidar ranges within arbitrary limits
+                lidar = [max(2, random() * 3.2) for _ in range(LIDAR_RANGES)]
+                # Make ranges over threshold infinite
+                lidar = [inf if r >= 3 else r for r in lidar]
                 robot_session.publish_laser(
                     x=fake_robot.x,
                     y=fake_robot.y,
                     yaw=fake_robot.yaw,
-                    ranges=lidar
+                    ranges=lidar,
+                    angle=(-pi / 3, pi / 3),  # show lidar ranges on a cone
                 )
 
             sleep(1)

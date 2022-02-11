@@ -21,7 +21,7 @@ from time import time
 from time import sleep
 import requests
 import math
-
+from inorbit_edge.utils import encode_floating_point_list
 
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
 
@@ -443,67 +443,34 @@ class RobotSession:
         msg.speed_available = True
         self.publish_protobuf(MQTT_TOPIC_ODOMETRY, msg)
 
-    def publish_laser(self, x, y, yaw, ranges, frame_id="map", ts=None):
-        """Publish robot pose
+    def publish_laser(
+        self, x, y, yaw, ranges, angle=(-math.pi, math.pi), frame_id="map", ts=None
+    ):
+        """Publish robot laser scan
 
         Args:
             x (float): Robot pose x coordinate.
             y (float): Robot pose y coordinate.
             yaw (float): Robot yaw (radians).
+            ranges (List[float]): Laser scan range data. This list of ``float`` number may
+                contain infinite values represented as ``math.pi``.
+            angle (tuple, optional): Laser scan range angle (radians). This parameter defines
+                the cone in which the laser points will be shown. For full 360 degrees scanning
+                use (-math.pi, math.pi). Defaults to (-math.pi, math.pi).
             frame_id (str, optional): Robot map frame identifier. Defaults to "map".
             ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
         """
 
-        def encode_floating_point_list(fp_list, ranges):
-            """
-            Encodes a list of float numbers (which may contain infinite values) into a
-            FloatingPointList which has a compact representation for runs of
-            consecutive inf and non-inf values.
-            """
-
-            # Encode the numbers in runs of infinite and non-infinite sequences
-            last_was_infinite = True
-            current_run_length = 0
-            values = []
-            runs = []
-            for r in ranges:
-                if (r == math.inf) == last_was_infinite:
-                    # Current and last were both infinite, or both non-infinite
-                    current_run_length += 1
-                else:
-                    # Current=inf, last was not inf; switch and output the last run
-                    runs.append(current_run_length)
-                    current_run_length = 1
-                    last_was_infinite = r == math.inf
-                # Now process the number (if not infinite)
-                if r != math.inf:
-                    values.append(r)
-            # Finally output the last run length
-            runs.append(current_run_length)
-            fp_list.runs.extend(runs)
-            fp_list.values.extend(values)
-            # Tricky code above... Do some validations for invariants
-            # (see declaration of FloatingPointList)
-            if sum(runs) != len(ranges):
-                raise Exception(
-                    "Sum of encoded runs is {:d}, must be equal to original list "
-                    "length {:d}".format(sum(runs), len(ranges))
-                )
-            # Only the first element can be 0
-            if len(list(filter(lambda x: x <= 0, runs[1:]))) > 0:
-                raise Exception("There are zero or negative elements in runs!")
-            if sum(runs[1::2]) != len(values):
-                raise Exception(
-                    "Sum of non-inf runs is {:d}, must be equal to number of "
-                    "encoded values {:d}".format(sum(runs[1::2]), len(values))
-                )
-
-
         pb_lasers_message = LaserMessage()
         pb_lasers_message.name = "0"
 
-        encode_floating_point_list(pb_lasers_message.ranges, ranges)
+        runs, values = encode_floating_point_list(ranges)
 
+        pb_lasers_message.ranges.runs.extend(runs)
+        pb_lasers_message.ranges.values.extend(values)
+
+        # Populate LocationAndPoseMessage with current pose
+        # and laser data, encoded as floating point list.
         msg = LocationAndPoseMessage()
         msg.ts = ts if ts else int(time() * 1000)
         msg.pos_x = x
@@ -512,25 +479,31 @@ class RobotSession:
         msg.frame_id = frame_id
         msg.lasers.append(pb_lasers_message)
 
+        # Publish laser configuration, based on provided and/or infered parameters.
+        # Note: x, y & yaw are robot to laser transform and are explicitely set to zero.
         self.publish(
-            topic="r/{}/ros/loc/config/{:d}".format(self.robot_id, 0),
-            message="{:d}|{:.4g}|{:.4g}|{:.6g}|{:.6g}|{:.6g}|{:.4g}|{:.4g}|{:d}".format(
-                int(time() * 1000),
-                0,
-                0,
-                0,
-                0,
-                2*math.pi,
-                min(pb_lasers_message.ranges.values),
-                max(pb_lasers_message.ranges.values)+1,
-                len(ranges),
+            topic="r/{robot_id}/ros/loc/config/{config_id:d}".format(
+                robot_id=self.robot_id, config_id=0
+            ),
+            message=(
+                "{ts:d}|{x:.4g}|{y:.4g}|{yaw:.6g}|{angle_min:.6g}|{angle_max:.6g}|"
+                "{range_min:.4g}|{range_max:.4g}|{n_points:d}"
+            ).format(
+                ts=int(time() * 1000),
+                x=0,
+                y=0,
+                yaw=0,
+                angle_min=angle[0],
+                angle_max=angle[1],
+                range_min=min(pb_lasers_message.ranges.values),
+                range_max=max(pb_lasers_message.ranges.values),
+                n_points=len(ranges),
             ),
             qos=1,
             retain=True,
         )
 
         self.publish_protobuf(MQTT_POSE_TOPIC, msg)
-        
 
 
 class RobotSessionFactory:
