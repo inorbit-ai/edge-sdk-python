@@ -85,7 +85,7 @@ class FakeRobot:
 
         # Ignore orientation update if the new yaw exceeds yaw limits
         if self.yaw + yaw_delta < MAX_YAW and self.yaw + yaw_delta > 0:
-            self.yaw = self.yaw - yaw_delta
+            self.yaw = self.yaw + yaw_delta
 
         self.linear_distance = random() * 10
         self.angular_distance = random() * 2
@@ -182,6 +182,13 @@ if __name__ == "__main__":
                     angular_distance=fake_robot.angular_distance,
                     linear_speed=fake_robot.linear_speed,
                     angular_speed=fake_robot.angular_speed,
+                )
+                robot_session.publish_path(
+                    path_points=[
+                        (fake_robot.x, fake_robot.y),
+                        (fake_robot.x + 10, fake_robot.y + 10),
+                        (fake_robot.x + 20, fake_robot.y + 10),
+                    ]
                 )
 
             sleep(1)
