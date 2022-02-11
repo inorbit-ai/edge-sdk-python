@@ -458,11 +458,11 @@ class RobotSession:
             x (float): Robot pose x coordinate.
             y (float): Robot pose y coordinate.
             yaw (float): Robot yaw (radians).
-            ranges (List[float]): Laser scan range data. This list of ``float`` number may
-                contain infinite values represented as ``math.pi``.
-            angle (tuple, optional): Laser scan range angle (radians). This parameter defines
-                the cone in which the laser points will be shown. For full 360 degrees scanning
-                use (-math.pi, math.pi). Defaults to (-math.pi, math.pi).
+            ranges (List[float]): Laser scan range data. This list of ``float`` number
+                may contain infinite values represented as ``math.pi``.
+            angle (tuple, optional): Laser scan range angle (radians). This parameter
+                defines the cone in which the laser points will be shown. For full 360
+                degrees scans use (-math.pi, math.pi). Defaults to (-math.pi, math.pi).
             frame_id (str, optional): Robot map frame identifier. Defaults to "map".
             ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
         """
