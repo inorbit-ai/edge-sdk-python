@@ -470,8 +470,10 @@ class RobotSession:
         pb_lasers_message = LaserMessage()
         pb_lasers_message.name = "0"
 
+        # Encode ranges list using a compact representation
         runs, values = encode_floating_point_list(ranges)
 
+        # Update LaserMessage message with encoded laser ranges
         pb_lasers_message.ranges.runs.extend(runs)
         pb_lasers_message.ranges.values.extend(values)
 
@@ -486,7 +488,8 @@ class RobotSession:
         msg.lasers.append(pb_lasers_message)
 
         # Publish laser configuration, based on provided and/or infered parameters.
-        # Note: x, y & yaw are robot to laser transform and are explicitely set to zero.
+        # Note: x, y & yaw should be used if there is a robot to laser transform.
+        #   As this is not supported they are explicitely set to zero.
         self.publish(
             topic="r/{robot_id}/ros/loc/config/{config_id:d}".format(
                 robot_id=self.robot_id, config_id=0
