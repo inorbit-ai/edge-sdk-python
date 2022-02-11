@@ -16,6 +16,9 @@ from inorbit_edge.inorbit_pb2 import (
     LocationAndPoseMessage,
     OdometryDataMessage,
     LaserMessage,
+    PathPoint,
+    RobotPath,
+    PathDataMessage,
 )
 from time import time
 from time import sleep
@@ -28,6 +31,9 @@ INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot
 MQTT_POSE_TOPIC = "ros/loc/data2"
 MQTT_TOPIC_CUSTOM_DATA = "custom"
 MQTT_TOPIC_ODOMETRY = "ros/odometry/data"
+MQTT_TOPIC_PATH = "ros/loc/path"
+
+ROBOT_PATH_POINTS_LIMIT = 1000
 
 
 class RobotSession:
@@ -504,6 +510,47 @@ class RobotSession:
         )
 
         self.publish_protobuf(MQTT_POSE_TOPIC, msg)
+
+    def publish_path(self, path_points, path_id="0", ts=None):
+        """Publish robot path
+
+        Send a list of points representing the path the robot
+        is traversing. This method only sends the data to InOrbit
+        for displaying purposes, meaning that the path provided
+        here won't make the robot to move
+
+        Args:
+            path_points (List[Tuple[int. int]]): List of x, y points
+                the robot would go through.
+        """
+
+        if len(path_points) > ROBOT_PATH_POINTS_LIMIT:
+            self.logger.warn(
+                "Path has {} points. Only the first {} points will be used.".format(
+                    len(path_points), ROBOT_PATH_POINTS_LIMIT
+                )
+            )
+
+        # Generate ``PathPoint`` protobuf messages
+        # from the list of path point tuples
+        pb_path_points = [
+            PathPoint(x=path_point[0], y=path_point[1])
+            for path_point in path_points[:ROBOT_PATH_POINTS_LIMIT]
+        ]
+
+        # Generate a ``RobotPath`` protobuf message and
+        # add the list of ``PathPoint`` created above
+        pb_robot_path = RobotPath()
+        pb_robot_path.ts = ts if ts else int(time() * 1000)
+        pb_robot_path.path_id = path_id
+        pb_robot_path.points.extend(pb_path_points)
+
+        # Publish ``PathDataMessage``
+        msg = PathDataMessage()
+        msg.ts = ts if ts else int(time() * 1000)
+        msg.paths.append(pb_robot_path)
+
+        self.publish_protobuf(MQTT_TOPIC_PATH, msg)
 
 
 class RobotSessionFactory:
