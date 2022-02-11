@@ -13,6 +13,8 @@ The `InOrbit Edge SDK` allows Python programs to communicate with `InOrbit` plat
 - Publish key-values.
 - Publish robot poses.
 - Publish robot odometry.
+- Publish robot path.
+- Publish robot laser.
 - Execute callbacks on Custom Action execution.
 
 ## Quick Start
