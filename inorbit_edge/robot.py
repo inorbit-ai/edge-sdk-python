@@ -15,6 +15,7 @@ from inorbit_edge.inorbit_pb2 import (
     KeyValueCustomElement,
     LocationAndPoseMessage,
     OdometryDataMessage,
+    LaserMessage,
     PathPoint,
     RobotPath,
     PathDataMessage,
@@ -22,7 +23,8 @@ from inorbit_edge.inorbit_pb2 import (
 from time import time
 from time import sleep
 import requests
-
+import math
+from inorbit_edge.utils import encode_floating_point_list
 
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
 
@@ -446,6 +448,71 @@ class RobotSession:
         msg.angular_speed = angular_speed
         msg.speed_available = True
         self.publish_protobuf(MQTT_TOPIC_ODOMETRY, msg)
+
+    def publish_laser(
+        self, x, y, yaw, ranges, angle=(-math.pi, math.pi), frame_id="map", ts=None
+    ):
+        """Publish robot laser scan
+
+        Args:
+            x (float): Robot pose x coordinate.
+            y (float): Robot pose y coordinate.
+            yaw (float): Robot yaw (radians).
+            ranges (List[float]): Laser scan range data. This list of ``float`` number
+                may contain infinite values represented as ``math.pi``.
+            angle (tuple, optional): Laser scan range angle (radians). This parameter
+                defines the cone in which the laser points will be shown. For full 360
+                degrees scans use (-math.pi, math.pi). Defaults to (-math.pi, math.pi).
+            frame_id (str, optional): Robot map frame identifier. Defaults to "map".
+            ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
+        """
+
+        pb_lasers_message = LaserMessage()
+        pb_lasers_message.name = "0"
+
+        # Encode ranges list using a compact representation
+        runs, values = encode_floating_point_list(ranges)
+
+        # Update LaserMessage message with encoded laser ranges
+        pb_lasers_message.ranges.runs.extend(runs)
+        pb_lasers_message.ranges.values.extend(values)
+
+        # Populate LocationAndPoseMessage with current pose
+        # and laser data, encoded as floating point list.
+        msg = LocationAndPoseMessage()
+        msg.ts = ts if ts else int(time() * 1000)
+        msg.pos_x = x
+        msg.pos_y = y
+        msg.yaw = yaw
+        msg.frame_id = frame_id
+        msg.lasers.append(pb_lasers_message)
+
+        # Publish laser configuration, based on provided and/or infered parameters.
+        # Note: x, y & yaw should be used if there is a robot to laser transform.
+        #   As this is not supported they are explicitely set to zero.
+        self.publish(
+            topic="r/{robot_id}/ros/loc/config/{config_id:d}".format(
+                robot_id=self.robot_id, config_id=0
+            ),
+            message=(
+                "{ts:d}|{x:.4g}|{y:.4g}|{yaw:.6g}|{angle_min:.6g}|{angle_max:.6g}|"
+                "{range_min:.4g}|{range_max:.4g}|{n_points:d}"
+            ).format(
+                ts=int(time() * 1000),
+                x=0,
+                y=0,
+                yaw=0,
+                angle_min=angle[0],
+                angle_max=angle[1],
+                range_min=min(pb_lasers_message.ranges.values),
+                range_max=max(pb_lasers_message.ranges.values),
+                n_points=len(ranges),
+            ),
+            qos=1,
+            retain=True,
+        )
+
+        self.publish_protobuf(MQTT_POSE_TOPIC, msg)
 
     def publish_path(self, path_points, path_id="0", ts=None):
         """Publish robot path

@@ -8,6 +8,7 @@ from math import pi
 import os
 import requests
 import sys
+from math import inf
 
 from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool
 
@@ -21,6 +22,8 @@ logging.basicConfig(
 MAX_X = 20
 MAX_Y = 20
 MAX_YAW = 2 * pi
+
+LIDAR_RANGES = 700
 
 NUM_ROBOTS = 2
 
@@ -183,12 +186,25 @@ if __name__ == "__main__":
                     linear_speed=fake_robot.linear_speed,
                     angular_speed=fake_robot.angular_speed,
                 )
+
                 robot_session.publish_path(
                     path_points=[
                         (fake_robot.x, fake_robot.y),
                         (fake_robot.x + 10, fake_robot.y + 10),
                         (fake_robot.x + 20, fake_robot.y + 10),
                     ]
+                )
+
+                # Generate random lidar ranges within arbitrary limits
+                lidar = [max(2, random() * 3.2) for _ in range(LIDAR_RANGES)]
+                # Make ranges over threshold infinite
+                lidar = [inf if r >= 3 else r for r in lidar]
+                robot_session.publish_laser(
+                    x=fake_robot.x,
+                    y=fake_robot.y,
+                    yaw=fake_robot.yaw,
+                    ranges=lidar,
+                    angle=(-pi / 3, pi / 3),  # show lidar ranges on a cone
                 )
 
             sleep(1)
