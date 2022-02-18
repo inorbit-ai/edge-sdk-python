@@ -26,12 +26,16 @@ import requests
 import math
 from inorbit_edge.utils import encode_floating_point_list
 
+
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
 
-MQTT_POSE_TOPIC = "ros/loc/data2"
-MQTT_TOPIC_CUSTOM_DATA = "custom"
-MQTT_TOPIC_ODOMETRY = "ros/odometry/data"
-MQTT_TOPIC_PATH = "ros/loc/path"
+MQTT_SUBTOPIC_POSE = "ros/loc/data2"
+MQTT_SUBTOPIC_PATH = "ros/loc/path"
+MQTT_SUBTOPIC_LASER_CONFIG = "ros/loc/config/0"
+MQTT_SUBTOPIC_ODOMETRY = "ros/odometry/data"
+MQTT_SUBTOPIC_CUSTOM_DATA = "custom"
+MQTT_SUBTOPIC_CUSTOM_COMMAND = "custom_command"
+MQTT_SUBTOPIC_STATE = "state"
 
 ROBOT_PATH_POINTS_LIMIT = 1000
 
@@ -56,7 +60,7 @@ class RobotSession:
         self.robot_name = robot_name
         self.api_key = api_key
         # The agent version is generated based on the InOrbit Edge SDK version
-        self.agent_version = f"{inorbit_edge_version}.edgesdk_py"
+        self.agent_version = "{}.edgesdk_py".format(inorbit_edge_version)
         self.endpoint = kwargs.get("endpoint", INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL)
 
         # Use SSL by default
@@ -109,6 +113,98 @@ class RobotSession:
         # Register MQTT client callbacks
         self.client.on_connect = self._on_connect
         self.client.on_message = self._on_message
+
+        # Internal variables for configuring throttling
+        # The throttling is done by method instead of by topic because the same topic
+        # might be used for sending different type of messages e.g. pose and laser.
+        # Each throttling has a ``last_ts`` that is the last time a method was called,
+        # a ``lock`` for updating the ``last_ts`` and a ``min_time_between_calls`` to
+        # configure what is the min time to wait before method calls.
+        self._publish_throttling = {
+            "publish_pose": {
+                "last_ts": 0,
+                "lock": threading.Lock(),
+                "min_time_between_calls": 1,  # seconds
+            },
+            "publish_key_values": {
+                "last_ts": 0,
+                "lock": threading.Lock(),
+                "min_time_between_calls": 1,  # seconds
+            },
+            "publish_odometry": {
+                "last_ts": 0,
+                "lock": threading.Lock(),
+                "min_time_between_calls": 1,  # seconds
+            },
+            "publish_laser": {
+                "last_ts": 0,
+                "lock": threading.Lock(),
+                "min_time_between_calls": 1,  # seconds
+            },
+            "publish_path": {
+                "last_ts": 0,
+                "lock": threading.Lock(),
+                "min_time_between_calls": 1,  # seconds
+            },
+        }
+
+    def _get_robot_subtopic(self, subtopic):
+        """Build topic for this robot.
+
+        It returns a robot topic by concatenating the robot id
+        base topic with the provided subtopic.
+
+        Args:
+            subtopic (str): robot subtopic.
+
+        Returns:
+            str: robot topic.
+        """
+        if subtopic.startswith("/"):
+            raise ValueError("Subtopic shouldn't start with '/'.")
+
+        return "r/{robot_id}/{subtopic}".format(
+            robot_id=self.robot_id, subtopic=subtopic
+        )
+
+    def _should_publish_message(self, method):
+        """Determine if the method should be executed or not
+
+        It uses robot session property ``self._publish_throttling`` to
+        determine if the method has not been called before the configured
+        time. If the method can be called, it also updates the method last
+        call timestamp.
+
+        Args:
+            method (str): method name.
+
+        Returns:
+            bool: True if the method can be called.
+        """
+        try:
+            throttling_cfg = self._publish_throttling[method]
+        except KeyError:
+            self.logger.error(
+                "Trying to publish using a method with no throttling configured."
+            )
+            raise
+
+        current_ts = time()
+        time_diff = current_ts - throttling_cfg["last_ts"]
+        if time_diff < throttling_cfg["min_time_between_calls"]:
+            self.logger.debug(
+                (
+                    "Ignoring message '{}' (robot '{}'). Last "
+                    "message was sent {:.4f} seconds ago."
+                ).format(method, self.robot_id, time_diff)
+            )
+            return False
+
+        lock = throttling_cfg["lock"]
+        lock.acquire()
+        throttling_cfg["last_ts"] = current_ts
+        lock.release()
+        return True
 
     def _fetch_robot_config(self):
         """Gets robot config by posting appkey and robot/agent info.
@@ -198,7 +294,7 @@ class RobotSession:
                 raise
 
     def _get_custom_command_topic(self):
-        return "r/{}/custom_command".format(self.robot_id)
+        return self._get_robot_subtopic(subtopic=MQTT_SUBTOPIC_CUSTOM_COMMAND)
 
     def register_custom_command_callback(self, func):
         """Register custom command callback method and subscribes to
@@ -245,7 +341,10 @@ class RobotSession:
             robot_status, self.robot_api_key, self.agent_version, self.robot_name
         )
         ret = self.publish(
-            "r/{}/state".format(self.robot_id), status_message, qos=1, retain=True
+            self._get_robot_subtopic(subtopic=MQTT_SUBTOPIC_STATE),
+            status_message,
+            qos=1,
+            retain=True,
         )
         self.logger.info("Publishing status {}. ret = {}.".format(robot_status, ret))
 
@@ -293,9 +392,13 @@ class RobotSession:
 
         # Configure "will" message to ensure the robot state
         # is set to offline if connection is interrupted
-        will_topic = "r/{}/state".format(self.robot_id)
         will_payload = "0|{}".format(self.robot_api_key)
-        self.client.will_set(will_topic, will_payload, qos=1, retain=True)
+        self.client.will_set(
+            self._get_robot_subtopic(subtopic=MQTT_SUBTOPIC_STATE),
+            will_payload,
+            qos=1,
+            retain=True,
+        )
 
         # TODO: add support for user-provided CA certificate file.
         if self.use_ssl:
@@ -364,7 +467,7 @@ class RobotSession:
             retain (bool, optional): If set to true, the message will be set as
                 the "last known good"/retained message for the topic. Defaults to False.
         """
-        topic = "r/{}/{}".format(self.robot_id, subtopic)
+        topic = self._get_robot_subtopic(subtopic=subtopic)
         self.logger.debug("Publishing to topic {}".format(topic))
         ret = self.publish(
             topic, bytearray(message.SerializeToString()), qos=qos, retain=retain
@@ -381,13 +484,16 @@ class RobotSession:
             frame_id (str, optional): Robot map frame identifier. Defaults to "map".
             ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
         """
+        if not self._should_publish_message(method="publish_pose"):
+            return None
+
         msg = LocationAndPoseMessage()
         msg.ts = ts if ts else int(time() * 1000)
         msg.pos_x = x
         msg.pos_y = y
         msg.yaw = yaw
         msg.frame_id = frame_id
-        self.publish_protobuf(MQTT_POSE_TOPIC, msg)
+        self.publish_protobuf(MQTT_SUBTOPIC_POSE, msg)
 
     def publish_key_values(self, key_values, custom_field="0"):
         """Publish key value pairs
@@ -396,6 +502,9 @@ class RobotSession:
             key_values (dict): Key value mappings to publish
             custom_field (str, optional): ID of the CustomData element. Defaults to "0".
         """
+
+        if not self._should_publish_message(method="publish_key_values"):
+            return None
 
         def convert_value(value):
             if isinstance(value, object):
@@ -414,7 +523,7 @@ class RobotSession:
 
         msg.key_value_payload.pairs.extend(map(set_pairs, key_values.keys()))
 
-        self.publish_protobuf(MQTT_TOPIC_CUSTOM_DATA, msg)
+        self.publish_protobuf(MQTT_SUBTOPIC_CUSTOM_DATA, msg)
 
     def publish_odometry(
         self,
@@ -439,6 +548,10 @@ class RobotSession:
             linear_speed (int, optional): Linear speed (m/s). Defaults to 0.
             angular_speed (int, optional): Angular speed (rad/s). Defaults to 0.
         """
+
+        if not self._should_publish_message(method="publish_odometry"):
+            return None
+
         msg = OdometryDataMessage()
         msg.ts_start = ts_start if ts_start else int(time() * 1000)
         msg.ts = ts if ts else int(time() * 1000)
@@ -447,7 +560,7 @@ class RobotSession:
         msg.linear_speed = linear_speed
         msg.angular_speed = angular_speed
         msg.speed_available = True
-        self.publish_protobuf(MQTT_TOPIC_ODOMETRY, msg)
+        self.publish_protobuf(MQTT_SUBTOPIC_ODOMETRY, msg)
 
     def publish_laser(
         self, x, y, yaw, ranges, angle=(-math.pi, math.pi), frame_id="map", ts=None
@@ -466,6 +579,9 @@ class RobotSession:
             frame_id (str, optional): Robot map frame identifier. Defaults to "map".
             ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
         """
+
+        if not self._should_publish_message(method="publish_laser"):
+            return None
 
         pb_lasers_message = LaserMessage()
         pb_lasers_message.name = "0"
@@ -491,9 +607,7 @@ class RobotSession:
         # Note: x, y & yaw should be used if there is a robot to laser transform.
         #   As this is not supported they are explicitely set to zero.
         self.publish(
-            topic="r/{robot_id}/ros/loc/config/{config_id:d}".format(
-                robot_id=self.robot_id, config_id=0
-            ),
+            topic=self._get_robot_subtopic(MQTT_SUBTOPIC_LASER_CONFIG),
             message=(
                 "{ts:d}|{x:.4g}|{y:.4g}|{yaw:.6g}|{angle_min:.6g}|{angle_max:.6g}|"
                 "{range_min:.4g}|{range_max:.4g}|{n_points:d}"
@@ -512,7 +626,7 @@ class RobotSession:
             retain=True,
         )
 
-        self.publish_protobuf(MQTT_POSE_TOPIC, msg)
+        self.publish_protobuf(MQTT_SUBTOPIC_POSE, msg)
 
     def publish_path(self, path_points, path_id="0", ts=None):
         """Publish robot path
@@ -526,6 +640,9 @@ class RobotSession:
             path_points (List[Tuple[int. int]]): List of x, y points
                 the robot would go through.
         """
+
+        if not self._should_publish_message(method="publish_path"):
+            return None
 
         if len(path_points) > ROBOT_PATH_POINTS_LIMIT:
             self.logger.warn(
@@ -553,7 +670,7 @@ class RobotSession:
         msg.ts = ts if ts else int(time() * 1000)
         msg.paths.append(pb_robot_path)
 
-        self.publish_protobuf(MQTT_TOPIC_PATH, msg)
+        self.publish_protobuf(MQTT_SUBTOPIC_PATH, msg)
 
 
 class RobotSessionFactory:
