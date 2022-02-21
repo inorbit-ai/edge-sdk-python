@@ -117,33 +117,28 @@ class RobotSession:
         # Internal variables for configuring throttling
         # The throttling is done by method instead of by topic because the same topic
         # might be used for sending different type of messages e.g. pose and laser.
-        # Each throttling has a ``last_ts`` that is the last time a method was called,
-        # a ``lock`` for updating the ``last_ts`` and a ``min_time_between_calls`` to
-        # configure what is the min time to wait before method calls.
+        # Each throttling has a ``last_ts`` that is the last time a method was called
+        # and a ``min_time_between_calls`` to configure what is the min time to wait
+        # before method calls.
         self._publish_throttling = {
             "publish_pose": {
                 "last_ts": 0,
-                "lock": threading.Lock(),
                 "min_time_between_calls": 1,  # seconds
             },
             "publish_key_values": {
                 "last_ts": 0,
-                "lock": threading.Lock(),
                 "min_time_between_calls": 1,  # seconds
             },
             "publish_odometry": {
                 "last_ts": 0,
-                "lock": threading.Lock(),
                 "min_time_between_calls": 1,  # seconds
             },
             "publish_laser": {
                 "last_ts": 0,
-                "lock": threading.Lock(),
                 "min_time_between_calls": 1,  # seconds
             },
             "publish_path": {
                 "last_ts": 0,
-                "lock": threading.Lock(),
                 "min_time_between_calls": 1,  # seconds
             },
         }
@@ -200,10 +195,7 @@ class RobotSession:
             )
             return False
 
-        lock = throttling_cfg["lock"]
-        lock.acquire()
         throttling_cfg["last_ts"] = current_ts
-        lock.release()
         return True
 
     def _fetch_robot_config(self):
