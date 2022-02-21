@@ -152,3 +152,17 @@ def test_robot_session_on_unsupported_topic(caplog):
 
         robot_session._on_message(..., ..., mqtt_message)
         assert "Ignoring message from unsupported topic" in caplog.text
+
+
+def test_method_throttling():
+    robot_session = RobotSession(
+        robot_id="id_123",
+        robot_name="name_123",
+        api_key="apikey_123",
+    )
+
+    assert robot_session._should_publish_message(method="publish_pose")
+    assert not robot_session._should_publish_message(method="publish_pose")
+    assert not robot_session._should_publish_message(method="publish_pose")
+    robot_session._publish_throttling["publish_pose"]["last_ts"] = 0
+    assert robot_session._should_publish_message(method="publish_pose")
