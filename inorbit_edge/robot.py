@@ -25,6 +25,7 @@ from time import sleep
 import requests
 import math
 from inorbit_edge.utils import encode_floating_point_list
+import certifi
 
 
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
@@ -396,7 +397,7 @@ class RobotSession:
         if self.use_ssl:
             self.logger.debug("Configuring client to use SSL")
             self.client.tls_set(
-                "/etc/ssl/certs/ca-certificates.crt", tls_version=ssl.PROTOCOL_TLSv1_2
+                certifi.where(), tls_version=ssl.PROTOCOL_TLSv1_2
             )
 
         # Configure MQTT client hostname and port
