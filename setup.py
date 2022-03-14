@@ -44,7 +44,8 @@ requirements = [
     "requests==2.26.0",
     "paho_mqtt==1.6.1",
     "PySocks==1.7.1",
-    "protobuf==3.19.3"
+    "protobuf==3.19.3",
+    "certifi>=2021.10.8"
 ]
 
 extra_requirements = {
@@ -84,6 +85,6 @@ setup(
     url="https://github.com/inorbit-ai/edge-sdk-python",
     # Do not edit this string manually, always use bumpversion
     # Details in CONTRIBUTING.rst
-    version="0.4.0",
+    version="0.6.0",
     zip_safe=False,
 )
