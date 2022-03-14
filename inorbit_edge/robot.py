@@ -396,9 +396,7 @@ class RobotSession:
         # TODO: add support for user-provided CA certificate file.
         if self.use_ssl:
             self.logger.debug("Configuring client to use SSL")
-            self.client.tls_set(
-                certifi.where(), tls_version=ssl.PROTOCOL_TLSv1_2
-            )
+            self.client.tls_set(certifi.where(), tls_version=ssl.PROTOCOL_TLSv1_2)
 
         # Configure MQTT client hostname and port
         hostname = robot_config["hostname"]
