@@ -45,7 +45,7 @@ requirements = [
     "paho_mqtt==1.6.1",
     "PySocks==1.7.1",
     "protobuf==3.19.3",
-    "certify>=2021.10.8"
+    "certifi>=2021.10.8"
 ]
 
 extra_requirements = {
