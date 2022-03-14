@@ -53,7 +53,7 @@ Ready to contribute? Here's how to set up `edge-sdk-python` for local developmen
 ## Deploying
 
 A reminder for the maintainers on how to deploy.
-Make sure you are on branch `main` and that pulled latest changes.
+Make sure you are on the `main` branch and have pulled the latest changes.
 
 Setup `virtualenv` with `dev` requirements:
 
