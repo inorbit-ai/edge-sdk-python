@@ -53,8 +53,18 @@ Ready to contribute? Here's how to set up `edge-sdk-python` for local developmen
 ## Deploying
 
 A reminder for the maintainers on how to deploy.
-Make sure all your changes are committed.
-Then run:
+Make sure you are on branch `main` and that pulled latest changes.
+
+Setup `virtualenv` with `dev` requirements:
+
+```bash
+cd edge-sdk-python/
+virtualenv venv
+. venv/bin/activate
+pip install -e .[dev]
+```
+
+Then run `bump2version` and choose the part of the version to be bumped, and don't forget to push changes and tags:
 
 ```bash
 bump2version patch # possible: major / minor / patch
