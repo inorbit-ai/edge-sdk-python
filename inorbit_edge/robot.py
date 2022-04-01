@@ -114,6 +114,7 @@ class RobotSession:
         # Register MQTT client callbacks
         self.client.on_connect = self._on_connect
         self.client.on_message = self._on_message
+        self.client.on_disconnect = self._on_disconnect
 
         # Internal variables for configuring throttling
         # The throttling is done by method instead of by topic because the same topic
@@ -286,6 +287,22 @@ class RobotSession:
                 self.logger.error("Unexpected error while processing message.")
                 raise
 
+    def _on_disconnect(self, client, userdata, rc):
+        """MQTT client disconnect callback.
+
+        Args:
+            client:     the client instance for this callback
+            userdata:   the private user data as set in Client() or userdata_set()
+            rc:         disconnection result
+        """
+
+        if rc != 0:
+            self.logger.warn(
+                "Unexpected disconnection: {}".format(mqtt.error_string(rc))
+            )
+        else:
+            self.logger.info("Disconnected from MQTT broker")
+
     def _get_custom_command_topic(self):
         return self._get_robot_subtopic(subtopic=MQTT_SUBTOPIC_CUSTOM_COMMAND)
 
@@ -429,8 +446,6 @@ class RobotSession:
 
         self._wait_for_connection_state(self._is_disconnected)
 
-        self.logger.info("Disconnected from MQTT broker")
-
     def publish(self, topic, message, qos=0, retain=False):
         """MQTT client wrapper method for publishing messages
 
@@ -443,7 +458,21 @@ class RobotSession:
         Returns:
             MQTTMessageInfo: Returns a MQTTMessageInfo class
         """
-        return self.client.publish(topic=topic, payload=message, qos=qos, retain=retain)
+        try:
+            info = self.client.publish(
+                topic=topic, payload=message, qos=qos, retain=retain
+            )
+        except ValueError:
+            self.logger.error("Payload greater than 268435455 bytes is not allowed")
+
+        if info.rc != mqtt.MQTT_ERR_SUCCESS:
+            self.logger.warn(
+                "There was a problem sending message {}: {}".format(
+                    info.mid, mqtt.error_string(info.rc)
+                )
+            )
+
+        return info
 
     def publish_protobuf(self, subtopic, message, qos=0, retain=False):
         """Publish protobuf messages to this robot session subtopic.
