@@ -129,7 +129,7 @@ class RobotSession:
             },
             "publish_key_values": {
                 "last_ts": 0,
-                "min_time_between_calls": 1,  # seconds
+                "min_time_between_calls": 10,  # seconds
             },
             "publish_odometry": {
                 "last_ts": 0,
@@ -189,7 +189,7 @@ class RobotSession:
         current_ts = time()
         time_diff = current_ts - throttling_cfg["last_ts"]
         if time_diff < throttling_cfg["min_time_between_calls"]:
-            self.logger.debug(
+            self.logger.info(
                 (
                     "Ignoring message '{}' (robot '{}'). Last "
                     "message was sent {:.4f} seconds ago."
@@ -487,7 +487,7 @@ class RobotSession:
                 the "last known good"/retained message for the topic. Defaults to False.
         """
         topic = self._get_robot_subtopic(subtopic=subtopic)
-        self.logger.debug("Publishing to topic {}".format(topic))
+        self.logger.info("Publishing to topic {}".format(topic))
         ret = self.publish(
             topic, bytearray(message.SerializeToString()), qos=qos, retain=retain
         )
