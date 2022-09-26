@@ -271,6 +271,7 @@ class RobotSession:
             target=self._send_robot_status, kwargs={"robot_status": "1"}
         ).start()
 
+        # Subscribe to interesting topics
         self.client.subscribe(
             topic=self._get_robot_subtopic(subtopic=MQTT_INITIAL_POSE))
         self.client.subscribe(
@@ -321,18 +322,21 @@ class RobotSession:
             self.logger.info("Disconnected from MQTT broker")
 
     def _send_echo(self, topic, payload):
+        """Sends an echo response to the server.
+
+        Args:
+            topic: topic in which the message has been published
+            payload: message payload
+        """
         msg = Echo()
         msg.topic = topic
         msg.time_stamp = int(time() * 1000)
+        # NOTE: some payloads fail to decode using 'utf-8'
         msg.string_payload = payload.decode('latin-1')
         self.publish_protobuf(subtopic=MQTT_TOPIC_ECHO, message=msg)
 
     def _handle_initial_pose(self, msg):
-        """Handle incoming MQTT_INITIAL_POSE message
-
-        Arguments:
-            msg -- _description_
-        """
+        """Handle incoming MQTT_INITIAL_POSE message."""
 
         args = msg.split("|")
         seq = args[0]
@@ -342,23 +346,19 @@ class RobotSession:
         theta = args[4]
 
         # Hand over to callback for processing, using the proper format
-        self.dispatch_command(
+        self._dispatch_command(
             command_name=COMMAND_INITIAL_POSE,
             args=[{'x': x, 'y': y, 'theta': theta}],
             execution_id=seq  # NOTE: Using seq as the execution ID
         )
 
     def _handle_custom_command(self, msg):
-        """Handle incoming MQTT_CUSTOM_COMMAND message
-
-        Arguments:
-            msg -- _description_
-        """
+        """Handle incoming MQTT_CUSTOM_COMMAND message."""
 
         custom_script_msg = CustomScriptCommandMessage()
         custom_script_msg.ParseFromString(msg)
         # Hand over to callback for processing, using the proper format
-        self.dispatch_command(
+        self._dispatch_command(
             command_name=COMMAND_CUSTOM_COMMAND,
             args=[
                 custom_script_msg.file_name,
@@ -367,7 +367,8 @@ class RobotSession:
             execution_id=custom_script_msg.execution_id
         )
 
-    def dispatch_command(self, command_name, args, execution_id):
+    def _dispatch_command(self, command_name, args, execution_id):
+        """Executes registered command callbacks for a specific incoming command."""
         for callback in self.command_callbacks:
             def result_function(result_code):
                 return self.report_command_result(args, execution_id, result_code)
@@ -382,14 +383,7 @@ class RobotSession:
             callback(command_name, args, options)
 
     def report_command_result(self, args, execution_id, result_code):
-        """Send to the server the result code of a command
-        executed by a registered user callback
-
-        Arguments:
-            args -- _description_
-            execution_id -- _description_
-            result_code -- _description_
-        """
+        """Send to the server the result code of a command executed by a registered user callback."""
 
         msg = CustomScriptStatusMessage()
         msg.file_name = args[0]
