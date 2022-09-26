@@ -119,6 +119,12 @@ def log_command(robot_id, command_name, args, options):
     print("Received command! What should I do now?")
     print(robot_id, command_name, args, options)
 
+def custom_command_callback(robot_id, command_name, args, options):
+  if (command_name == 'customCommand'):
+    print(f"Received '{command_name}' for robot '{robot_id}'!. {args}")
+    # Return '0' for success
+    options['result_function']('0')
+
 
 if __name__ == "__main__":
 
@@ -139,6 +145,7 @@ if __name__ == "__main__":
     )
     robot_session_pool = RobotSessionPool(robot_session_factory)
     robot_session_pool.register_command_callback(log_command)
+    robot_session_pool.register_command_callback(custom_command_callback)
 
     # Dictionary mapping robot ID and fake robot object
     fake_robot_pool = dict()
