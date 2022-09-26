@@ -292,10 +292,6 @@ class RobotSession:
             subtopic = "/".join(msg.topic.split('/')[2:])
             if subtopic in self.message_handlers:
                 self.message_handlers[subtopic](msg.payload)
-        except json.decoder.JSONDecodeError:
-            self.logger.error(
-                "Failed to parse JSON message, ignoring. {}".format(msg.payload)
-            )
         except UnicodeDecodeError as ex:
             self.logger.error(
                 f"Failed to decode message, ignoring. Payload: '{msg.payload}'. {ex}"
@@ -331,14 +327,13 @@ class RobotSession:
         msg = Echo()
         msg.topic = topic
         msg.time_stamp = int(time() * 1000)
-        # NOTE: some payloads fail to decode using 'utf-8'
-        msg.string_payload = payload.decode('latin-1')
+        msg.string_payload = payload.decode('utf-8', errors='ignore')
         self.publish_protobuf(subtopic=MQTT_TOPIC_ECHO, message=msg)
 
     def _handle_initial_pose(self, msg):
         """Handle incoming MQTT_INITIAL_POSE message."""
 
-        args = msg.split("|")
+        args = msg.decode('utf-8').split("|")
         seq = args[0]
         ts = args[1]
         x = args[2]
