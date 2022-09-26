@@ -103,11 +103,11 @@ class FakeRobot:
         self.cpu = random() * 100
 
 
-def my_custom_command_handler(robot_session, message):
+def log_command(robot_id, command_name, args, options):
     """Callback for custom actions.
 
     Callback method executed for messages published on the ``custom_command``
-    topic. It recieves the RobotSession object and the message that contains
+    topic. It receives the RobotSession object and the message that contains
     the ``cmd`` and ``ts`` fields.
 
     Args:
@@ -116,11 +116,8 @@ def my_custom_command_handler(robot_session, message):
             on InOrbit Custom Defined action and ``ts``.
     """
 
-    print(
-        "Robot '{}' received command '{}'".format(
-            robot_session.robot_id, message["cmd"]
-        )
-    )
+    print("Received command! What should I do now?")
+    print(robot_id, command_name, args, options)
 
 
 if __name__ == "__main__":
@@ -139,9 +136,9 @@ if __name__ == "__main__":
         endpoint=inorbit_api_endpoint,
         api_key=inorbit_api_key,
         use_ssl=False if inorbit_api_use_ssl == "false" else True,
-        custom_command_callback=my_custom_command_handler,
     )
     robot_session_pool = RobotSessionPool(robot_session_factory)
+    robot_session_pool.register_command_callback(log_command)
 
     # Dictionary mapping robot ID and fake robot object
     fake_robot_pool = dict()
