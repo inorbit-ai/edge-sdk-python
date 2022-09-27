@@ -333,7 +333,7 @@ class RobotSession:
 
         args = msg.decode('utf-8').split("|")
         seq = args[0]
-        ts = args[1]
+        ts = args[1]  # noqa: F841
         x = args[2]
         y = args[3]
         theta = args[4]
@@ -365,9 +365,11 @@ class RobotSession:
         for callback in self.command_callbacks:
             def result_function(result_code):
                 return self.report_command_result(args, execution_id, result_code)
+
             # TODO: Implement progress reporting function
             def progress_function(output, error):
                 return 1
+
             options = {
                 'result_function': result_function,
                 'progress_function': progress_function,
@@ -376,31 +378,35 @@ class RobotSession:
             callback(command_name, args, options)
 
     def report_command_result(self, args, execution_id, result_code):
-        """Send to the server the result code of a command executed by a registered user callback."""
+        """Send to server the result code of a command executed by a user callback."""
 
         msg = CustomScriptStatusMessage()
         msg.file_name = args[0]
         msg.execution_id = execution_id
-        msg.execution_status = CUSTOM_COMMAND_STATUS_FINISHED if result_code == '0' else CUSTOM_COMMAND_STATUS_ABORTED
-        msg.return_code  = result_code
+        msg.execution_status = (
+            CUSTOM_COMMAND_STATUS_FINISHED if result_code == '0'
+            else CUSTOM_COMMAND_STATUS_ABORTED
+        )
+        msg.return_code = result_code
         self.publish_protobuf(MQTT_SCRIPT_OUTPUT_TOPIC, msg)
 
     def register_command_callback(self, callback):
-        """Register a callback function to be called whenever a command for the robot is received.
+        """Register a function to be called when a command for the robot is received.
 
         Args:
-            callback (callable): callback method for messages. The callback signature is
-                `callback(command_name, args, options)`:
+            callback (callable): callback method for messages. The callback signature
+                is `callback(command_name, args, options)`:
                 - `command_name` identifies the specific command to be executed.
-                - `args` is an ordered list with each argument as an entry. Each element of the
-                  array can be a string or an object, depending on the definition of the action.
+                - `args` is an ordered list with each argument as an entry. Each
+                  element of the array can be a string or an object, depending on
+                  the definition of the action.
                 - `options`: is a dictionary that includes:
-                  - `result_function` can be called to report command execution result. It has
-                    the following signature: `result_function(return_code)`.
-                  - `progress_function` can be used to report command output and has the following
-                    signature: `progress_function(output, error)`.
-                  - `metadata` is reserved for the future and will contains additional information
-                    about the received command request.
+                  - `result_function` can be called to report command execution result.
+                    It has the following signature: `result_function(return_code)`.
+                  - `progress_function` can be used to report command output and has
+                    the following signature: `progress_function(output, error)`.
+                  - `metadata` is reserved for the future and will contains additional
+                    information about the received command request.
         """
 
         self.logger.info(
@@ -818,7 +824,8 @@ class RobotSessionPool:
         self.command_callbacks = []
 
     def dispatch_command(self, args):
-        """Relays a command received from a robot session to all command callbacks registered by users."""
+        """Relays a command received from a robot session to all command
+        callbacks registered by users."""
         for command_callback in self.command_callbacks:
             command_callback(*args)
 

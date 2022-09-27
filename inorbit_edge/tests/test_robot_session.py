@@ -7,9 +7,6 @@ from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL
 from inorbit_edge.tests.test_fetch_robot_config import ROBOT_CONFIG_MOCK_RESPONSE
 from inorbit_edge import get_module_version
 import requests_mock
-import pytest
-import logging
-from paho.mqtt.client import MQTTMessage
 
 
 def test_robot_session_init(monkeypatch):
@@ -107,7 +104,10 @@ def test_robot_session_custom_command_callback(monkeypatch):
         robot_session._on_connect(..., ..., ..., 0)
 
         assert my_command_handler in robot_session.command_callbacks
-        mqtt_client_mock.subscribe.assert_called_with(topic="r/id_123/custom_command/script/command")
+        mqtt_client_mock.subscribe.assert_called_with(
+            topic="r/id_123/custom_command/script/command"
+        )
+
 
 def test_method_throttling():
     robot_session = RobotSession(

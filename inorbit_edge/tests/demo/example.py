@@ -122,6 +122,7 @@ def log_command(robot_id, command_name, args, options):
     print("Received command! What should I do now?")
     print(robot_id, command_name, args, options)
 
+
 def custom_command_callback(robot_id, command_name, args, options):
     """Callback for processing custom command calls.
 
