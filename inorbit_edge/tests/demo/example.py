@@ -103,24 +103,45 @@ class FakeRobot:
         self.cpu = random() * 100
 
 
-def my_custom_command_handler(robot_session, message):
-    """Callback for custom actions.
-
-    Callback method executed for messages published on the ``custom_command``
-    topic. It recieves the RobotSession object and the message that contains
-    the ``cmd`` and ``ts`` fields.
+def log_command(robot_id, command_name, args, options):
+    """Callback for printing command execution.
 
     Args:
-        robot_session (RobotSession): RobotSession object
-        message (dict): Message with the ``cmd`` string as defined
-            on InOrbit Custom Defined action and ``ts``.
+        robot_id (str): InOrbit robot ID
+        command_name (str): InOrbit command e.g. 'customCommand'
+        args (list): Command arguments
+        options (dict): object that includes
+            - `result_function` can be called to report command execution result. It
+            has the following signature: `result_function(return_code)`.
+            - `progress_function` can be used to report command output and has the
+            following signature: `progress_function(output, error)`.
+            - `metadata` is reserved for the future and will contains additional
+            information about the received command request.
     """
 
-    print(
-        "Robot '{}' received command '{}'".format(
-            robot_session.robot_id, message["cmd"]
-        )
-    )
+    print("Received command! What should I do now?")
+    print(robot_id, command_name, args, options)
+
+
+def custom_command_callback(robot_id, command_name, args, options):
+    """Callback for processing custom command calls.
+
+    Args:
+        robot_id (str): InOrbit robot ID
+        command_name (str): InOrbit command e.g. 'customCommand'
+        args (list): Command arguments
+        options (dict): object that includes
+            - `result_function` can be called to report command execution result. It
+            has the following signature: `result_function(return_code)`.
+            - `progress_function` can be used to report command output and has the
+            following signature: `progress_function(output, error)`.
+            - `metadata` is reserved for the future and will contains additional
+            information about the received command request.
+    """
+    if command_name == "customCommand":
+        print(f"Received '{command_name}' for robot '{robot_id}'!. {args}")
+        # Return '0' for success
+        options["result_function"]("0")
 
 
 if __name__ == "__main__":
@@ -139,9 +160,10 @@ if __name__ == "__main__":
         endpoint=inorbit_api_endpoint,
         api_key=inorbit_api_key,
         use_ssl=False if inorbit_api_use_ssl == "false" else True,
-        custom_command_callback=my_custom_command_handler,
     )
     robot_session_pool = RobotSessionPool(robot_session_factory)
+    robot_session_pool.register_command_callback(log_command)
+    robot_session_pool.register_command_callback(custom_command_callback)
 
     # Dictionary mapping robot ID and fake robot object
     fake_robot_pool = dict()
