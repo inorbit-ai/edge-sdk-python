@@ -138,10 +138,10 @@ def custom_command_callback(robot_id, command_name, args, options):
             - `metadata` is reserved for the future and will contains additional
             information about the received command request.
     """
-    if (command_name == 'customCommand'):
+    if command_name == "customCommand":
         print(f"Received '{command_name}' for robot '{robot_id}'!. {args}")
         # Return '0' for success
-        options['result_function']('0')
+        options["result_function"]("0")
 
 
 if __name__ == "__main__":
