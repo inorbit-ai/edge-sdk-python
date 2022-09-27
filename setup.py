@@ -85,6 +85,6 @@ setup(
     url="https://github.com/inorbit-ai/edge-sdk-python",
     # Do not edit this string manually, always use bumpversion
     # Details in CONTRIBUTING.rst
-    version="0.7.0",
+    version="1.5.0",
     zip_safe=False,
 )
