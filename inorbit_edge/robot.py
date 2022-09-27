@@ -21,7 +21,7 @@ from inorbit_edge.inorbit_pb2 import (
     PathDataMessage,
     Echo,
     CustomScriptCommandMessage,
-    CustomScriptStatusMessage
+    CustomScriptStatusMessage,
 )
 from time import time
 from time import sleep
@@ -41,20 +41,20 @@ MQTT_SUBTOPIC_CUSTOM_DATA = "custom"
 MQTT_SUBTOPIC_CUSTOM_COMMAND = "custom_command"
 MQTT_SUBTOPIC_STATE = "state"
 
-MQTT_TOPIC_ECHO = 'echo'
-MQTT_NAV_GOAL_GOAL = 'ros/loc/nav_goal'
-MQTT_NAV_GOAL_MULTI = 'ros/loc/goal_path'
-MQTT_INITIAL_POSE = 'ros/loc/set_pose'
-MQTT_CUSTOM_COMMAND = 'custom_command/script/command'
-MQTT_SCRIPT_OUTPUT_TOPIC = 'custom_command/script/status'
+MQTT_TOPIC_ECHO = "echo"
+MQTT_NAV_GOAL_GOAL = "ros/loc/nav_goal"
+MQTT_NAV_GOAL_MULTI = "ros/loc/goal_path"
+MQTT_INITIAL_POSE = "ros/loc/set_pose"
+MQTT_CUSTOM_COMMAND = "custom_command/script/command"
+MQTT_SCRIPT_OUTPUT_TOPIC = "custom_command/script/status"
 
 # InOrbit commands
-COMMAND_INITIAL_POSE = 'initialPose'
-COMMAND_NAV_GOAL = 'navGoal'
-COMMAND_CUSTOM_COMMAND = 'customCommand'
+COMMAND_INITIAL_POSE = "initialPose"
+COMMAND_NAV_GOAL = "navGoal"
+COMMAND_CUSTOM_COMMAND = "customCommand"
 # CustomCommand execution status
-CUSTOM_COMMAND_STATUS_FINISHED = 'finished'
-CUSTOM_COMMAND_STATUS_ABORTED = 'aborted'
+CUSTOM_COMMAND_STATUS_FINISHED = "finished"
+CUSTOM_COMMAND_STATUS_ABORTED = "aborted"
 
 ROBOT_PATH_POINTS_LIMIT = 1000
 
@@ -271,9 +271,11 @@ class RobotSession:
 
         # Subscribe to interesting topics
         self.client.subscribe(
-            topic=self._get_robot_subtopic(subtopic=MQTT_INITIAL_POSE))
+            topic=self._get_robot_subtopic(subtopic=MQTT_INITIAL_POSE)
+        )
         self.client.subscribe(
-            topic=self._get_robot_subtopic(subtopic=MQTT_CUSTOM_COMMAND))
+            topic=self._get_robot_subtopic(subtopic=MQTT_CUSTOM_COMMAND)
+        )
 
     def _on_message(self, client, userdata, msg):
         """MQTT client message callback.
@@ -287,7 +289,7 @@ class RobotSession:
 
         try:
             self._send_echo(msg.topic, msg.payload)
-            subtopic = "/".join(msg.topic.split('/')[2:])
+            subtopic = "/".join(msg.topic.split("/")[2:])
             if subtopic in self.message_handlers:
                 self.message_handlers[subtopic](msg.payload)
         except UnicodeDecodeError as ex:
@@ -325,13 +327,13 @@ class RobotSession:
         msg = Echo()
         msg.topic = topic
         msg.time_stamp = int(time() * 1000)
-        msg.string_payload = payload.decode('utf-8', errors='ignore')
+        msg.string_payload = payload.decode("utf-8", errors="ignore")
         self.publish_protobuf(subtopic=MQTT_TOPIC_ECHO, message=msg)
 
     def _handle_initial_pose(self, msg):
         """Handle incoming MQTT_INITIAL_POSE message."""
 
-        args = msg.decode('utf-8').split("|")
+        args = msg.decode("utf-8").split("|")
         seq = args[0]
         ts = args[1]  # noqa: F841
         x = args[2]
@@ -341,8 +343,8 @@ class RobotSession:
         # Hand over to callback for processing, using the proper format
         self._dispatch_command(
             command_name=COMMAND_INITIAL_POSE,
-            args=[{'x': x, 'y': y, 'theta': theta}],
-            execution_id=seq  # NOTE: Using seq as the execution ID
+            args=[{"x": x, "y": y, "theta": theta}],
+            execution_id=seq,  # NOTE: Using seq as the execution ID
         )
 
     def _handle_custom_command(self, msg):
@@ -353,16 +355,14 @@ class RobotSession:
         # Hand over to callback for processing, using the proper format
         self._dispatch_command(
             command_name=COMMAND_CUSTOM_COMMAND,
-            args=[
-                custom_script_msg.file_name,
-                custom_script_msg.arg_options
-            ],
-            execution_id=custom_script_msg.execution_id
+            args=[custom_script_msg.file_name, custom_script_msg.arg_options],
+            execution_id=custom_script_msg.execution_id,
         )
 
     def _dispatch_command(self, command_name, args, execution_id):
         """Executes registered command callbacks for a specific incoming command."""
         for callback in self.command_callbacks:
+
             def result_function(result_code):
                 return self.report_command_result(args, execution_id, result_code)
 
@@ -371,9 +371,9 @@ class RobotSession:
                 return 1
 
             options = {
-                'result_function': result_function,
-                'progress_function': progress_function,
-                'metadata': {}
+                "result_function": result_function,
+                "progress_function": progress_function,
+                "metadata": {},
             }
             callback(command_name, args, options)
 
@@ -384,7 +384,8 @@ class RobotSession:
         msg.file_name = args[0]
         msg.execution_id = execution_id
         msg.execution_status = (
-            CUSTOM_COMMAND_STATUS_FINISHED if result_code == '0'
+            CUSTOM_COMMAND_STATUS_FINISHED
+            if result_code == "0"
             else CUSTOM_COMMAND_STATUS_ABORTED
         )
         msg.return_code = result_code
@@ -844,8 +845,10 @@ class RobotSessionPool:
                 )
                 self.robot_sessions[robot_id].connect()
                 if new_robot_session:
+
                     def callback(*args):
                         self.dispatch_command([robot_id, *args])
+
                     self.robot_sessions[robot_id].register_command_callback(callback)
 
             return self.robot_sessions[robot_id]
