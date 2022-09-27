@@ -77,9 +77,7 @@ class RobotSession:
         self.robot_name = robot_name
         self.api_key = api_key
         # The agent version is generated based on the InOrbit Edge SDK version
-        # HACK(@leandropineda.lp): backend ignores commands for agent version <1.2.
-        # Bump package version and revert hack below
-        self.agent_version = "{}.edgesdk_py".format("1.5.0")
+        self.agent_version = "{}.edgesdk_py".format(inorbit_edge_version)
         self.endpoint = kwargs.get("endpoint", INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL)
 
         # Use SSL by default
