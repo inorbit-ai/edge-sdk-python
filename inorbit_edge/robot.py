@@ -462,7 +462,7 @@ class RobotSession:
         self.logger.info("Publishing status {}. ret = {}.".format(robot_status, ret))
 
         # TODO: handle errors while waiting for publish. Consider that
-        # this method would tipically run on a separate thread.
+        # this method would typically run on a separate thread.
         ret.wait_for_publish()
         published = ret.is_published()
 

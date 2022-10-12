@@ -17,11 +17,52 @@ Docs: https://docs.pytest.org/en/latest/example/simple.html
 """
 
 import pytest
+import paho.mqtt.client as mqtt
+from paho.mqtt.client import MQTTMessageInfo
+import requests_mock
 
 from inorbit_edge.robot import RobotSession
+from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL
 
 
 @pytest.fixture
-def mock_connection(monkeypatch):
-    monkeypatch.setattr(RobotSession, "connect", lambda s: 0)
-    monkeypatch.setattr(RobotSession, "disconnect", lambda s: 0)
+def mock_mqtt_client(mocker):
+    fake_mid = 52
+    mock = mocker.patch.object(mqtt, "Client")
+    mock_mqtt_client = mock.return_value
+
+    # Patch MQTTMessageInfo method wait_for_publish
+    mock_wait_for_publish = mocker.patch.object(MQTTMessageInfo, "wait_for_publish")
+    mock_wait_for_publish.return_value = True
+
+    mqtt_message_info = MQTTMessageInfo(fake_mid)
+    mock_mqtt_client.subscribe = mocker.MagicMock(return_value=mqtt_message_info)
+    mock_mqtt_client.unsubscribe = mocker.MagicMock(return_value=mqtt_message_info)
+    mock_mqtt_client.publish = mocker.MagicMock(return_value=mqtt_message_info)
+    mock_mqtt_client.connect.return_value = 0
+    mock_mqtt_client.reconnect.return_value = 0
+    mock_mqtt_client.disconnect.return_value = 0
+    return mock_mqtt_client
+
+@pytest.fixture
+def mock_inorbit_api():
+	# Dummy cloud_sdk_robot_config sample response for testing
+	ROBOT_CONFIG_MOCK_RESPONSE = {
+		"hostname": "localdev.com",
+		"port": 1883,
+		"protocol": "mqtt://",
+		"websocket_port": 9001,
+		"websocket_protocol": "ws://",
+		"username": "test",
+		"password": "mytest123",
+		"robotApiKey": "robot_apikey_123",
+		"awsUploadCredentials": {
+			"secretKey": "secret_key",
+			"accessKey": "access_key",
+			"company": "fakecompany",
+			"bucket": "inorbit-data-other",
+		},
+	}
+	with requests_mock.Mocker() as mock:
+		mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, json=ROBOT_CONFIG_MOCK_RESPONSE)
+		yield

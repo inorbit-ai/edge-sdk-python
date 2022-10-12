@@ -4,7 +4,7 @@
 from inorbit_edge.robot import RobotSessionFactory
 
 
-def test_robot_factory_build(mock_connection):
+def test_robot_factory_build(mock_mqtt_client):
     robot_session_factory = RobotSessionFactory(
         api_key="apikey_123", endpoint="http://myendpoint/"
     )
@@ -17,7 +17,6 @@ def test_robot_factory_build(mock_connection):
             robot_session.api_key == "apikey_123",
             robot_session.agent_version.endswith("edgesdk_py"),
             robot_session.endpoint == "http://myendpoint/",
-            robot_session.client._transport == "tcp",
             robot_session.http_proxy is None,
         ]
     )

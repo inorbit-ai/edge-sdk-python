@@ -4,7 +4,7 @@
 from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool
 
 
-def test_robot_session_pool_get_session(mock_connection):
+def test_robot_session_pool_get_session(mock_mqtt_client, mock_inorbit_api):
     factory = RobotSessionFactory(api_key="apikey_123")
     pool = RobotSessionPool(factory)
 
@@ -22,24 +22,29 @@ def test_robot_session_pool_get_session(mock_connection):
     )
 
 
-def test_robot_session_pool_free(mock_connection):
+def test_robot_session_pool_free(mock_mqtt_client, mock_inorbit_api):
     factory = RobotSessionFactory(api_key="apikey_123")
     pool = RobotSessionPool(factory)
 
-    pool.get_session("id_1", "name_1")
-    pool.get_session("id_2", "name_2")
-
+    sess1 = pool.get_session("id_1", "name_1")
+    sess1._is_disconnected = lambda: True
+    
+    sess2 = pool.get_session("id_2", "name_2")
+    sess2._is_disconnected = lambda: True
+    
     pool.free_robot_session("id_1")
 
     assert all([not pool.has_robot("id_1"), pool.has_robot("id_2")])
 
 
-def test_robot_session_pool_tear_down(mock_connection):
+def test_robot_session_pool_tear_down(mock_mqtt_client, mock_inorbit_api):
     factory = RobotSessionFactory(api_key="apikey_123")
     pool = RobotSessionPool(factory)
 
-    pool.get_session("id_1", "name_1")
-    pool.get_session("id_2", "name_2")
+    sess1 = pool.get_session("id_1", "name_1")
+    sess1._is_disconnected = lambda: True
+    sess2 = pool.get_session("id_2", "name_2")
+    sess2._is_disconnected = lambda: True
 
     pool.tear_down()
 
