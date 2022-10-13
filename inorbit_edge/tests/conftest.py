@@ -21,7 +21,6 @@ import paho.mqtt.client as mqtt
 from paho.mqtt.client import MQTTMessageInfo
 import requests_mock
 
-from inorbit_edge.robot import RobotSession
 from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL
 
 
