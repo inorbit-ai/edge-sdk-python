@@ -6,6 +6,7 @@ from paho.mqtt.client import MQTTMessage
 from inorbit_edge.inorbit_pb2 import Echo
 import time
 
+
 def test_builtin_callbacks(mock_mqtt_client, mock_inorbit_api):
     robot_session = RobotSession(
         robot_id="id_123",
@@ -16,9 +17,7 @@ def test_builtin_callbacks(mock_mqtt_client, mock_inorbit_api):
     robot_session.connect()
     robot_session._on_connect(..., ..., ..., 0)
 
-    robot_session.client.subscribe.assert_any_call(
-        topic="r/id_123/ros/loc/set_pose"
-    )
+    robot_session.client.subscribe.assert_any_call(topic="r/id_123/ros/loc/set_pose")
     robot_session.client.subscribe.assert_any_call(
         topic="r/id_123/custom_command/script/command"
     )
@@ -67,7 +66,7 @@ def test_robot_session_callback_on_message(mocker, mock_mqtt_client, mock_inorbi
 
     msg = MQTTMessage(topic=b"r/id_123/ros/loc/set_pose")
     msg.payload = "1|123456789|1.23|4.56|-0.1".encode()
-    
+
     with mocker.patch.object(time, "time", return_value=123456.789):
         robot_session._on_message(..., ..., msg)
 
@@ -80,5 +79,5 @@ def test_robot_session_callback_on_message(mocker, mock_mqtt_client, mock_inorbi
         topic="r/id_123/echo",
         payload=bytearray(echo_msg.SerializeToString()),
         qos=0,
-        retain=False
+        retain=False,
     )

@@ -54,7 +54,9 @@ def test_robot_session_connect(mock_mqtt_client, mock_inorbit_api):
     # check publish state was called with the correct API key
     robot_session.client.publish.assert_called_with(
         topic="r/id_123/state",
-        payload="1|robot_apikey_123|{}.edgesdk_py|name_123".format(get_module_version()),
+        payload="1|robot_apikey_123|{}.edgesdk_py|name_123".format(
+            get_module_version()
+        ),
         qos=1,
         retain=True,
     )
