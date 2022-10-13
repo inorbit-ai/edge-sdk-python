@@ -44,25 +44,26 @@ def mock_mqtt_client(mocker):
     mock_mqtt_client.disconnect.return_value = 0
     return mock_mqtt_client
 
+
 @pytest.fixture
 def mock_inorbit_api():
-	# Dummy cloud_sdk_robot_config sample response for testing
-	ROBOT_CONFIG_MOCK_RESPONSE = {
-		"hostname": "localdev.com",
-		"port": 1883,
-		"protocol": "mqtt://",
-		"websocket_port": 9001,
-		"websocket_protocol": "ws://",
-		"username": "test",
-		"password": "mytest123",
-		"robotApiKey": "robot_apikey_123",
-		"awsUploadCredentials": {
-			"secretKey": "secret_key",
-			"accessKey": "access_key",
-			"company": "fakecompany",
-			"bucket": "inorbit-data-other",
-		},
-	}
-	with requests_mock.Mocker() as mock:
-		mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, json=ROBOT_CONFIG_MOCK_RESPONSE)
-		yield
+    # Dummy cloud_sdk_robot_config sample response for testing
+    ROBOT_CONFIG_MOCK_RESPONSE = {
+        "hostname": "localdev.com",
+        "port": 1883,
+        "protocol": "mqtt://",
+        "websocket_port": 9001,
+        "websocket_protocol": "ws://",
+        "username": "test",
+        "password": "mytest123",
+        "robotApiKey": "robot_apikey_123",
+        "awsUploadCredentials": {
+            "secretKey": "secret_key",
+            "accessKey": "access_key",
+            "company": "fakecompany",
+            "bucket": "inorbit-data-other",
+        },
+    }
+    with requests_mock.Mocker() as mock:
+        mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, json=ROBOT_CONFIG_MOCK_RESPONSE)
+        yield

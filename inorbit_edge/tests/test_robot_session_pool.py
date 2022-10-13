@@ -28,10 +28,10 @@ def test_robot_session_pool_free(mock_mqtt_client, mock_inorbit_api):
 
     sess1 = pool.get_session("id_1", "name_1")
     sess1._is_disconnected = lambda: True
-    
+
     sess2 = pool.get_session("id_2", "name_2")
     sess2._is_disconnected = lambda: True
-    
+
     pool.free_robot_session("id_1")
 
     assert all([not pool.has_robot("id_1"), pool.has_robot("id_2")])
