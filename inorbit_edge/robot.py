@@ -23,8 +23,7 @@ from inorbit_edge.inorbit_pb2 import (
     CustomScriptCommandMessage,
     CustomScriptStatusMessage,
 )
-from time import time
-from time import sleep
+import time
 import requests
 import math
 from inorbit_edge.utils import encode_floating_point_list
@@ -209,7 +208,7 @@ class RobotSession:
             )
             raise
 
-        current_ts = time()
+        current_ts = time.time()
         time_diff = current_ts - throttling_cfg["last_ts"]
         if time_diff < throttling_cfg["min_time_between_calls"]:
             self.logger.debug(
@@ -326,7 +325,7 @@ class RobotSession:
         """
         msg = Echo()
         msg.topic = topic
-        msg.time_stamp = int(time() * 1000)
+        msg.time_stamp = int(time.time() * 1000)
         msg.string_payload = payload.decode("utf-8", errors="ignore")
         self.publish_protobuf(subtopic=MQTT_TOPIC_ECHO, message=msg)
 
@@ -481,7 +480,7 @@ class RobotSession:
             self.logger.info(
                 "Waiting for MQTT connection state '{}' ...".format(state_func.__name__)
             )
-            sleep(1)
+            time.sleep(1)
             if state_func():
                 return
         raise RuntimeError(
@@ -607,7 +606,7 @@ class RobotSession:
             return None
 
         msg = LocationAndPoseMessage()
-        msg.ts = ts if ts else int(time() * 1000)
+        msg.ts = ts if ts else int(time.time() * 1000)
         msg.pos_x = x
         msg.pos_y = y
         msg.yaw = yaw
@@ -672,8 +671,8 @@ class RobotSession:
             return None
 
         msg = OdometryDataMessage()
-        msg.ts_start = ts_start if ts_start else int(time() * 1000)
-        msg.ts = ts if ts else int(time() * 1000)
+        msg.ts_start = ts_start if ts_start else int(time.time() * 1000)
+        msg.ts = ts if ts else int(time.time() * 1000)
         msg.linear_distance = linear_distance
         msg.angular_distance = angular_distance
         msg.linear_speed = linear_speed
@@ -715,7 +714,7 @@ class RobotSession:
         # Populate LocationAndPoseMessage with current pose
         # and laser data, encoded as floating point list.
         msg = LocationAndPoseMessage()
-        msg.ts = ts if ts else int(time() * 1000)
+        msg.ts = ts if ts else int(time.time() * 1000)
         msg.pos_x = x
         msg.pos_y = y
         msg.yaw = yaw
@@ -731,7 +730,7 @@ class RobotSession:
                 "{ts:d}|{x:.4g}|{y:.4g}|{yaw:.6g}|{angle_min:.6g}|{angle_max:.6g}|"
                 "{range_min:.4g}|{range_max:.4g}|{n_points:d}"
             ).format(
-                ts=int(time() * 1000),
+                ts=int(time.time() * 1000),
                 x=0,
                 y=0,
                 yaw=0,
@@ -780,13 +779,13 @@ class RobotSession:
         # Generate a ``RobotPath`` protobuf message and
         # add the list of ``PathPoint`` created above
         pb_robot_path = RobotPath()
-        pb_robot_path.ts = ts if ts else int(time() * 1000)
+        pb_robot_path.ts = ts if ts else int(time.time() * 1000)
         pb_robot_path.path_id = path_id
         pb_robot_path.points.extend(pb_path_points)
 
         # Publish ``PathDataMessage``
         msg = PathDataMessage()
-        msg.ts = ts if ts else int(time() * 1000)
+        msg.ts = ts if ts else int(time.time() * 1000)
         msg.paths.append(pb_robot_path)
 
         self.publish_protobuf(MQTT_SUBTOPIC_PATH, msg)
