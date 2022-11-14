@@ -19,9 +19,11 @@ from inorbit_edge.inorbit_pb2 import (
     PathPoint,
     RobotPath,
     PathDataMessage,
+    Echo,
+    CustomScriptCommandMessage,
+    CustomScriptStatusMessage,
 )
-from time import time
-from time import sleep
+import time
 import requests
 import math
 from inorbit_edge.utils import encode_floating_point_list
@@ -38,6 +40,21 @@ MQTT_SUBTOPIC_CUSTOM_DATA = "custom"
 MQTT_SUBTOPIC_CUSTOM_COMMAND = "custom_command"
 MQTT_SUBTOPIC_STATE = "state"
 
+MQTT_TOPIC_ECHO = "echo"
+MQTT_NAV_GOAL_GOAL = "ros/loc/nav_goal"
+MQTT_NAV_GOAL_MULTI = "ros/loc/goal_path"
+MQTT_INITIAL_POSE = "ros/loc/set_pose"
+MQTT_CUSTOM_COMMAND = "custom_command/script/command"
+MQTT_SCRIPT_OUTPUT_TOPIC = "custom_command/script/status"
+
+# InOrbit commands
+COMMAND_INITIAL_POSE = "initialPose"
+COMMAND_NAV_GOAL = "navGoal"
+COMMAND_CUSTOM_COMMAND = "customCommand"
+# CustomCommand execution status
+CUSTOM_COMMAND_STATUS_FINISHED = "finished"
+CUSTOM_COMMAND_STATUS_ABORTED = "aborted"
+
 ROBOT_PATH_POINTS_LIMIT = 1000
 
 
@@ -49,8 +66,6 @@ class RobotSession:
             robot_id (str): ID of the robot.
             robot_name (str): Robot name.
             api_key (str): API key for authenticating against InOrbit Cloud services.
-            custom_command_callback (callable): callback method for messages published
-                on ``custom_command`` topic.
             endpoint (str): InOrbit URL. Defaults: INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL.
             use_ssl (bool): Configures MQTT client to use SSL. Defaults: True.
         """
@@ -109,12 +124,19 @@ class RobotSession:
                 proxy_type=socks.HTTP, proxy_addr=proxy_hostname, proxy_port=proxy_port
             )
 
-        self.custom_command_callback = kwargs.get("custom_command_callback")
-
         # Register MQTT client callbacks
         self.client.on_connect = self._on_connect
         self.client.on_message = self._on_message
         self.client.on_disconnect = self._on_disconnect
+
+        # Functions to handle incoming MQTT messages.
+        # They are mapped by MQTT subtopic e.g.
+        # 'ros/loc/set_pose': set_pose_message_handler
+        self.message_handlers = {}
+
+        self.command_callbacks = []
+        self.message_handlers[MQTT_INITIAL_POSE] = self._handle_initial_pose
+        self.message_handlers[MQTT_CUSTOM_COMMAND] = self._handle_custom_command
 
         # Internal variables for configuring throttling
         # The throttling is done by method instead of by topic because the same topic
@@ -186,7 +208,7 @@ class RobotSession:
             )
             raise
 
-        current_ts = time()
+        current_ts = time.time()
         time_diff = current_ts - throttling_cfg["last_ts"]
         if time_diff < throttling_cfg["min_time_between_calls"]:
             self.logger.debug(
@@ -246,12 +268,16 @@ class RobotSession:
             target=self._send_robot_status, kwargs={"robot_status": "1"}
         ).start()
 
-        # Configure custom command callback if provided
-        if self.custom_command_callback:
-            self.register_custom_command_callback(self.custom_command_callback)
+        # Subscribe to interesting topics
+        self.client.subscribe(
+            topic=self._get_robot_subtopic(subtopic=MQTT_INITIAL_POSE)
+        )
+        self.client.subscribe(
+            topic=self._get_robot_subtopic(subtopic=MQTT_CUSTOM_COMMAND)
+        )
 
     def _on_message(self, client, userdata, msg):
-        """MQTT client connect callback.
+        """MQTT client message callback.
 
         Args:
             client:     the client instance for this callback
@@ -260,32 +286,19 @@ class RobotSession:
                         members topic, payload, qos, retain.
         """
 
-        # Parse message and execute custom command callback
-        if self.custom_command_callback:
-            # Check if the message is coming from the custom command topic
-            # TODO(lean): generalize to support subscribing multiple topics.
-            #   Now it only supports the custom command topic.
-            if msg.topic != self._get_custom_command_topic():
-                self.logger.warn(
-                    "Ignoring message from unsupported topic: {}".format(msg.topic)
-                )
-                return
-
-            try:
-                parsed_msg = json.loads(msg.payload.decode("utf-8"))
-                self.custom_command_callback(self, parsed_msg)
-            except json.decoder.JSONDecodeError:
-                self.logger.error(
-                    "Failed to parse JSON message, ignoring. {}".format(msg.payload)
-                )
-            except UnicodeDecodeError:
-                self.logger.error(
-                    "Failed to decode message, ignoring. {}".format(msg.payload)
-                )
-            except Exception:
-                # Re-raise any other error
-                self.logger.error("Unexpected error while processing message.")
-                raise
+        try:
+            self._send_echo(msg.topic, msg.payload)
+            subtopic = "/".join(msg.topic.split("/")[2:])
+            if subtopic in self.message_handlers:
+                self.message_handlers[subtopic](msg.payload)
+        except UnicodeDecodeError as ex:
+            self.logger.error(
+                f"Failed to decode message, ignoring. Payload: '{msg.payload}'. {ex}"
+            )
+        except Exception:
+            # Re-raise any other error
+            self.logger.error("Unexpected error while processing message.")
+            raise
 
     def _on_disconnect(self, client, userdata, rc):
         """MQTT client disconnect callback.
@@ -303,26 +316,115 @@ class RobotSession:
         else:
             self.logger.info("Disconnected from MQTT broker")
 
-    def _get_custom_command_topic(self):
-        return self._get_robot_subtopic(subtopic=MQTT_SUBTOPIC_CUSTOM_COMMAND)
-
-    def register_custom_command_callback(self, func):
-        """Register custom command callback method and subscribes to
-        custom command topic.
+    def _send_echo(self, topic, payload):
+        """Sends an echo response to the server.
 
         Args:
-            func (callable): callback method for messages published
-                on ``custom_command`` topic.
+            topic: topic in which the message has been published
+            payload: message payload
+        """
+        msg = Echo()
+        msg.topic = topic
+        msg.time_stamp = int(time.time() * 1000)
+        msg.string_payload = payload.decode("utf-8", errors="ignore")
+        self.publish_protobuf(subtopic=MQTT_TOPIC_ECHO, message=msg)
+
+    def _handle_initial_pose(self, msg):
+        """Handle incoming MQTT_INITIAL_POSE message."""
+
+        args = msg.decode("utf-8").split("|")
+        seq = args[0]
+        ts = args[1]  # noqa: F841
+        x = args[2]
+        y = args[3]
+        theta = args[4]
+
+        # Hand over to callback for processing, using the proper format
+        self._dispatch_command(
+            command_name=COMMAND_INITIAL_POSE,
+            args=[{"x": x, "y": y, "theta": theta}],
+            execution_id=seq,  # NOTE: Using seq as the execution ID
+        )
+
+    def _handle_custom_command(self, msg):
+        """Handle incoming MQTT_CUSTOM_COMMAND message."""
+
+        custom_script_msg = CustomScriptCommandMessage()
+        custom_script_msg.ParseFromString(msg)
+        # Hand over to callback for processing, using the proper format
+        self._dispatch_command(
+            command_name=COMMAND_CUSTOM_COMMAND,
+            args=[custom_script_msg.file_name, custom_script_msg.arg_options],
+            execution_id=custom_script_msg.execution_id,
+        )
+
+    def _dispatch_command(self, command_name, args, execution_id):
+        """Executes registered command callbacks for a specific incoming command."""
+        for callback in self.command_callbacks:
+
+            def result_function(result_code):
+                return self.report_command_result(args, execution_id, result_code)
+
+            # TODO: Implement progress reporting function
+            def progress_function(output, error):
+                return 1
+
+            options = {
+                "result_function": result_function,
+                "progress_function": progress_function,
+                "metadata": {},
+            }
+            callback(command_name, args, options)
+
+    def report_command_result(self, args, execution_id, result_code):
+        """Send to server the result code of a command executed by a user callback."""
+
+        msg = CustomScriptStatusMessage()
+        msg.file_name = args[0]
+        msg.execution_id = execution_id
+        msg.execution_status = (
+            CUSTOM_COMMAND_STATUS_FINISHED
+            if result_code == "0"
+            else CUSTOM_COMMAND_STATUS_ABORTED
+        )
+        msg.return_code = result_code
+        self.publish_protobuf(MQTT_SCRIPT_OUTPUT_TOPIC, msg)
+
+    def register_command_callback(self, callback):
+        """Register a function to be called when a command for the robot is received.
+
+        Args:
+            callback (callable): callback method for messages. The callback signature
+                is `callback(command_name, args, options)`:
+                - `command_name` identifies the specific command to be executed.
+                - `args` is an ordered list with each argument as an entry. Each
+                  element of the array can be a string or an object, depending on
+                  the definition of the action.
+                - `options`: is a dictionary that includes:
+                  - `result_function` can be called to report command execution result.
+                    It has the following signature: `result_function(return_code)`.
+                  - `progress_function` can be used to report command output and has
+                    the following signature: `progress_function(output, error)`.
+                  - `metadata` is reserved for the future and will contains additional
+                    information about the received command request.
         """
 
         self.logger.info(
             "Registering callback '{}' for robot '{}'".format(
-                func.__name__, self.robot_id
+                callback.__name__, self.robot_id
             )
         )
-        topic = self._get_custom_command_topic()
-        self.logger.debug("Subscribing to topic '{}'".format(topic))
-        self.client.subscribe(topic=topic)
+
+        # Don't do anything if callback is not a valid function
+        if not callable(callback):
+            return
+
+        self.command_callbacks.append(callback)
+
+    def unregister_command_callback(self, callback):
+        """Unregisters the specified callback"""
+        # TODO: Implement
+        pass
 
     def _send_robot_status(self, robot_status):
         """Sends robot online/offline status message.
@@ -359,7 +461,7 @@ class RobotSession:
         self.logger.info("Publishing status {}. ret = {}.".format(robot_status, ret))
 
         # TODO: handle errors while waiting for publish. Consider that
-        # this method would tipically run on a separate thread.
+        # this method would typically run on a separate thread.
         ret.wait_for_publish()
         published = ret.is_published()
 
@@ -378,7 +480,7 @@ class RobotSession:
             self.logger.info(
                 "Waiting for MQTT connection state '{}' ...".format(state_func.__name__)
             )
-            sleep(1)
+            time.sleep(1)
             if state_func():
                 return
         raise RuntimeError(
@@ -437,10 +539,7 @@ class RobotSession:
         self.logger.info("Ending robot session")
         self._send_robot_status(robot_status="0")
 
-        if self.custom_command_callback:
-            topic = self._get_custom_command_topic()
-            self.logger.info("Unsubscribing from topic '{}'".format(topic))
-            self.client.unsubscribe(topic=topic)
+        # TODO: Unsubscribe from topics
 
         self.client.disconnect()
 
@@ -507,7 +606,7 @@ class RobotSession:
             return None
 
         msg = LocationAndPoseMessage()
-        msg.ts = ts if ts else int(time() * 1000)
+        msg.ts = ts if ts else int(time.time() * 1000)
         msg.pos_x = x
         msg.pos_y = y
         msg.yaw = yaw
@@ -572,8 +671,8 @@ class RobotSession:
             return None
 
         msg = OdometryDataMessage()
-        msg.ts_start = ts_start if ts_start else int(time() * 1000)
-        msg.ts = ts if ts else int(time() * 1000)
+        msg.ts_start = ts_start if ts_start else int(time.time() * 1000)
+        msg.ts = ts if ts else int(time.time() * 1000)
         msg.linear_distance = linear_distance
         msg.angular_distance = angular_distance
         msg.linear_speed = linear_speed
@@ -615,7 +714,7 @@ class RobotSession:
         # Populate LocationAndPoseMessage with current pose
         # and laser data, encoded as floating point list.
         msg = LocationAndPoseMessage()
-        msg.ts = ts if ts else int(time() * 1000)
+        msg.ts = ts if ts else int(time.time() * 1000)
         msg.pos_x = x
         msg.pos_y = y
         msg.yaw = yaw
@@ -631,7 +730,7 @@ class RobotSession:
                 "{ts:d}|{x:.4g}|{y:.4g}|{yaw:.6g}|{angle_min:.6g}|{angle_max:.6g}|"
                 "{range_min:.4g}|{range_max:.4g}|{n_points:d}"
             ).format(
-                ts=int(time() * 1000),
+                ts=int(time.time() * 1000),
                 x=0,
                 y=0,
                 yaw=0,
@@ -680,13 +779,13 @@ class RobotSession:
         # Generate a ``RobotPath`` protobuf message and
         # add the list of ``PathPoint`` created above
         pb_robot_path = RobotPath()
-        pb_robot_path.ts = ts if ts else int(time() * 1000)
+        pb_robot_path.ts = ts if ts else int(time.time() * 1000)
         pb_robot_path.path_id = path_id
         pb_robot_path.points.extend(pb_path_points)
 
         # Publish ``PathDataMessage``
         msg = PathDataMessage()
-        msg.ts = ts if ts else int(time() * 1000)
+        msg.ts = ts if ts else int(time.time() * 1000)
         msg.paths.append(pb_robot_path)
 
         self.publish_protobuf(MQTT_SUBTOPIC_PATH, msg)
@@ -703,7 +802,7 @@ class RobotSessionFactory:
 
     def build(self, robot_id, robot_name):
         """Builds a RobotSession object using the provided id and name.
-        It also passes the  robot_session_kw_args set when creating the factory to the
+        It also passes the robot_session_kw_args set when creating the factory to the
         RobotSession constructor.
         """
         return RobotSession(robot_id, robot_name, **self.robot_session_kw_args)
@@ -722,18 +821,35 @@ class RobotSessionPool:
         self.robot_session_factory = robot_session_factory
         self.robot_sessions = {}
         self.getting_session_mutex = threading.Lock()
+        self.command_callbacks = []
+
+    def dispatch_command(self, args):
+        """Relays a command received from a robot session to all command
+        callbacks registered by users."""
+        for command_callback in self.command_callbacks:
+            command_callback(*args)
 
     def get_session(self, robot_id, robot_name=""):
         """Returns a connected RobotSession for the specified robot"""
+        # mutex to avoid the case of asking for the same robot twice and
+        # opening 2 connections
         self.getting_session_mutex.acquire()
+        # The `get_session` method might be called multiple times. Only create
+        # connection and register callbacks for new robot sessions.
+        new_robot_session = not self.has_robot(robot_id)
         try:
-            # mutext to avoid the case of asking for the same robot twice and
-            # opening 2 connections
-            if not self.has_robot(robot_id):
+            if new_robot_session:
                 self.robot_sessions[robot_id] = self.robot_session_factory.build(
                     robot_id, robot_name
                 )
                 self.robot_sessions[robot_id].connect()
+                if new_robot_session:
+
+                    def callback(*args):
+                        self.dispatch_command([robot_id, *args])
+
+                    self.robot_sessions[robot_id].register_command_callback(callback)
+
             return self.robot_sessions[robot_id]
         finally:
             self.getting_session_mutex.release()
@@ -755,3 +871,10 @@ class RobotSessionPool:
         sess = self.get_session(robot_id)
         sess.disconnect()
         del self.robot_sessions[robot_id]
+
+    def register_command_callback(self, callback):
+        if not callable(callback):
+            # Don't do anything if callback is not a valid function
+            return
+
+        self.command_callbacks.append(callback)
