@@ -45,11 +45,13 @@ def test_robot_session_register_command_callback(mock_mqtt_client, mock_inorbit_
     robot_session._on_connect(..., ..., ..., 0)
 
     assert my_command_handler in robot_session.command_callbacks
-    robot_session.client.subscribe.assert_has_calls([
-        call(topic="r/id_123/ros/loc/set_pose"),
-        call(topic="r/id_123/custom_command/script/command"),
-        call(topic="r/id_123/ros/loc/nav_goal"),
-    ])
+    robot_session.client.subscribe.assert_has_calls(
+        [
+            call(topic="r/id_123/ros/loc/set_pose"),
+            call(topic="r/id_123/custom_command/script/command"),
+            call(topic="r/id_123/ros/loc/nav_goal"),
+        ]
+    )
     assert robot_session.client.subscribe.call_count == 3
 
 
