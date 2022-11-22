@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 import pytest
 from inorbit_edge.robot import RobotSession
 from paho.mqtt.client import MQTTMessage
@@ -45,9 +45,12 @@ def test_robot_session_register_command_callback(mock_mqtt_client, mock_inorbit_
     robot_session._on_connect(..., ..., ..., 0)
 
     assert my_command_handler in robot_session.command_callbacks
-    robot_session.client.subscribe.assert_called_with(
-        topic="r/id_123/custom_command/script/command"
-    )
+    robot_session.client.subscribe.assert_has_calls([
+        call(topic="r/id_123/ros/loc/set_pose"),
+        call(topic="r/id_123/custom_command/script/command"),
+        call(topic="r/id_123/ros/loc/nav_goal"),
+    ])
+    assert robot_session.client.subscribe.call_count == 3
 
 
 def test_robot_session_echo(mocker, mock_mqtt_client, mock_inorbit_api):
@@ -107,6 +110,16 @@ def test_robot_session_echo(mocker, mock_mqtt_client, mock_inorbit_api):
                 ).SerializeToString(),
             },
             {"command_name": "customCommand", "command_args": ["foo", ["a", "b"]]},
+        ),
+        (
+            {
+                "topic": b"r/id_123/ros/loc/nav_goal",
+                "payload": "1|123456789|1.23|4.56|-0.1".encode(),
+            },
+            {
+                "command_name": "navGoal",
+                "command_args": [{"x": "1.23", "y": "4.56", "theta": "-0.1"}],
+            },
         ),
     ],
 )

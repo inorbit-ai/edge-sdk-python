@@ -137,6 +137,7 @@ class RobotSession:
         self.command_callbacks = []
         self.message_handlers[MQTT_INITIAL_POSE] = self._handle_initial_pose
         self.message_handlers[MQTT_CUSTOM_COMMAND] = self._handle_custom_command
+        self.message_handlers[MQTT_NAV_GOAL_GOAL] = self._handle_nav_goal
 
         # Internal variables for configuring throttling
         # The throttling is done by method instead of by topic because the same topic
@@ -275,6 +276,9 @@ class RobotSession:
         self.client.subscribe(
             topic=self._get_robot_subtopic(subtopic=MQTT_CUSTOM_COMMAND)
         )
+        self.client.subscribe(
+            topic=self._get_robot_subtopic(subtopic=MQTT_NAV_GOAL_GOAL)
+        )
 
     def _on_message(self, client, userdata, msg):
         """MQTT client message callback.
@@ -356,6 +360,22 @@ class RobotSession:
             command_name=COMMAND_CUSTOM_COMMAND,
             args=[custom_script_msg.file_name, custom_script_msg.arg_options],
             execution_id=custom_script_msg.execution_id,
+        )
+
+    def _handle_nav_goal(self, msg):
+        """Handle incoming MQTT_NAV_GOAL_GOAL message."""
+
+        args = msg.decode("utf-8").split("|")
+        seq = args[0]
+        ts = args[1]  # noqa: F841
+        x = args[2]
+        y = args[3]
+        theta = args[4]
+        # Hand over to callback for processing, using the proper format
+        self._dispatch_command(
+            command_name=COMMAND_NAV_GOAL,
+            args=[{"x": x, "y": y, "theta": theta}],
+            execution_id=seq,  # NOTE: Using seq as the execution ID
         )
 
     def _dispatch_command(self, command_name, args, execution_id):
