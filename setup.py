@@ -53,6 +53,7 @@ extra_requirements = {
     "setup": setup_requirements,
     "test": test_requirements,
     "dev": dev_requirements,
+    "video": ["opencv-python==4.7.0.68"],
     "all": [
         *requirements,
         *dev_requirements,
