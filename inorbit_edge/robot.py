@@ -22,13 +22,14 @@ from inorbit_edge.inorbit_pb2 import (
     Echo,
     CustomScriptCommandMessage,
     CustomScriptStatusMessage,
+    CameraMessage
 )
+from inorbit_edge.video import CameraStreamer, Camera
 import time
 import requests
 import math
 from inorbit_edge.utils import encode_floating_point_list
 import certifi
-
 
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
 
@@ -39,6 +40,7 @@ MQTT_SUBTOPIC_ODOMETRY = "ros/odometry/data"
 MQTT_SUBTOPIC_CUSTOM_DATA = "custom"
 MQTT_SUBTOPIC_CUSTOM_COMMAND = "custom_command"
 MQTT_SUBTOPIC_STATE = "state"
+MQTT_SUBTOPIC_CAMERA_V2 = "ros/camera2"
 
 MQTT_TOPIC_ECHO = "echo"
 MQTT_NAV_GOAL_GOAL = "ros/loc/nav_goal"
@@ -46,11 +48,14 @@ MQTT_NAV_GOAL_MULTI = "ros/loc/goal_path"
 MQTT_INITIAL_POSE = "ros/loc/set_pose"
 MQTT_CUSTOM_COMMAND = "custom_command/script/command"
 MQTT_SCRIPT_OUTPUT_TOPIC = "custom_command/script/status"
+MQTT_IN_CMD = "in_cmd"
 
 # InOrbit commands
 COMMAND_INITIAL_POSE = "initialPose"
 COMMAND_NAV_GOAL = "navGoal"
 COMMAND_CUSTOM_COMMAND = "customCommand"
+# InOrbit modules
+INORBIT_MODULE_CAMERAS = "RosImageAgentlet"
 # CustomCommand execution status
 CUSTOM_COMMAND_STATUS_FINISHED = "finished"
 CUSTOM_COMMAND_STATUS_ABORTED = "aborted"
@@ -135,9 +140,11 @@ class RobotSession:
         self.message_handlers = {}
 
         self.command_callbacks = []
+        self.camera_streamers = {}
         self.message_handlers[MQTT_INITIAL_POSE] = self._handle_initial_pose
         self.message_handlers[MQTT_CUSTOM_COMMAND] = self._handle_custom_command
         self.message_handlers[MQTT_NAV_GOAL_GOAL] = self._handle_nav_goal
+        self.message_handlers[MQTT_IN_CMD] = self._handle_in_cmd
 
         # Internal variables for configuring throttling
         # The throttling is done by method instead of by topic because the same topic
@@ -279,6 +286,9 @@ class RobotSession:
         self.client.subscribe(
             topic=self._get_robot_subtopic(subtopic=MQTT_NAV_GOAL_GOAL)
         )
+        self.client.subscribe(
+            topic=self._get_robot_subtopic(subtopic=MQTT_IN_CMD)
+        )
 
     def _on_message(self, client, userdata, msg):
         """MQTT client message callback.
@@ -378,6 +388,46 @@ class RobotSession:
             execution_id=seq,  # NOTE: Using seq as the execution ID
         )
 
+    def _handle_in_cmd(self, msg):
+        """Handles an in_cmd message"""
+        args = msg.decode("utf-8").split("|")
+        if len(args) < 1:
+            return
+        if args[0] == "load_module" and len(args) >= 3:
+            self._handle_load_module(args[1], args[2])
+        if args[0] == "unload_module" and len(args) >= 2:
+            self._handle_unload_module(args[1])
+
+    def _handle_load_module(self, module_name, run_level):
+        """Handles a load_module command"""
+        if module_name == INORBIT_MODULE_CAMERAS:
+            self._start_cameras_streaming()
+
+    def _handle_unload_module(self, module_name):
+        """Handles an unload_module command"""
+        if module_name == INORBIT_MODULE_CAMERAS:
+            self._stop_cameras_streaming()
+
+    def _start_cameras_streaming(self):
+        """Start streaming on all registered cameras"""
+        for s in self.camera_streamers.values():
+            s.start()
+
+    def _stop_cameras_streaming(self):
+        """Start streaming on all registered cameras"""
+        for s in self.camera_streamers.values():
+            s.stop()
+
+    def publish_camera_frame(self, camera_id, image, width, height, ts):
+        """Publishes a camera frame"""
+        msg = CameraMessage()
+        msg.camera_id = camera_id
+        msg.width = width
+        msg.height = height
+        msg.ts = ts
+        msg.image = image
+        self.publish_protobuf(MQTT_SUBTOPIC_CAMERA_V2, msg)
+
     def _dispatch_command(self, command_name, args, execution_id):
         """Executes registered command callbacks for a specific incoming command."""
         for callback in self.command_callbacks:
@@ -445,6 +495,16 @@ class RobotSession:
         """Unregisters the specified callback"""
         # TODO: Implement
         pass
+
+    def register_camera(self, camera_id: str, camera: Camera):
+        """Registers a camera. Video will be automatically streamed from this camera
+           when requested from the platform, for example when a user accesses the
+           navigation view.
+        """
+        def publish(image, width, height, ts):
+            self.publish_camera_frame(camera_id, image, int(width), int(height),
+                                      int(ts))
+        self.camera_streamers[camera_id] = CameraStreamer(camera, publish)
 
     def _send_robot_status(self, robot_status):
         """Sends robot online/offline status message.

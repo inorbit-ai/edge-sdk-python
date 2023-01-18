@@ -11,6 +11,7 @@ import sys
 from math import inf
 
 from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool
+from inorbit_edge.video import OpenCVCamera
 
 logging.basicConfig(
     level=logging.INFO,
@@ -150,6 +151,8 @@ if __name__ == "__main__":
     inorbit_api_url = os.environ.get("INORBIT_API_URL")
     inorbit_api_key = os.environ.get("INORBIT_API_KEY")
     inorbit_api_use_ssl = os.environ.get("INORBIT_API_USE_SSL")
+    # If configured stream video as if it was a robot camera
+    video_url = os.environ.get("INORBIT_VIDEO_URL")
 
     assert inorbit_api_endpoint, "Environment variable INORBIT_URL not specified"
     assert inorbit_api_url, "Environment variable INORBIT_API_URL not specified"
@@ -183,6 +186,8 @@ if __name__ == "__main__":
                 os.path.dirname(os.path.abspath(__file__)), "map.png"
             ),
         )
+        if video_url is not None:
+            robot_session.register_camera('0', OpenCVCamera(video_url))
 
     # Go through every fake robot and simulate robot movement
     while True:
