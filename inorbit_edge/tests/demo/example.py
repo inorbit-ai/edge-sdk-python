@@ -187,7 +187,7 @@ if __name__ == "__main__":
             ),
         )
         if video_url is not None:
-            robot_session.register_camera('0', OpenCVCamera(video_url))
+            robot_session.register_camera("0", OpenCVCamera(video_url))
 
     # Go through every fake robot and simulate robot movement
     while True:

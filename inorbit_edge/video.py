@@ -25,6 +25,7 @@ except Exception:
 
 class Camera:
     """Interface that all camera classes must implement"""
+
     def __init__(self):
         raise Exception("Abstract class")
 
@@ -47,12 +48,14 @@ def convert_frame(frame, width, height, scaling, quality=25):
     h = int(height * scaling)
     resized = cv2.resize(frame, (w, h), interpolation=cv2.INTER_AREA)
     img_encode = cv2.imencode(
-        '.jpg', resized, [int(cv2.IMWRITE_JPEG_QUALITY), quality])[1].tobytes()
+        ".jpg", resized, [int(cv2.IMWRITE_JPEG_QUALITY), quality]
+    )[1].tobytes()
     return img_encode, w, h
 
 
 class OpenCVCamera(Camera):
     """Camera implementation backed up by OpenCV"""
+
     def __init__(self, video_url):
         self.video_url = video_url
         self.capture = None
@@ -97,14 +100,15 @@ class OpenCVCamera(Camera):
                     # Try to grab always the latest frame
                     self.capture.grab()
                 except Exception as e:
-                    self.logger.error(
-                        f"Failed to grab video frame {e}"
-                    )
+                    self.logger.error(f"Failed to grab video frame {e}")
 
 
 class CameraStreamer:
     """Streams video from a camera to InOrbit"""
-    def __init__(self, camera, publish_frame_callback, rate=10, scaling=.3, quality=25):
+
+    def __init__(
+        self, camera, publish_frame_callback, rate=10, scaling=0.3, quality=25
+    ):
         self.camera = camera
         self.rate = rate
         self.running = False
@@ -127,16 +131,17 @@ class CameraStreamer:
         self.must_stop = True
 
     def _run(self):
-        """This thread takes care of getting video from a camera at the desired rate, 
-            converting it to the right format and publishing the video frames"""
+        """This thread takes care of getting video from a camera at the desired rate,
+        converting it to the right format and publishing the video frames"""
         self.camera.open()
         while True:
             frame, width, height, ts = self.camera.get_frame()
             if frame is not None:
-                img_encode, w, h = convert_frame(frame, width, height, self.scaling,
-                                                 self.quality)
+                img_encode, w, h = convert_frame(
+                    frame, width, height, self.scaling, self.quality
+                )
                 self.publish_frame(img_encode, w, h, ts)
-            time.sleep(1. / self.rate)
+            time.sleep(1.0 / self.rate)
             with self.mutex:
                 if self.must_stop:
                     break

@@ -22,7 +22,7 @@ from inorbit_edge.inorbit_pb2 import (
     Echo,
     CustomScriptCommandMessage,
     CustomScriptStatusMessage,
-    CameraMessage
+    CameraMessage,
 )
 from inorbit_edge.video import CameraStreamer, Camera
 import time
@@ -286,9 +286,7 @@ class RobotSession:
         self.client.subscribe(
             topic=self._get_robot_subtopic(subtopic=MQTT_NAV_GOAL_GOAL)
         )
-        self.client.subscribe(
-            topic=self._get_robot_subtopic(subtopic=MQTT_IN_CMD)
-        )
+        self.client.subscribe(topic=self._get_robot_subtopic(subtopic=MQTT_IN_CMD))
 
     def _on_message(self, client, userdata, msg):
         """MQTT client message callback.
@@ -498,12 +496,15 @@ class RobotSession:
 
     def register_camera(self, camera_id: str, camera: Camera):
         """Registers a camera. Video will be automatically streamed from this camera
-           when requested from the platform, for example when a user accesses the
-           navigation view.
+        when requested from the platform, for example when a user accesses the
+        navigation view.
         """
+
         def publish(image, width, height, ts):
-            self.publish_camera_frame(camera_id, image, int(width), int(height),
-                                      int(ts))
+            self.publish_camera_frame(
+                camera_id, image, int(width), int(height), int(ts)
+            )
+
         self.camera_streamers[camera_id] = CameraStreamer(camera, publish)
 
     def _send_robot_status(self, robot_status):
