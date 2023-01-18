@@ -14,6 +14,7 @@
 import logging
 import threading
 import time
+from abc import ABC, abstractmethod
 
 try:
     import cv2
@@ -23,22 +24,21 @@ except Exception:
     )
 
 
-class Camera:
+class Camera(ABC):
     """Interface that all camera classes must implement"""
-
-    def __init__(self):
-        raise Exception("Abstract class")
-
+    @abstractmethod
     def open(self):
         """Opens the capturing device / stream"""
         pass
 
+    @abstractmethod
     def close(self):
         """Closes the capturing device / stream"""
         pass
 
-    def get_frame(self):
-        """Returns the latest frame captured by the camera"""
+    @abstractmethod
+    def get_frame_jpg(self):
+        """Returns the latest frame captured by the camera as a JPG image"""
         pass
 
 
@@ -56,12 +56,15 @@ def convert_frame(frame, width, height, scaling, quality=25):
 class OpenCVCamera(Camera):
     """Camera implementation backed up by OpenCV"""
 
-    def __init__(self, video_url):
+    def __init__(self, video_url, rate=10, scaling=0.3, quality=35):
         self.video_url = video_url
         self.capture = None
         self.capture_mutex = threading.Lock()
         self.running = False
         self.logger = logging.getLogger(__class__.__name__)
+        self.rate = rate
+        self.scaling = scaling
+        self.quality = quality
 
     def open(self):
         """Opens the capturing device / stream"""
@@ -80,8 +83,8 @@ class OpenCVCamera(Camera):
                 self.capture = None
             self.running = False
 
-    def get_frame(self):
-        """Returns the latest frame captured by the camera"""
+    def get_frame_jpg(self):
+        """Returns the latest frame captured by the camera as JPG"""
         ts = time.time() * 1000
         with self.capture_mutex:
             # decode the latest grabbed frame
@@ -90,7 +93,10 @@ class OpenCVCamera(Camera):
                 return None, 0, 0, ts
             width = self.capture.get(cv2.CAP_PROP_FRAME_WIDTH)
             height = self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT)
-            return frame, width, height, ts
+            jpg, w, h = convert_frame(
+                frame, width, height, self.scaling, self.quality
+            )
+            return jpg, w, h, ts
 
     def _run(self):
         """Thread to grab always the most recent frame"""
@@ -107,14 +113,11 @@ class CameraStreamer:
     """Streams video from a camera to InOrbit"""
 
     def __init__(
-        self, camera, publish_frame_callback, rate=10, scaling=0.3, quality=25
+        self, camera, publish_frame_callback
     ):
         self.camera = camera
-        self.rate = rate
         self.running = False
         self.mutex = threading.Lock()
-        self.scaling = scaling
-        self.quality = quality
         self.publish_frame = publish_frame_callback
         self.must_stop = False
 
@@ -135,13 +138,10 @@ class CameraStreamer:
         converting it to the right format and publishing the video frames"""
         self.camera.open()
         while True:
-            frame, width, height, ts = self.camera.get_frame()
-            if frame is not None:
-                img_encode, w, h = convert_frame(
-                    frame, width, height, self.scaling, self.quality
-                )
-                self.publish_frame(img_encode, w, h, ts)
-            time.sleep(1.0 / self.rate)
+            jpg, width, height, ts = self.camera.get_frame_jpg()
+            if jpg is not None:
+                self.publish_frame(jpg, width, height, ts)
+            time.sleep(1.0 / self.camera.rate)
             with self.mutex:
                 if self.must_stop:
                     break
