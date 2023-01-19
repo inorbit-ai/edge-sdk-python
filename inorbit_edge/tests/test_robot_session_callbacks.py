@@ -50,9 +50,10 @@ def test_robot_session_register_command_callback(mock_mqtt_client, mock_inorbit_
             call(topic="r/id_123/ros/loc/set_pose"),
             call(topic="r/id_123/custom_command/script/command"),
             call(topic="r/id_123/ros/loc/nav_goal"),
+            call(topic="r/id_123/in_cmd"),
         ]
     )
-    assert robot_session.client.subscribe.call_count == 3
+    assert robot_session.client.subscribe.call_count == 4
 
 
 def test_robot_session_echo(mocker, mock_mqtt_client, mock_inorbit_api):

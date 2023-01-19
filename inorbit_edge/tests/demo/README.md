@@ -4,7 +4,7 @@ Code for generating synthetic data for simulating a fleet of robots. It uses the
 
 ## How to use
 
-Export required environment variables and execute the `demo.py` script. Use the `virtualenv` used on the `CONTRIBUTING.md` guide.
+Export required environment variables and execute the `example.py` script. Use the `virtualenv` used on the `CONTRIBUTING.md` guide.
 
 ```bash
 export INORBIT_URL="https://control.inorbit.ai"
@@ -12,6 +12,8 @@ export INORBIT_API_URL="https://api.inorbit.ai"
 export INORBIT_API_KEY="foobar123"
 # Disable SSL for local development only
 export INORBIT_API_USE_SSL="true"
+# Optionally enable video streaming as camera "0"
+export INORBIT_VIDEO_URL=/dev/video0
 
 python example.py
 ```
