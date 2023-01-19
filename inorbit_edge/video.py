@@ -26,6 +26,7 @@ except Exception:
 
 class Camera(ABC):
     """Interface that all camera classes must implement"""
+
     @abstractmethod
     def open(self):
         """Opens the capturing device / stream"""
@@ -93,9 +94,7 @@ class OpenCVCamera(Camera):
                 return None, 0, 0, ts
             width = self.capture.get(cv2.CAP_PROP_FRAME_WIDTH)
             height = self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT)
-            jpg, w, h = convert_frame(
-                frame, width, height, self.scaling, self.quality
-            )
+            jpg, w, h = convert_frame(frame, width, height, self.scaling, self.quality)
             return jpg, w, h, ts
 
     def _run(self):
@@ -112,9 +111,7 @@ class OpenCVCamera(Camera):
 class CameraStreamer:
     """Streams video from a camera to InOrbit"""
 
-    def __init__(
-        self, camera, publish_frame_callback
-    ):
+    def __init__(self, camera, publish_frame_callback):
         self.camera = camera
         self.running = False
         self.mutex = threading.Lock()
