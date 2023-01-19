@@ -146,7 +146,6 @@ def custom_command_callback(robot_id, command_name, args, options):
 
 
 if __name__ == "__main__":
-
     inorbit_api_endpoint = os.environ.get("INORBIT_URL")
     inorbit_api_url = os.environ.get("INORBIT_API_URL")
     inorbit_api_key = os.environ.get("INORBIT_API_KEY")
