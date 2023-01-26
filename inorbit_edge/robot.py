@@ -508,6 +508,7 @@ class RobotSession:
         when requested from the platform, for example when a user accesses the
         navigation view.
         """
+
         def publish(image, width, height, ts):
             self.publish_camera_frame(
                 camera_id, image, int(width), int(height), int(ts)
@@ -523,7 +524,7 @@ class RobotSession:
         self.publish(
             self._get_robot_subtopic(subtopic=MQTT_SUBTOPIC_OUT_CMD),
             "resend_modules",
-            qos=1
+            qos=1,
         )
 
     def _send_robot_status(self, robot_status):
