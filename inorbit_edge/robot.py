@@ -41,6 +41,7 @@ MQTT_SUBTOPIC_CUSTOM_DATA = "custom"
 MQTT_SUBTOPIC_CUSTOM_COMMAND = "custom_command"
 MQTT_SUBTOPIC_STATE = "state"
 MQTT_SUBTOPIC_CAMERA_V2 = "ros/camera2"
+MQTT_SUBTOPIC_OUT_CMD = "out_cmd"
 
 MQTT_TOPIC_ECHO = "echo"
 MQTT_NAV_GOAL_GOAL = "ros/loc/nav_goal"
@@ -141,6 +142,8 @@ class RobotSession:
 
         self.command_callbacks = []
         self.camera_streamers = {}
+        self.camera_streaming_on = False
+        self.camera_streaming_mutex = threading.Lock()
         self.message_handlers[MQTT_INITIAL_POSE] = self._handle_initial_pose
         self.message_handlers[MQTT_CUSTOM_COMMAND] = self._handle_custom_command
         self.message_handlers[MQTT_NAV_GOAL_GOAL] = self._handle_nav_goal
@@ -287,6 +290,8 @@ class RobotSession:
             topic=self._get_robot_subtopic(subtopic=MQTT_NAV_GOAL_GOAL)
         )
         self.client.subscribe(topic=self._get_robot_subtopic(subtopic=MQTT_IN_CMD))
+        # ask server to resend modules, so our state is consistent with the server side
+        self._resend_modules()
 
     def _on_message(self, client, userdata, msg):
         """MQTT client message callback.
@@ -408,13 +413,17 @@ class RobotSession:
 
     def _start_cameras_streaming(self):
         """Start streaming on all registered cameras"""
-        for s in self.camera_streamers.values():
-            s.start()
+        with self.camera_streaming_mutex:
+            self.camera_streaming_on = True
+            for s in self.camera_streamers.values():
+                s.start()
 
     def _stop_cameras_streaming(self):
         """Start streaming on all registered cameras"""
-        for s in self.camera_streamers.values():
-            s.stop()
+        with self.camera_streaming_mutex:
+            self.camera_streaming_on = False
+            for s in self.camera_streamers.values():
+                s.stop()
 
     def publish_camera_frame(self, camera_id, image, width, height, ts):
         """Publishes a camera frame"""
@@ -506,6 +515,17 @@ class RobotSession:
             )
 
         self.camera_streamers[camera_id] = CameraStreamer(camera, publish)
+        with self.camera_streaming_mutex:
+            if self.camera_streaming_on:
+                self.camera_streamers[camera_id].start()
+
+    def _resend_modules(self):
+        """Ask server to resend modules"""
+        self.publish(
+            self._get_robot_subtopic(subtopic=MQTT_SUBTOPIC_OUT_CMD),
+            "resend_modules",
+            qos=1,
+        )
 
     def _send_robot_status(self, robot_status):
         """Sends robot online/offline status message.
