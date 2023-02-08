@@ -23,7 +23,7 @@ test_requirements = [
     "pytest-raises>=0.11",
     "pyyaml>=6.0",
     "lark>=1.0.0",
-    "requests_mock>=1.9.3"
+    "requests_mock>=1.9.3",
 ]
 
 dev_requirements = [
@@ -46,7 +46,8 @@ requirements = [
     "paho_mqtt==1.6.1",
     "PySocks==1.7.1",
     "protobuf==3.19.3",
-    "certifi>=2021.10.8"
+    "certifi>=2021.10.8",
+    "deprecated==1.2.13"
 ]
 
 extra_requirements = {
