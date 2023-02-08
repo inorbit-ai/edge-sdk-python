@@ -30,6 +30,8 @@ import requests
 import math
 from inorbit_edge.utils import encode_floating_point_list
 import certifi
+from deprecated import deprecated
+
 
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
 
@@ -900,13 +902,36 @@ class RobotSessionFactory:
         constructor of instances.
         """
         self.robot_session_kw_args = robot_session_kw_args
+        self.command_callbacks = []
 
     def build(self, robot_id, robot_name):
         """Builds a RobotSession object using the provided id and name.
         It also passes the robot_session_kw_args set when creating the factory to the
         RobotSession constructor.
         """
-        return RobotSession(robot_id, robot_name, **self.robot_session_kw_args)
+        session = RobotSession(robot_id, robot_name, **self.robot_session_kw_args)
+
+        def callback(*args):
+            self.dispatch_command([robot_id, *args])
+
+        session.register_command_callback(callback)
+
+        return session
+
+    def dispatch_command(self, args):
+        """Relays a command received from a robot session to all command
+        callbacks registered by users."""
+        for command_callback in self.command_callbacks:
+            command_callback(*args)
+
+    def register_command_callback(self, callback):
+        """Register a command callback to be used on all robot sessions created
+        by this factory"""
+        if not callable(callback):
+            # Don't do anything if callback is not a valid function
+            return
+
+        self.command_callbacks.append(callback)
 
 
 class RobotSessionPool:
@@ -922,13 +947,6 @@ class RobotSessionPool:
         self.robot_session_factory = robot_session_factory
         self.robot_sessions = {}
         self.getting_session_mutex = threading.Lock()
-        self.command_callbacks = []
-
-    def dispatch_command(self, args):
-        """Relays a command received from a robot session to all command
-        callbacks registered by users."""
-        for command_callback in self.command_callbacks:
-            command_callback(*args)
 
     def get_session(self, robot_id, robot_name=""):
         """Returns a connected RobotSession for the specified robot"""
@@ -944,13 +962,6 @@ class RobotSessionPool:
                     robot_id, robot_name
                 )
                 self.robot_sessions[robot_id].connect()
-                if new_robot_session:
-
-                    def callback(*args):
-                        self.dispatch_command([robot_id, *args])
-
-                    self.robot_sessions[robot_id].register_command_callback(callback)
-
             return self.robot_sessions[robot_id]
         finally:
             self.getting_session_mutex.release()
@@ -973,9 +984,10 @@ class RobotSessionPool:
         sess.disconnect()
         del self.robot_sessions[robot_id]
 
+    @deprecated(
+        version="1.7.2",
+        reason="use RobotSessionFactory.register_command_callback() instead",
+    )
     def register_command_callback(self, callback):
-        if not callable(callback):
-            # Don't do anything if callback is not a valid function
-            return
-
-        self.command_callbacks.append(callback)
+        """Registers a callback to be called when a command is received"""
+        self.robot_session_factory.register_command_callback(callback)
