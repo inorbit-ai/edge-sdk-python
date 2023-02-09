@@ -87,7 +87,7 @@ def test_built_robot_session_executes_commands(
     mock_mqtt_client, mock_inorbit_api, mock_popen
 ):
     robot_session_factory = RobotSessionFactory(api_key="apikey_123")
-    robot_session_factory.register_executable_commands(r".*\.sh", "./user_scripts")
+    robot_session_factory.register_commands_path("./user_scripts", r".*\.sh")
 
     robot_session = robot_session_factory.build("id_123", "name_123")
 
