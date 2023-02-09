@@ -490,6 +490,7 @@ class RobotSession:
                         shell=False,
                         env=dict(os.environ, INORBIT_ROBOT_ID=self.robot_id),
                     )
+                    options["result_function"]("0")
                 except Exception as ex:
                     self.logger.error(
                         f"Failed to run executable command: {script_name} {ex}"
