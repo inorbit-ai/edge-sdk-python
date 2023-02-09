@@ -470,10 +470,8 @@ class RobotSession:
         msg.return_code = result_code
         self.publish_protobuf(MQTT_SCRIPT_OUTPUT_TOPIC, msg)
 
-    def register_executable_commands(
-        self, exec_name_regex=r".*\.sh", path="./user_scripts"
-    ):
-        """Registers executable commands that handle InOrbit script actions.
+    def register_commands_path(self, path="./user_scripts", exec_name_regex=r".*"):
+        """Registers executable commands that handle InOrbit custom command actions.
         Use `exec_name_regex` and `path` to customize which executables can be
         accessed. Note that if an action script name matches `exec_name_regex`, then
         the program will be executed prepending the provided `path`.
@@ -934,7 +932,7 @@ class RobotSessionFactory:
         """
         self.robot_session_kw_args = robot_session_kw_args
         self.command_callbacks = []
-        self.executable_commands_definitions = []
+        self.commands_paths_rules = []
 
     def build(self, robot_id, robot_name):
         """Builds a RobotSession object using the provided id and name.
@@ -952,8 +950,8 @@ class RobotSessionFactory:
         for command_callback in self.command_callbacks:
             session.register_command_callback(build_callback(command_callback))
 
-        for exec_name_regex, path in self.executable_commands_definitions:
-            session.register_executable_commands(exec_name_regex, path)
+        for path, exec_name_regex in self.commands_paths_rules:
+            session.register_commands_path(path, exec_name_regex)
         return session
 
     def register_command_callback(self, callback):
@@ -965,15 +963,13 @@ class RobotSessionFactory:
 
         self.command_callbacks.append(callback)
 
-    def register_executable_commands(
-        self, exec_name_regex=r".*\.sh", path="./user_scripts"
-    ):
-        """Registers executable commands that handle InOrbit script actions.
+    def register_commands_path(self, path="./user_scripts", exec_name_regex=r".*"):
+        """Registers executable commands that handle InOrbit custom command actions.
         Use `exec_name_regex` and `path` to customize which executables can be
         accessed. Note that if an action script name matches `exec_name_regex`, then
         the program will be executed prepending the provided `path`.
         """
-        self.executable_commands_definitions.append((exec_name_regex, path))
+        self.commands_paths_rules.append((path, exec_name_regex))
 
 
 class RobotSessionPool:

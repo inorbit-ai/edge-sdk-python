@@ -23,32 +23,34 @@ The `InOrbit Edge SDK` allows Python programs to communicate with `InOrbit` plat
 ```python
 from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool
 
-def my_custom_command_handler(robot_session, message):
-    """Callback for custom actions.
-
-    Callback method executed for messages published on the ``custom_command``
-    topic. It recieves the RobotSession object and the message that contains
-    the ``cmd`` and ``ts`` fields.
+def my_command_handler(robot_id, command_name, args, options):
+    """Callback for processing custom command calls.
 
     Args:
-        robot_session (RobotSession): RobotSession object
-        message (dict): Message with the ``cmd`` string as defined
-            on InOrbit Custom Defined action and ``ts``.
+        robot_id (str): InOrbit robot ID
+        command_name (str): InOrbit command e.g. 'customCommand'
+        args (list): Command arguments
+        options (dict): object that includes
+            - `result_function` can be called to report command execution result. It
+            has the following signature: `result_function(return_code)`.
+            - `progress_function` can be used to report command output and has the
+            following signature: `progress_function(output, error)`.
+            - `metadata` is reserved for the future and will contains additional
+            information about the received command request.
     """
-
-    print(
-        "Robot '{}' received command '{}'".format(
-            robot_session.robot_id, message["cmd"]
-        )
-    )
+    if command_name == "customCommand":
+        print(f"Received '{command_name}' for robot '{robot_id}'!. {args}")
+        # Return '0' for success
+        options["result_function"]("0")
 
 
 robot_session_factory = RobotSessionFactory(
     api_key="<YOUR_API_KEY>"
 )
 
-robot_session_factory.register_command_callback(my_custom_command_handler)
-robot_session_factory.register_executable_commands(r".*\.sh", "./user_scripts")
+# Register commands handlers. Note that all handlers are invoked.
+robot_session_factory.register_command_callback(my_command_handler)
+robot_session_factory.register_executable_commands("./user_scripts", r".*\.sh")
 
 robot_session_pool = RobotSessionPool(robot_session_factory)
 

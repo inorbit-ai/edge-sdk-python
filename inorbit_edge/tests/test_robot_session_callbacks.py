@@ -178,7 +178,7 @@ def test_robot_session_executes_commands(
         api_key="apikey_123",
     )
 
-    robot_session.register_executable_commands(r".*\.sh", "./user_scripts")
+    robot_session.register_commands_path("./user_scripts", r".*\.sh")
 
     # connect robot_session so it populates properties with API response data
     robot_session.connect()
