@@ -952,7 +952,7 @@ class RobotSessionFactory:
         for command_callback in self.command_callbacks:
             session.register_command_callback(build_callback(command_callback))
 
-        for (exec_name_regex, path) in self.executable_commands_definitions:
+        for exec_name_regex, path in self.executable_commands_definitions:
             session.register_executable_commands(exec_name_regex, path)
         return session
 
