@@ -167,3 +167,35 @@ def test_robot_session_executes_command_callback_on_message(
     assert callable(command_options["result_function"])
     assert callable(command_options["progress_function"])
     assert command_options["metadata"] == {}
+
+
+def test_robot_session_executes_commands(
+    mock_mqtt_client, mock_inorbit_api, mock_popen
+):
+    robot_session = RobotSession(
+        robot_id="id_123",
+        robot_name="name_123",
+        api_key="apikey_123",
+    )
+
+    robot_session.register_executable_commands(r".*\.sh", "./user_scripts")
+
+    # connect robot_session so it populates properties with API response data
+    robot_session.connect()
+    # manually execute on_connect callback so the ``custom_command_callback``
+    # callback gets registered
+    robot_session._on_connect(..., ..., ..., 0)
+
+    msg = MQTTMessage(topic=b"r/id_123/custom_command/script/command")
+    msg.payload = CustomScriptCommandMessage(
+        file_name="my_script.sh", arg_options=["a", "b"], execution_id="1"
+    ).SerializeToString()
+
+    robot_session._on_message(..., ..., msg)
+
+    mock_popen.assert_called_once()
+    call_args, call_kwargs = mock_popen.call_args_list[0]
+
+    [program_args] = call_args
+    assert program_args == ["./user_scripts/my_script.sh", "a", "b"]
+    assert call_kwargs["env"]["INORBIT_ROBOT_ID"] == "id_123"

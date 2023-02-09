@@ -45,6 +45,11 @@ def mock_mqtt_client(mocker):
 
 
 @pytest.fixture
+def mock_popen(mocker):
+    return mocker.patch("subprocess.Popen")
+
+
+@pytest.fixture
 def mock_inorbit_api():
     # Dummy cloud_sdk_robot_config sample response for testing
     ROBOT_CONFIG_MOCK_RESPONSE = {
