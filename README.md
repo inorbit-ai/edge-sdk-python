@@ -16,6 +16,7 @@ The `InOrbit Edge SDK` allows Python programs to communicate with `InOrbit` plat
 - Publish robot path.
 - Publish robot laser.
 - Execute callbacks on Custom Action execution.
+- Execute scripts (or any program) in response to Custom Action execution.
 
 ## Quick Start
 
@@ -43,9 +44,11 @@ def my_custom_command_handler(robot_session, message):
 
 
 robot_session_factory = RobotSessionFactory(
-    api_key="<YOUR_API_KEY>",
-    custom_command_callback=my_custom_command_handler
+    api_key="<YOUR_API_KEY>"
 )
+
+robot_session_factory.register_command_callback(my_custom_command_handler)
+robot_session_factory.register_executable_commands(r".*\.sh", "./user_scripts")
 
 robot_session_pool = RobotSessionPool(robot_session_factory)
 
