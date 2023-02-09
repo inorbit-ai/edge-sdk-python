@@ -486,11 +486,17 @@ class RobotSession:
             script_args = args[1]
             if re.match(exec_name_regex, script_name):
                 # TODO(mike) handle script return and output
-                subprocess.Popen(
-                    [f"{path}/{script_name}"] + list(script_args),
-                    shell=False,
-                    env=dict(os.environ, INORBIT_ROBOT_ID=self.robot_id),
-                )
+                try:
+                    subprocess.Popen(
+                        [f"{path}/{script_name}"] + list(script_args),
+                        shell=False,
+                        env=dict(os.environ, INORBIT_ROBOT_ID=self.robot_id),
+                    )
+                except Exception as ex:
+                    self.logger.error(
+                        f"Failed to run executable command: {script_name} {ex}"
+                    )
+                    options["result_function"]("1")
 
         self.register_command_callback(handler)
 
