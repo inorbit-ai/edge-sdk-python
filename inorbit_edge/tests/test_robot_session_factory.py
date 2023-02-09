@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from paho.mqtt.client import MQTTMessage
 from inorbit_edge.robot import RobotSessionFactory
 from inorbit_edge.inorbit_pb2 import CustomScriptCommandMessage
