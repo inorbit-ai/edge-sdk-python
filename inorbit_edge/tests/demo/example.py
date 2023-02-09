@@ -124,8 +124,8 @@ def log_command(robot_id, command_name, args, options):
     print(robot_id, command_name, args, options)
 
 
-def custom_command_callback(robot_id, command_name, args, options):
-    """Callback for processing custom command calls.
+def my_command_handler(robot_id, command_name, args, options):
+    """Handler for processing custom command calls.
 
     Args:
         robot_id (str): InOrbit robot ID
@@ -163,10 +163,11 @@ if __name__ == "__main__":
         api_key=inorbit_api_key,
         use_ssl=False if inorbit_api_use_ssl == "false" else True,
     )
-    robot_session_pool = RobotSessionPool(robot_session_factory)
-    robot_session_pool.register_command_callback(log_command)
-    robot_session_pool.register_command_callback(custom_command_callback)
+    robot_session_factory.register_command_callback(log_command)
+    robot_session_factory.register_command_callback(my_command_handler)
+    robot_session_factory.register_commands_path("./user_scripts", r".*\.sh")
 
+    robot_session_pool = RobotSessionPool(robot_session_factory)
     # Dictionary mapping robot ID and fake robot object
     fake_robot_pool = dict()
 

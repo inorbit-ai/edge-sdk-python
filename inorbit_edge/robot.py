@@ -30,8 +30,9 @@ import requests
 import math
 from inorbit_edge.utils import encode_floating_point_list
 import certifi
+import subprocess
+import re
 from deprecated import deprecated
-
 
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
 
@@ -469,6 +470,34 @@ class RobotSession:
         msg.return_code = result_code
         self.publish_protobuf(MQTT_SCRIPT_OUTPUT_TOPIC, msg)
 
+    def register_commands_path(self, path="./user_scripts", exec_name_regex=r".*"):
+        """Registers executable commands that handle InOrbit custom command actions.
+        Use `exec_name_regex` and `path` to customize which executables can be
+        accessed. Note that if an action script name matches `exec_name_regex`, then
+        the program will be executed prepending the provided `path`.
+        """
+
+        def handler(command_name, args, options):
+            if command_name != COMMAND_CUSTOM_COMMAND:
+                return
+            script_name = args[0]
+            script_args = args[1]
+            if re.match(exec_name_regex, script_name):
+                # TODO(mike) handle script return and output
+                try:
+                    subprocess.Popen(
+                        [f"{path}/{script_name}"] + list(script_args),
+                        shell=False,
+                        env=dict(os.environ, INORBIT_ROBOT_ID=self.robot_id),
+                    )
+                except Exception as ex:
+                    self.logger.error(
+                        f"Failed to run executable command: {script_name} {ex}"
+                    )
+                    options["result_function"]("1")
+
+        self.register_command_callback(handler)
+
     def register_command_callback(self, callback):
         """Register a function to be called when a command for the robot is received.
 
@@ -903,6 +932,7 @@ class RobotSessionFactory:
         """
         self.robot_session_kw_args = robot_session_kw_args
         self.command_callbacks = []
+        self.commands_paths_rules = []
 
     def build(self, robot_id, robot_name):
         """Builds a RobotSession object using the provided id and name.
@@ -911,18 +941,18 @@ class RobotSessionFactory:
         """
         session = RobotSession(robot_id, robot_name, **self.robot_session_kw_args)
 
-        def callback(*args):
-            self.dispatch_command([robot_id, *args])
+        def build_callback(callback):
+            def c(*args):
+                callback(robot_id, *args)
 
-        session.register_command_callback(callback)
+            return c
 
-        return session
-
-    def dispatch_command(self, args):
-        """Relays a command received from a robot session to all command
-        callbacks registered by users."""
         for command_callback in self.command_callbacks:
-            command_callback(*args)
+            session.register_command_callback(build_callback(command_callback))
+
+        for path, exec_name_regex in self.commands_paths_rules:
+            session.register_commands_path(path, exec_name_regex)
+        return session
 
     def register_command_callback(self, callback):
         """Register a command callback to be used on all robot sessions created
@@ -932,6 +962,14 @@ class RobotSessionFactory:
             return
 
         self.command_callbacks.append(callback)
+
+    def register_commands_path(self, path="./user_scripts", exec_name_regex=r".*"):
+        """Registers executable commands that handle InOrbit custom command actions.
+        Use `exec_name_regex` and `path` to customize which executables can be
+        accessed. Note that if an action script name matches `exec_name_regex`, then
+        the program will be executed prepending the provided `path`.
+        """
+        self.commands_paths_rules.append((path, exec_name_regex))
 
 
 class RobotSessionPool:
