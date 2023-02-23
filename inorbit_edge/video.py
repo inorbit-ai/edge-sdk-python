@@ -80,9 +80,10 @@ class OpenCVCamera(Camera):
 
     def close(self):
         """Closes the capturing device / stream"""
+        self.running = False
+        self.capture_thread.join()
+        self.logger.info("Waiting for the capture thread to finish")
         with self.capture_mutex:
-            self.running = False
-            self.capture_thread.join()
             if self.capture is not None:
                 self.capture.release()
                 self.capture = None
