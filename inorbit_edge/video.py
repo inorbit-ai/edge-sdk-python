@@ -61,6 +61,7 @@ class OpenCVCamera(Camera):
         self.video_url = video_url
         self.capture = None
         self.capture_mutex = threading.Lock()
+        self.capture_thread = None
         self.running = False
         self.logger = logging.getLogger(__class__.__name__)
         self.rate = rate
@@ -74,15 +75,17 @@ class OpenCVCamera(Camera):
                 self.capture = cv2.VideoCapture(self.video_url)
             if not self.running:
                 self.running = True
-                threading.Thread(target=self._run).start()
+                self.capture_thread = threading.Thread(target=self._run)
+                self.capture_thread.start()
 
     def close(self):
         """Closes the capturing device / stream"""
         with self.capture_mutex:
+            self.running = False
+            self.capture_thread.join()
             if self.capture is not None:
                 self.capture.release()
                 self.capture = None
-            self.running = False
 
     def get_frame_jpg(self):
         """Returns the latest frame captured by the camera as JPG"""
