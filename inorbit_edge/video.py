@@ -119,6 +119,7 @@ class CameraStreamer:
         self.camera = camera
         self.running = False
         self.mutex = threading.Lock()
+        self.thread = None
         self.publish_frame = publish_frame_callback
         self.must_stop = False
 
@@ -128,11 +129,13 @@ class CameraStreamer:
             self.must_stop = False
             if not self.running:
                 self.running = True
-                threading.Thread(target=self._run).start()
+                self.thread = threading.Thread(target=self._run)
+                self.thread.start()
 
     def stop(self):
         """Stops streaming video to the platform"""
         self.must_stop = True
+        self.thread.join()
 
     def _run(self):
         """This thread takes care of getting video from a camera at the desired rate,
