@@ -147,6 +147,7 @@ class RobotSession:
         self.camera_streamers = {}
         self.camera_streaming_on = False
         self.camera_streaming_mutex = threading.Lock()
+
         self.message_handlers[MQTT_INITIAL_POSE] = self._handle_initial_pose
         self.message_handlers[MQTT_CUSTOM_COMMAND] = self._handle_custom_command
         self.message_handlers[MQTT_NAV_GOAL_GOAL] = self._handle_nav_goal
@@ -670,6 +671,7 @@ class RobotSession:
     def disconnect(self):
         """Ends session, disconnecting from cloud services"""
         self.logger.info("Ending robot session")
+        self._stop_cameras_streaming()
         self._send_robot_status(robot_status="0")
 
         # TODO: Unsubscribe from topics

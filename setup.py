@@ -12,7 +12,12 @@ setup_requirements = [
     "pytest-runner>=5.2",
 ]
 
+video_requirements = [
+    "opencv-python==4.7.0.68"
+]
+
 test_requirements = [
+    *video_requirements,
     "black>=19.10b0",
     "codecov>=2.1.4",
     "flake8>=3.8.3",
@@ -54,7 +59,7 @@ extra_requirements = {
     "setup": setup_requirements,
     "test": test_requirements,
     "dev": dev_requirements,
-    "video": ["opencv-python==4.7.0.68"],
+    "video": video_requirements,
     "all": [
         *requirements,
         *dev_requirements,

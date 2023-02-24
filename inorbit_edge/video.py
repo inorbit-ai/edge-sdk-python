@@ -61,6 +61,7 @@ class OpenCVCamera(Camera):
         self.video_url = video_url
         self.capture = None
         self.capture_mutex = threading.Lock()
+        self.capture_thread = None
         self.running = False
         self.logger = logging.getLogger(__class__.__name__)
         self.rate = rate
@@ -74,15 +75,18 @@ class OpenCVCamera(Camera):
                 self.capture = cv2.VideoCapture(self.video_url)
             if not self.running:
                 self.running = True
-                threading.Thread(target=self._run).start()
+                self.capture_thread = threading.Thread(target=self._run)
+                self.capture_thread.start()
 
     def close(self):
         """Closes the capturing device / stream"""
+        self.running = False
+        self.logger.info("Waiting for the capture thread to finish")
+        self.capture_thread.join()
         with self.capture_mutex:
             if self.capture is not None:
                 self.capture.release()
                 self.capture = None
-            self.running = False
 
     def get_frame_jpg(self):
         """Returns the latest frame captured by the camera as JPG"""
@@ -112,9 +116,11 @@ class CameraStreamer:
     """Streams video from a camera to InOrbit"""
 
     def __init__(self, camera, publish_frame_callback):
+        self.logger = logging.getLogger(__class__.__name__)
         self.camera = camera
         self.running = False
         self.mutex = threading.Lock()
+        self.thread = None
         self.publish_frame = publish_frame_callback
         self.must_stop = False
 
@@ -124,11 +130,14 @@ class CameraStreamer:
             self.must_stop = False
             if not self.running:
                 self.running = True
-                threading.Thread(target=self._run).start()
+                self.thread = threading.Thread(target=self._run)
+                self.thread.start()
 
     def stop(self):
         """Stops streaming video to the platform"""
         self.must_stop = True
+        self.logger.info("Waiting for the streaming thread to finish")
+        self.thread.join()
 
     def _run(self):
         """This thread takes care of getting video from a camera at the desired rate,
