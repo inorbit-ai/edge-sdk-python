@@ -81,8 +81,8 @@ class OpenCVCamera(Camera):
     def close(self):
         """Closes the capturing device / stream"""
         self.running = False
-        self.capture_thread.join()
         self.logger.info("Waiting for the capture thread to finish")
+        self.capture_thread.join()
         with self.capture_mutex:
             if self.capture is not None:
                 self.capture.release()
@@ -135,6 +135,7 @@ class CameraStreamer:
     def stop(self):
         """Stops streaming video to the platform"""
         self.must_stop = True
+        self.logger.info("Waiting for the streaming thread to finish")
         self.thread.join()
 
     def _run(self):
