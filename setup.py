@@ -12,7 +12,12 @@ setup_requirements = [
     "pytest-runner>=5.2",
 ]
 
+video_requirements = [
+    "opencv-python==4.7.0.68"
+]
+
 test_requirements = [
+    *video_requirements,
     "black>=19.10b0",
     "codecov>=2.1.4",
     "flake8>=3.8.3",
@@ -26,14 +31,9 @@ test_requirements = [
     "requests_mock>=1.9.3",
 ]
 
-video_requirements = [
-    "opencv-python==4.7.0.68"
-]
-
 dev_requirements = [
     *setup_requirements,
     *test_requirements,
-    *video_requirements,
     "bump2version>=1.0.1",
     "coverage>=5.1",
     "ipython>=7.15.0",
