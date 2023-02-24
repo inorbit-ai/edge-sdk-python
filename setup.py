@@ -26,9 +26,14 @@ test_requirements = [
     "requests_mock>=1.9.3",
 ]
 
+video_requirements = [
+    "opencv-python==4.7.0.68"
+]
+
 dev_requirements = [
     *setup_requirements,
     *test_requirements,
+    *video_requirements,
     "bump2version>=1.0.1",
     "coverage>=5.1",
     "ipython>=7.15.0",
@@ -54,7 +59,7 @@ extra_requirements = {
     "setup": setup_requirements,
     "test": test_requirements,
     "dev": dev_requirements,
-    "video": ["opencv-python==4.7.0.68"],
+    "video": video_requirements,
     "all": [
         *requirements,
         *dev_requirements,
