@@ -116,6 +116,7 @@ class CameraStreamer:
     """Streams video from a camera to InOrbit"""
 
     def __init__(self, camera, publish_frame_callback):
+        self.logger = logging.getLogger(__class__.__name__)
         self.camera = camera
         self.running = False
         self.mutex = threading.Lock()
