@@ -7,7 +7,7 @@ from inorbit_edge.robot import RobotSession
 from paho.mqtt.client import MQTTMessage
 from inorbit_edge.inorbit_pb2 import Echo
 import time
-from inorbit_edge.inorbit_pb2 import CustomScriptCommandMessage
+from inorbit_edge.inorbit_pb2 import CustomScriptCommandMessage, CustomCommandRosMessage
 
 
 def test_builtin_callbacks(mock_mqtt_client, mock_inorbit_api):
@@ -49,11 +49,12 @@ def test_robot_session_register_command_callback(mock_mqtt_client, mock_inorbit_
         [
             call(topic="r/id_123/ros/loc/set_pose"),
             call(topic="r/id_123/custom_command/script/command"),
+            call(topic="r/id_123/custom_command/ros"),
             call(topic="r/id_123/ros/loc/nav_goal"),
             call(topic="r/id_123/in_cmd"),
         ]
     )
-    assert robot_session.client.subscribe.call_count == 4
+    assert robot_session.client.subscribe.call_count == 5
 
 
 def test_robot_session_echo(mocker, mock_mqtt_client, mock_inorbit_api):
@@ -123,6 +124,15 @@ def test_robot_session_echo(mocker, mock_mqtt_client, mock_inorbit_api):
                 "command_name": "navGoal",
                 "command_args": [{"x": "1.23", "y": "4.56", "theta": "-0.1"}],
             },
+        ),
+        (
+            {
+                "topic": b"r/id_123/custom_command/ros",
+                "payload": CustomCommandRosMessage(
+                    cmd="hello world"
+                ).SerializeToString(),
+            },
+            {"command_name": "message", "command_args": ["hello world"]},
         ),
     ],
 )
