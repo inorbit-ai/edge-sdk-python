@@ -22,6 +22,7 @@ from inorbit_edge.inorbit_pb2 import (
     Echo,
     CustomScriptCommandMessage,
     CustomScriptStatusMessage,
+    CustomCommandRosMessage,
     CameraMessage,
 )
 from inorbit_edge.video import CameraStreamer, Camera
@@ -51,6 +52,7 @@ MQTT_NAV_GOAL_GOAL = "ros/loc/nav_goal"
 MQTT_NAV_GOAL_MULTI = "ros/loc/goal_path"
 MQTT_INITIAL_POSE = "ros/loc/set_pose"
 MQTT_CUSTOM_COMMAND = "custom_command/script/command"
+MQTT_CUSTOM_COMMAND_MESSAGE = "custom_command/ros"
 MQTT_SCRIPT_OUTPUT_TOPIC = "custom_command/script/status"
 MQTT_IN_CMD = "in_cmd"
 
@@ -58,6 +60,7 @@ MQTT_IN_CMD = "in_cmd"
 COMMAND_INITIAL_POSE = "initialPose"
 COMMAND_NAV_GOAL = "navGoal"
 COMMAND_CUSTOM_COMMAND = "customCommand"
+COMMAND_MESSAGE = "message"
 # InOrbit modules
 INORBIT_MODULE_CAMERAS = "RosImageAgentlet"
 # CustomCommand execution status
@@ -150,6 +153,7 @@ class RobotSession:
 
         self.message_handlers[MQTT_INITIAL_POSE] = self._handle_initial_pose
         self.message_handlers[MQTT_CUSTOM_COMMAND] = self._handle_custom_command
+        self.message_handlers[MQTT_CUSTOM_COMMAND_MESSAGE] = self._handle_custom_message
         self.message_handlers[MQTT_NAV_GOAL_GOAL] = self._handle_nav_goal
         self.message_handlers[MQTT_IN_CMD] = self._handle_in_cmd
 
@@ -291,6 +295,9 @@ class RobotSession:
             topic=self._get_robot_subtopic(subtopic=MQTT_CUSTOM_COMMAND)
         )
         self.client.subscribe(
+            topic=self._get_robot_subtopic(subtopic=MQTT_CUSTOM_COMMAND_MESSAGE)
+        )
+        self.client.subscribe(
             topic=self._get_robot_subtopic(subtopic=MQTT_NAV_GOAL_GOAL)
         )
         self.client.subscribe(topic=self._get_robot_subtopic(subtopic=MQTT_IN_CMD))
@@ -379,6 +386,17 @@ class RobotSession:
             execution_id=custom_script_msg.execution_id,
         )
 
+    def _handle_custom_message(self, msg):
+        """Handle incoming MQTT_CUSTOM_COMMAND_MESSAGE message."""
+
+        custom_command_message = CustomCommandRosMessage()
+        custom_command_message.ParseFromString(msg)
+        # Hand over to callback for processing, using the proper format
+        self._dispatch_command(
+            command_name=COMMAND_MESSAGE,
+            args=[custom_command_message.cmd],
+        )
+
     def _handle_nav_goal(self, msg):
         """Handle incoming MQTT_NAV_GOAL_GOAL message."""
 
@@ -439,12 +457,13 @@ class RobotSession:
         msg.image = image
         self.publish_protobuf(MQTT_SUBTOPIC_CAMERA_V2, msg)
 
-    def _dispatch_command(self, command_name, args, execution_id):
+    def _dispatch_command(self, command_name, args, execution_id=None):
         """Executes registered command callbacks for a specific incoming command."""
         for callback in self.command_callbacks:
 
             def result_function(result_code):
-                return self.report_command_result(args, execution_id, result_code)
+                if execution_id is not None:
+                    return self.report_command_result(args, execution_id, result_code)
 
             # TODO: Implement progress reporting function
             def progress_function(output, error):
