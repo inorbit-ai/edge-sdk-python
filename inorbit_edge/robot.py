@@ -26,6 +26,7 @@ from inorbit_edge.inorbit_pb2 import (
     CameraMessage,
 )
 from inorbit_edge.video import CameraStreamer, Camera
+from inorbit_edge.missions import MissionsModule
 import time
 import requests
 import math
@@ -147,6 +148,7 @@ class RobotSession:
         self.message_handlers = {}
 
         self.command_callbacks = []
+        self.missions_module = MissionsModule(self)
         self.camera_streamers = {}
         self.camera_streaming_on = False
         self.camera_streaming_mutex = threading.Lock()
@@ -368,7 +370,7 @@ class RobotSession:
         theta = args[4]
 
         # Hand over to callback for processing, using the proper format
-        self._dispatch_command(
+        self.dispatch_command(
             command_name=COMMAND_INITIAL_POSE,
             args=[{"x": x, "y": y, "theta": theta}],
             execution_id=seq,  # NOTE: Using seq as the execution ID
@@ -380,7 +382,7 @@ class RobotSession:
         custom_script_msg = CustomScriptCommandMessage()
         custom_script_msg.ParseFromString(msg)
         # Hand over to callback for processing, using the proper format
-        self._dispatch_command(
+        self.dispatch_command(
             command_name=COMMAND_CUSTOM_COMMAND,
             args=[custom_script_msg.file_name, custom_script_msg.arg_options],
             execution_id=custom_script_msg.execution_id,
@@ -392,7 +394,7 @@ class RobotSession:
         custom_command_message = CustomCommandRosMessage()
         custom_command_message.ParseFromString(msg)
         # Hand over to callback for processing, using the proper format
-        self._dispatch_command(
+        self.dispatch_command(
             command_name=COMMAND_MESSAGE,
             args=[custom_command_message.cmd],
         )
@@ -407,7 +409,7 @@ class RobotSession:
         y = args[3]
         theta = args[4]
         # Hand over to callback for processing, using the proper format
-        self._dispatch_command(
+        self.dispatch_command(
             command_name=COMMAND_NAV_GOAL,
             args=[{"x": x, "y": y, "theta": theta}],
             execution_id=seq,  # NOTE: Using seq as the execution ID
@@ -457,7 +459,7 @@ class RobotSession:
         msg.image = image
         self.publish_protobuf(MQTT_SUBTOPIC_CAMERA_V2, msg)
 
-    def _dispatch_command(self, command_name, args, execution_id=None):
+    def dispatch_command(self, command_name, args, execution_id=None):
         """Executes registered command callbacks for a specific incoming command."""
         for callback in self.command_callbacks:
 
