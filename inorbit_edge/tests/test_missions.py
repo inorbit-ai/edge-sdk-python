@@ -3,6 +3,8 @@ from inorbit_edge.robot import RobotSession, COMMAND_MESSAGE, COMMAND_CUSTOM_COM
 
 def test_mission_end_to_end(mock_mqtt_client, mock_inorbit_api, mocker, mock_sleep,
   mock_time):
+    """Tests mission execution and tracking
+    """
     robot_session = RobotSession(
         robot_id="id_123", robot_name="name_123", api_key="apikey_123"
     )
