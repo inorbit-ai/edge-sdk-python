@@ -26,7 +26,7 @@ MAX_YAW = 2 * pi
 
 LIDAR_RANGES = 700
 
-NUM_ROBOTS = 2
+NUM_ROBOTS = 1
 
 
 # TODO: integrate this into the Edge SDK ``RobotSession`` class
@@ -188,6 +188,7 @@ if __name__ == "__main__":
         )
         if video_url is not None:
             robot_session.register_camera("0", OpenCVCamera(video_url))
+        robot_session._publish_throttling["publish_key_values"]["min_time_between_calls"] = 0
 
     # Go through every fake robot and simulate robot movement
     while True:

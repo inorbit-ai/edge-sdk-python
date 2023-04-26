@@ -31,6 +31,7 @@ class MissionsModule:
         self.executor = MissionExecutor(self.robot_session)
 
     def command_callback(self, command_name, args, options):
+        print("processing mission cmd", args)
         if command_name != "message":
             return
         
@@ -64,6 +65,7 @@ class MissionsModule:
         pass
 
     def handle_run_mission(self, args):
+        print("handle run", args)
         args = args.split(" ")
         if len(args) < 2:
             self.logger.error(f"Error: {COMMAND_RUN_MISSION} expects 2 arguments {str(args)}")
@@ -134,7 +136,7 @@ class Mission:
     def __init__(self, id, program, robot_session):
         self.id = id
         self.label = program["label"]
-        self.start_ts = time.time()
+        self.start_ts = int(time.time())
         self.end_ts = None
         self.robot_session = robot_session
         self.defaultStepTimeoutMs = -1
@@ -151,9 +153,12 @@ class Mission:
     def execute(self):
         self.state = "Executing"
         for step_idx in range(0, len(self.steps)):
+            if self.state != "Executing":
+                break
             self.current_step_idx = step_idx
             self.current_step = self.steps[step_idx]
             self.report()
+            time.sleep(5)
             try:
                 self.current_step.execute(self)
             except Exception as e:
@@ -163,7 +168,7 @@ class Mission:
         if self.state == "Executing":
             self.state = "Completed"
             self.current_step_idx += 1
-        self.end_ts = time.time()
+        self.end_ts = int(time.time())
         self.report()
 
     def build_report(self):
@@ -175,10 +180,11 @@ class Mission:
             "startTs": self.start_ts,
             "data": self.data,
             "status": self.status,
-            "currentTaskId": self.current_step_idx if self.state == "Executing" else None
         }
+        if self.state == "Executing":
+            report["currentTaskId"] = str(self.current_step_idx)
         report["tasks"] = [{
-            "taskId": i,
+            "taskId": str(i),
             "label": s.label
         } for i, s in enumerate(self.steps)]
 
@@ -192,12 +198,13 @@ class Mission:
         return report
 
     def report(self):
+        print("send report", self.build_report())
         self.robot_session.publish_key_values(
             key_values={"mission_tracking": self.build_report()},
         )
 
     def cancel(self):
-        pass
+        self.state = "Aborted"
 
     def _build_steps(self, program):
         if "steps" not in program:
