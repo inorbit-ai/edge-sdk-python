@@ -3,6 +3,7 @@
 
 import json
 from inorbit_edge import __version__ as inorbit_edge_version
+from inorbit_edge.types import Pose, SpatialTolerance
 import os
 import logging
 import paho.mqtt.client as mqtt
@@ -91,7 +92,8 @@ class RobotSession:
         # The agent version is generated based on the InOrbit Edge SDK version
         self.agent_version = "{}.edgesdk_py".format(inorbit_edge_version)
         self.endpoint = kwargs.get("endpoint", INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL)
-
+        # Track robot's current pose
+        self._last_pose = None
         # Use SSL by default
         self.use_ssl = kwargs.get("use_ssl", True)
 
@@ -767,8 +769,23 @@ class RobotSession:
         msg.pos_y = y
         msg.yaw = yaw
         msg.frame_id = frame_id
+        self._last_pose = Pose(frame_id=frame_id, x=x, y=y, theta=yaw)
         self.publish_protobuf(MQTT_SUBTOPIC_POSE, msg)
 
+    def reached_waypoint(self, waypoint: Pose, tolerance: SpatialTolerance):
+        if self._last_pose is None:
+            return False
+        return (
+            math.dist(
+                (self._last_pose.x, self._last_pose.y),
+                (waypoint.x, waypoint.y),
+            ) <= tolerance.positionMeters
+            and (self._last_pose.theta - waypoint.theta) % (2 * math.pi)
+                <= tolerance.angularRadians
+        )
+            
+            
+        
     def publish_key_values(self, key_values, custom_field="0"):
         """Publish key value pairs
 

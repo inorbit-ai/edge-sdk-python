@@ -2,10 +2,14 @@
 # TODO(mike) implement events
 # TODO(mike) report errors to cloud
 # TODO(mike) report executor state
+# TODO(mike) implement timeouts
+# TODO(mike) use constants
+# 
 import json
 import logging
 import threading
 import time
+from inorbit_edge.types import Pose, SpatialTolerance
 
 # Commands handled by this module
 COMMAND_PAUSE = "inorbit_pause"
@@ -81,85 +85,6 @@ class MissionsModule:
         self.executor.cancel_mission(args[0])
 
 
-class Mission:
-    def __init__(self, id, program, robot_session):
-        self.id = id
-        self.robot_session = robot_session
-        self.defaultStepTimeoutMs = -1
-        self.steps = self._build_steps(program)
-        self.state = ""
-        self.current_step = None
-
-    def execute(self):
-        for step in self.steps:
-            self.current_step = step
-            self.current_step.execute(self.robot_session)
-
-    def cancel(self):
-        pass
-
-    def _build_steps(self, program):
-        if "steps" not in program:
-            return []
-        steps = [self._build_step(s) for s in program["steps"]]
-        return steps
-
-    def _build_step(self, step_def):
-        if step_def["type"] == "Action" and step_def["action"]["type"] == "PublishToTopic":
-            return MissionStepPublishToTopic.build_from_def(step_def, self.defaultStepTimeoutMs)
-        if step_def["type"] == "Action" and step_def["action"]["type"] == "RunScript":
-            return MissionStepRunScript.build_from_def(step_def, self.defaultStepTimeoutMs)
-        raise Exception(f"Error build mission step {str(step_def)}")
-                
-
-class Step:
-    def __init__(self, label, timeoutMs=-1):
-        self.label = label
-        self.timeoutMs = timeoutMs
-
-    def execute(self):
-        pass
-
-    def success(self):
-        return True
-
-    def cancel(self):
-        pass
-
-
-class MissionStepPublishToTopic(Step):
-    def __init__(self, label, timeoutMs, message):
-        super().__init__(label, timeoutMs)
-        self.message = message
-
-    def execute(self, robot_session):
-        robot_session.dispatch_command("message", self.message)
-
-    def build_from_def(step_def, defaultTimeoutMs):
-        return MissionStepPublishToTopic(
-            step_def["label"],
-            step_def.get("timeoutMs", defaultTimeoutMs),
-            step_def["action"]["message"]
-        )
-
-class MissionStepRunScript(Step):
-    def __init__(self, label, fileName, args, timeoutMs):
-        super().__init__(label, timeoutMs)
-        self.fileName = fileName
-        self.args = args
-
-    def execute(self, robot_session):
-        robot_session.dispatch_command("customCommand", [self.fileName, self.args])
-
-    def build_from_def(step_def, defaultTimeoutMs):
-        return MissionStepRunScript(
-            step_def["label"],
-            step_def["action"]["fileName"],
-            step_def["action"]["args"],
-            step_def.get("timeoutMs", defaultTimeoutMs),
-        )
-
-
 class MissionExecutor:
     """
     MissionExecutor handles missions execution and enforces execution rules, like:
@@ -193,6 +118,7 @@ class MissionExecutor:
         This method is mostly a helper for tests to wait for mission completion.
         """
         self.is_idle.wait(timeout)
+        return self.is_idle.is_set()
 
     def cancel_mission(self, mission_id):
         with self.mutex:
@@ -203,3 +129,203 @@ class MissionExecutor:
             self.mission.cancel()
             self.mission = None
             self.is_idle.set()
+
+class Mission:
+    def __init__(self, id, program, robot_session):
+        self.id = id
+        self.label = program["label"]
+        self.start_ts = time.time()
+        self.end_ts = None
+        self.robot_session = robot_session
+        self.defaultStepTimeoutMs = -1
+        self.steps = self._build_steps(program)
+        self.state = "Starting"
+        self.status = "OK"
+        self.current_step_idx = -1
+        self.current_step = None
+        self.data = {}
+
+    def set_data(self, data: dict):
+        self.data.update(data)
+
+    def execute(self):
+        self.state = "Executing"
+        for step_idx in range(0, len(self.steps)):
+            self.current_step_idx = step_idx
+            self.current_step = self.steps[step_idx]
+            self.report()
+            try:
+                self.current_step.execute(self)
+            except Exception as e:
+                self.state = "Aborted"
+                self.status = "Error"
+                break
+        if self.state == "Executing":
+            self.state = "Completed"
+            self.current_step_idx += 1
+        self.end_ts = time.time()
+        self.report()
+
+    def build_report(self):
+        report = {
+            "missionId": self.id,
+            "inProgress": self.state == "Executing",
+            "state": self.state,
+            "label": self.label,
+            "startTs": self.start_ts,
+            "data": self.data,
+            "status": self.status,
+            "currentTaskId": self.current_step_idx if self.state == "Executing" else None
+        }
+        report["tasks"] = [{
+            "taskId": i,
+            "label": s.label
+        } for i, s in enumerate(self.steps)]
+
+        if self.end_ts is not None:
+            report ["endTs"] = self.end_ts
+
+        if self.current_step_idx is not None:
+            report["completedPercent"] = self.current_step_idx / len(self.steps)
+        else:
+            report["completedPercent"] = 0
+        return report
+
+    def report(self):
+        self.robot_session.publish_key_values(
+            key_values={"mission_tracking": self.build_report()},
+        )
+
+    def cancel(self):
+        pass
+
+    def _build_steps(self, program):
+        if "steps" not in program:
+            return []
+        steps = [self._build_step(s) for s in program["steps"]]
+        return steps
+
+    def _build_step(self, step_def):
+        if step_def["type"] == "Action" and step_def["action"]["type"] == "PublishToTopic":
+            return MissionStepPublishToTopic.build_from_def(step_def, self.defaultStepTimeoutMs)
+        if step_def["type"] == "Action" and step_def["action"]["type"] == "RunScript":
+            return MissionStepRunScript.build_from_def(step_def, self.defaultStepTimeoutMs)
+        if step_def["type"] == "Action" and step_def["action"]["type"] == "NavigateTo":
+            return MissionStepNavigateTo.build_from_def(step_def, self.defaultStepTimeoutMs)
+        if step_def["type"] == "WaitSeconds":
+            return MissionStepWaitSeconds.build_from_def(step_def)
+        if step_def["type"] == "SetData":
+            return MissionStepSetData.build_from_def(step_def, self.defaultStepTimeoutMs)
+        raise Exception(f"Error build mission step {str(step_def)}")
+                
+
+class Step:
+    def __init__(self, label, timeoutMs=-1):
+        self.label = label
+        self.timeoutMs = timeoutMs
+
+    def execute(self):
+        pass
+
+    def success(self):
+        return True
+
+    def cancel(self):
+        pass
+
+
+class MissionStepPublishToTopic(Step):
+    def __init__(self, label, message, timeoutMs):
+        super().__init__(label, timeoutMs)
+        self.message = message
+
+    def execute(self, mission):
+        mission.robot_session.dispatch_command("message", self.message)
+
+    def build_from_def(step_def, defaultTimeoutMs):
+        return MissionStepPublishToTopic(
+            step_def["label"],
+            step_def["action"]["message"],
+            step_def.get("timeoutMs", defaultTimeoutMs)
+        )
+
+
+class MissionStepSetData(Step):
+    def __init__(self, label, data: dict, timeoutMs):
+        super().__init__(label, timeoutMs)
+        self.data = data
+
+    def execute(self, mission):
+        mission.set_data(self.data)
+
+    def build_from_def(step_def, defaultTimeoutMs):
+        return MissionStepSetData(
+            step_def["label"],
+            step_def["data"],
+            step_def.get("timeoutMs", defaultTimeoutMs)
+        )
+
+
+class MissionStepRunScript(Step):
+    def __init__(self, label, fileName, args, timeoutMs):
+        super().__init__(label, timeoutMs)
+        self.fileName = fileName
+        self.args = args
+
+    def execute(self, mission):
+        mission.robot_session.dispatch_command(
+            "customCommand", [self.fileName, self.args])
+
+    def build_from_def(step_def, defaultTimeoutMs):
+        return MissionStepRunScript(
+            step_def["label"],
+            step_def["action"]["fileName"],
+            step_def["action"]["args"],
+            step_def.get("timeoutMs", defaultTimeoutMs),
+        )
+
+class MissionStepWaitSeconds(Step):
+    def __init__(self, label, waitTimeSeconds):
+        super().__init__(label)
+        self.waitTimeSeconds = waitTimeSeconds
+
+    def execute(self, mission):
+        time.sleep(self.waitTimeSeconds)
+
+    def build_from_def(step_def):
+        return MissionStepWaitSeconds(
+            step_def["label"],
+            step_def["seconds"],
+        )
+
+
+class MissionStepNavigateTo(Step):
+    def __init__(self, label, waypoint, tolerance, timeoutMs):
+        super().__init__(label, timeoutMs)
+        self.waypoint = Pose(x=waypoint["x"], y=waypoint["y"],
+            theta=waypoint["theta"], frame_id=waypoint["frameId"])
+        self.tolerance = SpatialTolerance(positionMeters=
+            tolerance["positionMeters"], angularRadians=tolerance["angularRadians"])
+
+    def execute(self, mission):
+        mission.robot_session.dispatch_command(
+            command_name="navGoal",
+            args=[{
+                "x": self.waypoint.x,
+                "y": self.waypoint.y,
+                "theta": self.waypoint.theta,
+                "frameId": self.waypoint.frame_id,
+            }],
+        )
+        while True:
+            if mission.robot_session.reached_waypoint(self.waypoint, self.tolerance):
+                return
+            time.sleep(1)
+
+    def build_from_def(step_def, defaultTimeoutMs):
+        return MissionStepNavigateTo(
+            step_def["label"],
+            step_def["action"]["waypoint"],
+            step_def["tolerance"],
+            step_def.get("timeoutMs", defaultTimeoutMs),
+        )
