@@ -149,7 +149,7 @@ def test_mission_end_to_end(
             "label": "Delivery Mission",
             "startTs": 1001,
             "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
-            "status": "OK", 
+            "status": "OK",
             "completedPercent": 0.16666666666666666,
             "tasks": expected_tasks,
         },

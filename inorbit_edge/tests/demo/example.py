@@ -199,8 +199,10 @@ if __name__ == "__main__":
                 # Get the corresponding robot session and publish robot data
                 robot_session = robot_session_pool.get_session(robot_id=robot_id)
                 robot_session.publish_pose(
-                    x=fake_robot.x, y=fake_robot.y, yaw=fake_robot.yaw,
-                    frame_id=fake_robot.frame_id
+                    x=fake_robot.x,
+                    y=fake_robot.y,
+                    yaw=fake_robot.yaw,
+                    frame_id=fake_robot.frame_id,
                 )
                 robot_session.publish_key_values(
                     {
