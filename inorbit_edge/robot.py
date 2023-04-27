@@ -28,8 +28,12 @@ from inorbit_edge.inorbit_pb2 import (
 )
 from inorbit_edge.video import CameraStreamer, Camera
 from inorbit_edge.missions import MissionsModule
-from inorbit_edge.commands import COMMAND_INITIAL_POSE, COMMAND_NAV_GOAL, \
-    COMMAND_CUSTOM_COMMAND, COMMAND_MESSAGE
+from inorbit_edge.commands import (
+    COMMAND_INITIAL_POSE,
+    COMMAND_NAV_GOAL,
+    COMMAND_CUSTOM_COMMAND,
+    COMMAND_MESSAGE
+)
 import time
 import requests
 import math
@@ -776,7 +780,8 @@ class RobotSession:
             math.dist(
                 (self._last_pose.x, self._last_pose.y),
                 (waypoint.x, waypoint.y),
-            ) <= tolerance.positionMeters
+            )
+            <= tolerance.positionMeters
             and (self._last_pose.theta - waypoint.theta) % (2 * math.pi)
             <= tolerance.angularRadians
         )
@@ -790,9 +795,8 @@ class RobotSession:
             is_event (bool): Events are not throttled
         """
 
-        if (
-            not is_event
-            and not self._should_publish_message(method="publish_key_values")
+        if not is_event and not self._should_publish_message(
+            method="publish_key_values"
         ):
             return None
 
