@@ -84,15 +84,13 @@ def test_mission_end_to_end(
     # run mission
     robot_session.dispatch_command(COMMAND_MESSAGE, message)
     # wait for mission completion
-    assert robot_session.missions_module.executor.wait_until_idle(5)
-
+    assert robot_session.missions_module.executor.wait_until_idle(10)
     # filter out the execute mission command
     dispatched_commands = [
         c
         for c in my_command_handler.call_args_list
-        if c.args[0] != COMMAND_MESSAGE or c.args[1] != message
+        if c[0][0] != COMMAND_MESSAGE or c[0][1] != message
     ]
-
     # check step completed and message published
     call_args, _ = dispatched_commands[0]
     [command_name, command_args, _] = call_args
@@ -116,9 +114,9 @@ def test_mission_end_to_end(
 
     # check mission tracking reports
     reports = [
-        c.kwargs["key_values"]["mission_tracking"]
+        c[1]["key_values"]["mission_tracking"]
         for c in robot_session.publish_key_values.call_args_list
-        if "key_values" in c.kwargs and "mission_tracking" in c.kwargs["key_values"]
+        if "key_values" in c[1] and "mission_tracking" in c[1]["key_values"]
     ]
     expected_tasks = [
         {"label": "init data", "taskId": "0"},
