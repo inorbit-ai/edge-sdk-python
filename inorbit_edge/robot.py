@@ -28,6 +28,8 @@ from inorbit_edge.inorbit_pb2 import (
 )
 from inorbit_edge.video import CameraStreamer, Camera
 from inorbit_edge.missions import MissionsModule
+from inorbit_edge.commands import COMMAND_INITIAL_POSE, COMMAND_NAV_GOAL, \
+    COMMAND_CUSTOM_COMMAND, COMMAND_MESSAGE
 import time
 import requests
 import math
@@ -58,11 +60,6 @@ MQTT_CUSTOM_COMMAND_MESSAGE = "custom_command/ros"
 MQTT_SCRIPT_OUTPUT_TOPIC = "custom_command/script/status"
 MQTT_IN_CMD = "in_cmd"
 
-# InOrbit commands
-COMMAND_INITIAL_POSE = "initialPose"
-COMMAND_NAV_GOAL = "navGoal"
-COMMAND_CUSTOM_COMMAND = "customCommand"
-COMMAND_MESSAGE = "message"
 # InOrbit modules
 INORBIT_MODULE_CAMERAS = "RosImageAgentlet"
 # CustomCommand execution status
@@ -786,15 +783,17 @@ class RobotSession:
             
             
         
-    def publish_key_values(self, key_values, custom_field="0"):
+    def publish_key_values(self, key_values, custom_field="0", is_event=False):
         """Publish key value pairs
 
         Args:
             key_values (dict): Key value mappings to publish
             custom_field (str, optional): ID of the CustomData element. Defaults to "0".
+            is_event (bool): Events are not throttled
         """
 
-        if not self._should_publish_message(method="publish_key_values"):
+        if (not is_event
+            and not self._should_publish_message(method="publish_key_values")):
             return None
 
         def convert_value(value):

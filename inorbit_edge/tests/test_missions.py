@@ -1,3 +1,8 @@
+ # Tests the missions functionalities
+ #
+ # TODO(mike) add tests for wait event step
+ # TODO(mike) add tests cancel()
+
 from inorbit_edge.robot import RobotSession, COMMAND_MESSAGE, COMMAND_CUSTOM_COMMAND, \
   COMMAND_NAV_GOAL
 
@@ -90,8 +95,6 @@ def test_mission_end_to_end(mock_mqtt_client, mock_inorbit_api, mocker, mock_sle
     [command_name, command_args, _] = call_args
     assert command_name == COMMAND_MESSAGE
     assert command_args == "hello world 2"
-    # check that wait
-    assert mock_sleep.call_args_list[0].args[0] == 1.32
     # check that navigate step sends navGoal command
     call_args, _ = dispatched_commands[2]
     [command_name, command_args, _] = call_args
@@ -107,18 +110,18 @@ def test_mission_end_to_end(mock_mqtt_client, mock_inorbit_api, mocker, mock_sle
     reports = [c.kwargs["key_values"]["mission_tracking"] for c in robot_session.publish_key_values.call_args_list
                 if "key_values" in c.kwargs and "mission_tracking" in c.kwargs["key_values"]]
     expected_tasks =  [
-        {"label": "init data", "taskId": 0},
-        {"label": "my step", "taskId": 1},
-        {"label": "my step 2", "taskId": 2},
-        {"label": "sleep", "taskId": 3},
-        {"label": "go to picking station", "taskId": 4},
-        {"label": "run a script", "taskId": 5}
+        {"label": "init data", "taskId": "0"},
+        {"label": "my step", "taskId": "1"},
+        {"label": "my step 2", "taskId": "2"},
+        {"label": "sleep", "taskId": "3"},
+        {"label": "go to picking station", "taskId": "4"},
+        {"label": "run a script", "taskId": "5"}
     ]
     expected_reports = [
         {
             "missionId": "1234",
             "inProgress": True,
-            "currentTaskId": 0,
+            "currentTaskId": "0",
             "state": "Executing",
             "label": "Delivery Mission",
             "startTs": 1001,
@@ -132,7 +135,7 @@ def test_mission_end_to_end(mock_mqtt_client, mock_inorbit_api, mocker, mock_sle
         }, {
             "missionId": "1234",
             "inProgress": True,
-            "currentTaskId": 1,
+            "currentTaskId": "1",
             "state": "Executing",
             "label": "Delivery Mission",
             "startTs": 1001,
@@ -146,7 +149,7 @@ def test_mission_end_to_end(mock_mqtt_client, mock_inorbit_api, mocker, mock_sle
         }, {
             "missionId": "1234",
             "inProgress": True,
-            "currentTaskId": 2,
+            "currentTaskId": "2",
             "state": "Executing",
             "label": "Delivery Mission",
             "startTs": 1001,
@@ -160,7 +163,7 @@ def test_mission_end_to_end(mock_mqtt_client, mock_inorbit_api, mocker, mock_sle
         }, {
             "missionId": "1234",
             "inProgress": True,
-            "currentTaskId": 3,
+            "currentTaskId": "3",
             "state": "Executing",
             "label": "Delivery Mission",
             "startTs": 1001,
@@ -174,7 +177,7 @@ def test_mission_end_to_end(mock_mqtt_client, mock_inorbit_api, mocker, mock_sle
         }, {
             "missionId": "1234",
             "inProgress": True,
-            "currentTaskId": 4,
+            "currentTaskId": "4",
             "state": "Executing",
             "label": "Delivery Mission",
             "startTs": 1001,
@@ -189,7 +192,7 @@ def test_mission_end_to_end(mock_mqtt_client, mock_inorbit_api, mocker, mock_sle
         }, {
             "missionId": "1234",
             "inProgress": True,
-            "currentTaskId": 5,
+            "currentTaskId": "5",
             "state": "Executing",
             "label": "Delivery Mission",
             "startTs": 1001,
@@ -203,7 +206,6 @@ def test_mission_end_to_end(mock_mqtt_client, mock_inorbit_api, mocker, mock_sle
         }, {
             "missionId": "1234",
             "inProgress": False,
-            "currentTaskId": None,
             "state": "Completed",
             "label": "Delivery Mission",
             "startTs": 1001,

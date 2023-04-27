@@ -1,5 +1,7 @@
+# This module provides mission execution capabilities
+# See design doc  https://docs.google.com/document/d/1QqZkqa1LEl8xFFDZ3ygq_uZsB0fNwrDURylSjxmDWG0/edit#heading=h.ibkxl4cmv68t
+#
 # TODO(mike) implement pause/resume
-# TODO(mike) implement events
 # TODO(mike) report errors to cloud
 # TODO(mike) report executor state
 # TODO(mike) implement timeouts
@@ -10,6 +12,8 @@ import logging
 import threading
 import time
 from inorbit_edge.types import Pose, SpatialTolerance
+from inorbit_edge.commands import COMMAND_NAV_GOAL, COMMAND_CUSTOM_COMMAND,\
+    COMMAND_MESSAGE
 
 # Commands handled by this module
 COMMAND_PAUSE = "inorbit_pause"
@@ -17,6 +21,17 @@ COMMAND_RESUME = "inorbit_resume"
 COMMAND_RUN_MISSION = "inorbit_run_mission"
 COMMAND_CANCEL_MISSION = "inorbit_cancel_mission"
 COMMAND_EVENT = "inorbit_event"
+
+# Mission states
+MISSION_STATE_STARTING = "Starting"
+MISSION_STATE_EXECUTING = "Executing"
+MISSION_STATE_ABORTED = "Aborted"
+MISSION_STATE_COMPLETED = "Completed"
+MISSION_STATE_CANCELED = "Canceled"
+
+# Mission status
+MISSION_STATUS_OK = "OK"
+MISSION_STATUS_ERROR = "Error"
 
 class MissionsModule:
     """
@@ -31,8 +46,7 @@ class MissionsModule:
         self.executor = MissionExecutor(self.robot_session)
 
     def command_callback(self, command_name, args, options):
-        print("processing mission cmd", args)
-        if command_name != "message":
+        if command_name != COMMAND_MESSAGE:
             return
         
         msg = args
@@ -56,16 +70,17 @@ class MissionsModule:
             return self.handle_cancel_mission(cmd_args)
     
     def handle_pause(self):
+        # not yet implemented
         pass
 
     def handle_resume(self):
+        # not yet implemented
         pass
 
     def handle_event(self, args):
-        pass
+        self.executor.handle_event(args)
 
     def handle_run_mission(self, args):
-        print("handle run", args)
         args = args.split(" ")
         if len(args) < 2:
             self.logger.error(f"Error: {COMMAND_RUN_MISSION} expects 2 arguments {str(args)}")
@@ -97,7 +112,6 @@ class MissionExecutor:
         self.logger = logging.getLogger(__class__.__name__)
         self.robot_session = robot_session
         self.mission = None
-        self.state = "idle"
         self.mutex = threading.Lock()
         self.is_idle = threading.Event()
         self.is_idle.set()
@@ -108,10 +122,12 @@ class MissionExecutor:
                 self.logger.warning(f"Can't start mission {mission.id} while other mission {self.mission.id} is running")
                 return
             self.is_idle.clear()
+            self.mission = mission
             threading.Thread(target=self._run_mission_thread, args=(mission,), daemon=True).start()
 
     def _run_mission_thread(self, mission):
         mission.execute()
+        self.mission = None
         self.is_idle.set()
 
     def wait_until_idle(self, timeout=None):
@@ -126,62 +142,96 @@ class MissionExecutor:
         with self.mutex:
             if self.mission is None:
                 self.logger.warning(f"Can't cancel mission when no mission is running")
-            elif self.mission.id != mission_id:
+            elif self.mission.id != mission_id and mission_id != "*":
                 self.logger.warning(f"Can't cancel mission {mission_id} because the id does not match running mission {self.mission.id}")
             self.mission.cancel()
             self.mission = None
             self.is_idle.set()
 
+    def handle_event(self, event):
+        with self.mutex:
+            if self.mission is not None:
+                self.mission.handle_event(event)
+
 class Mission:
+    """
+    Provides execution and tracking of a mission
+    """
     def __init__(self, id, program, robot_session):
+        """
+        Initializes the mission from a mission program
+        """
         self.id = id
         self.label = program["label"]
         self.start_ts = int(time.time())
         self.end_ts = None
         self.robot_session = robot_session
-        self.defaultStepTimeoutMs = -1
+        self.defaultStepTimeoutMs = None
         self.steps = self._build_steps(program)
-        self.state = "Starting"
-        self.status = "OK"
+        self.state = MISSION_STATE_STARTING
+        self.status = MISSION_STATUS_OK
         self.current_step_idx = -1
         self.current_step = None
         self.data = {}
+        # mutex for state, status and current step and reporting
+        self.mutex = threading.Lock()
 
     def set_data(self, data: dict):
+        """
+        Adds data to this mission's data
+        """
         self.data.update(data)
 
     def execute(self):
-        self.state = "Executing"
+        """
+        Runs this mission's steps
+        """
+        with self.mutex:
+            if self.state == MISSION_STATE_STARTING:
+                self.state = MISSION_STATE_EXECUTING
         for step_idx in range(0, len(self.steps)):
-            if self.state != "Executing":
-                break
-            self.current_step_idx = step_idx
-            self.current_step = self.steps[step_idx]
-            self.report()
+            with self.mutex:
+                if self.state != MISSION_STATE_EXECUTING:
+                    # Mission was aborted
+                    break
+                self.current_step_idx = step_idx
+                self.current_step = self.steps[step_idx]
+                self.report()
+            # HACK(mike) sending two reports without waiting can cause issues
+            # in the backend
             time.sleep(5)
             try:
                 self.current_step.execute(self)
+                if not self.current_step.success():
+                    raise Exception()
             except Exception as e:
-                self.state = "Aborted"
-                self.status = "Error"
+                with self.mutex:
+                    if self.state == MISSION_STATE_EXECUTING:
+                        self.state = MISSION_STATE_ABORTED
+                    self.status = MISSION_STATUS_ERROR
                 break
-        if self.state == "Executing":
-            self.state = "Completed"
-            self.current_step_idx += 1
-        self.end_ts = int(time.time())
-        self.report()
+        with self.mutex:
+            if self.state == MISSION_STATE_EXECUTING:
+                self.state = MISSION_STATE_COMPLETED
+                self.current_step_idx += 1
+                self.current_step = None
+            self.end_ts = int(time.time())
+            self.report()
 
     def build_report(self):
+        """
+        Builds a mission tracking report based on the mission state and progress
+        """
         report = {
             "missionId": self.id,
-            "inProgress": self.state == "Executing",
+            "inProgress": self.state == MISSION_STATE_EXECUTING,
             "state": self.state,
             "label": self.label,
             "startTs": self.start_ts,
             "data": self.data,
             "status": self.status,
         }
-        if self.state == "Executing":
+        if self.state == MISSION_STATE_EXECUTING:
             report["currentTaskId"] = str(self.current_step_idx)
         report["tasks"] = [{
             "taskId": str(i),
@@ -198,21 +248,45 @@ class Mission:
         return report
 
     def report(self):
-        print("send report", self.build_report())
+        """
+        Publishes the mission report
+        """
         self.robot_session.publish_key_values(
             key_values={"mission_tracking": self.build_report()},
+            is_event=True
         )
 
+    def handle_event(self, event):
+        """
+        Handles an external event
+        """
+        step = self.current_step
+        if step is not None:
+            step.handle_event(event)
+
     def cancel(self):
-        self.state = "Aborted"
+        """
+        Cancels the execution of the mission
+        """
+        with self.mutex:
+            if self.current_step is not None:
+                self.current_step.cancel()
+            self.state = MISSION_STATE_CANCELED
+            self.status = MISSION_STATUS_OK
 
     def _build_steps(self, program):
+        """
+        Builds the list of mission step objects from a mission program
+        """
         if "steps" not in program:
             return []
         steps = [self._build_step(s) for s in program["steps"]]
         return steps
 
     def _build_step(self, step_def):
+        """
+        Builds a mission step object from its definition
+        """
         if step_def["type"] == "Action" and step_def["action"]["type"] == "PublishToTopic":
             return MissionStepPublishToTopic.build_from_def(step_def, self.defaultStepTimeoutMs)
         if step_def["type"] == "Action" and step_def["action"]["type"] == "RunScript":
@@ -223,11 +297,16 @@ class Mission:
             return MissionStepWaitSeconds.build_from_def(step_def)
         if step_def["type"] == "SetData":
             return MissionStepSetData.build_from_def(step_def, self.defaultStepTimeoutMs)
+        if step_def["type"] == "WaitEvent":
+            return MissionStepWaitEvent.build_from_def(step_def, self.defaultStepTimeoutMs)
         raise Exception(f"Error build mission step {str(step_def)}")
                 
 
 class Step:
-    def __init__(self, label, timeoutMs=-1):
+    """
+    Base class for all mission steps. Steps can be executed and canceled.
+    """
+    def __init__(self, label, timeoutMs=None):
         self.label = label
         self.timeoutMs = timeoutMs
 
@@ -240,14 +319,20 @@ class Step:
     def cancel(self):
         pass
 
+    def handle_event(self, event):
+        pass
+
 
 class MissionStepPublishToTopic(Step):
+    """
+    Mission step that executes a publish message action
+    """
     def __init__(self, label, message, timeoutMs):
         super().__init__(label, timeoutMs)
         self.message = message
 
     def execute(self, mission):
-        mission.robot_session.dispatch_command("message", self.message)
+        mission.robot_session.dispatch_command(COMMAND_MESSAGE, self.message)
 
     def build_from_def(step_def, defaultTimeoutMs):
         return MissionStepPublishToTopic(
@@ -258,6 +343,9 @@ class MissionStepPublishToTopic(Step):
 
 
 class MissionStepSetData(Step):
+    """
+    Mission step that adds some data to the mission
+    """
     def __init__(self, label, data: dict, timeoutMs):
         super().__init__(label, timeoutMs)
         self.data = data
@@ -274,6 +362,9 @@ class MissionStepSetData(Step):
 
 
 class MissionStepRunScript(Step):
+    """
+    Mission step that executes a custom command action
+    """
     def __init__(self, label, fileName, args, timeoutMs):
         super().__init__(label, timeoutMs)
         self.fileName = fileName
@@ -281,7 +372,7 @@ class MissionStepRunScript(Step):
 
     def execute(self, mission):
         mission.robot_session.dispatch_command(
-            "customCommand", [self.fileName, self.args])
+            COMMAND_CUSTOM_COMMAND, [self.fileName, self.args])
 
     def build_from_def(step_def, defaultTimeoutMs):
         return MissionStepRunScript(
@@ -292,12 +383,16 @@ class MissionStepRunScript(Step):
         )
 
 class MissionStepWaitSeconds(Step):
+    """
+    Mission step that waits the specified seconds
+    """
     def __init__(self, label, waitTimeSeconds):
         super().__init__(label)
         self.waitTimeSeconds = waitTimeSeconds
+        self.event = threading.Event()
 
     def execute(self, mission):
-        time.sleep(self.waitTimeSeconds)
+        self.event.wait(self.waitTimeSeconds)
 
     def build_from_def(step_def):
         return MissionStepWaitSeconds(
@@ -305,18 +400,30 @@ class MissionStepWaitSeconds(Step):
             step_def["seconds"],
         )
 
+    def success(self):
+        return not self.event.is_set()
+
+    def cancel(self):
+        super().cancel()
+        self.event.set()
+
 
 class MissionStepNavigateTo(Step):
+    """
+    Mission step that tells the robot to go to a waypoint and waits until the
+    waypoint is reached
+    """
     def __init__(self, label, waypoint, tolerance, timeoutMs):
         super().__init__(label, timeoutMs)
         self.waypoint = Pose(x=waypoint["x"], y=waypoint["y"],
             theta=waypoint["theta"], frame_id=waypoint["frameId"])
         self.tolerance = SpatialTolerance(positionMeters=
             tolerance["positionMeters"], angularRadians=tolerance["angularRadians"])
+        self.canceled = False
 
     def execute(self, mission):
         mission.robot_session.dispatch_command(
-            command_name="navGoal",
+            command_name=COMMAND_NAV_GOAL,
             args=[{
                 "x": self.waypoint.x,
                 "y": self.waypoint.y,
@@ -327,6 +434,8 @@ class MissionStepNavigateTo(Step):
         while True:
             if mission.robot_session.reached_waypoint(self.waypoint, self.tolerance):
                 return
+            if self.canceled:
+                return
             time.sleep(1)
 
     def build_from_def(step_def, defaultTimeoutMs):
@@ -336,3 +445,43 @@ class MissionStepNavigateTo(Step):
             step_def["tolerance"],
             step_def.get("timeoutMs", defaultTimeoutMs),
         )
+
+    def cancel(self):
+        self.canceled = True
+        super().cancel()
+
+    def success(self):
+        return not self.canceled
+
+class MissionStepWaitEvent(Step):
+    """
+    Mission step that waits for an external event
+    """
+    def __init__(self, label, event, timeoutMs):
+        super().__init__(label)
+        self.awaited_event = event
+        self.timeoutS = timeoutMs * 1000 if timeoutMs is not None else None
+        self.event = threading.Event()
+        self.canceled = False
+
+    def execute(self, mission):
+        self.event.wait(self.timeoutS)
+
+    def success(self):
+        return self.event.is_set() and not self.canceled
+
+    def handle_event(self, event):
+        if self.awaited_event == event:
+            self.event.set()
+
+    def build_from_def(step_def, defaultTimeoutMs):
+        return MissionStepWaitEvent(
+            step_def["label"],
+            step_def["event"],
+            step_def.get("timeoutMs", defaultTimeoutMs),
+        )
+
+    def cancel(self):
+        super().cancel()
+        self.canceled = True
+        self.event.set()

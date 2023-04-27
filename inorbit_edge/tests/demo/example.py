@@ -59,6 +59,7 @@ class FakeRobot:
         self.x = uniform(-MAX_X / 4, MAX_X / 4)
         self.y = uniform(-MAX_Y / 4, MAX_Y / 4)
         self.yaw = uniform(0, MAX_YAW / 2)
+        self.frame_id = "map"
 
         # Initialize other robot data
         self.cpu = 0
@@ -188,7 +189,6 @@ if __name__ == "__main__":
         )
         if video_url is not None:
             robot_session.register_camera("0", OpenCVCamera(video_url))
-        robot_session._publish_throttling["publish_key_values"]["min_time_between_calls"] = 0
 
     # Go through every fake robot and simulate robot movement
     while True:
@@ -199,7 +199,8 @@ if __name__ == "__main__":
                 # Get the corresponding robot session and publish robot data
                 robot_session = robot_session_pool.get_session(robot_id=robot_id)
                 robot_session.publish_pose(
-                    x=fake_robot.x, y=fake_robot.y, yaw=fake_robot.yaw
+                    x=fake_robot.x, y=fake_robot.y, yaw=fake_robot.yaw,
+                    frame_id=fake_robot.frame_id
                 )
                 robot_session.publish_key_values(
                     {
