@@ -32,7 +32,7 @@ from inorbit_edge.commands import (
     COMMAND_INITIAL_POSE,
     COMMAND_NAV_GOAL,
     COMMAND_CUSTOM_COMMAND,
-    COMMAND_MESSAGE
+    COMMAND_MESSAGE,
 )
 import time
 import requests
