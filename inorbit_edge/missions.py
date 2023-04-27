@@ -76,12 +76,10 @@ class MissionsModule:
             return self.handle_cancel_mission(cmd_args)
 
     def handle_pause(self):
-        # not yet implemented
-        pass
+        self.executor.pause()
 
     def handle_resume(self):
-        # not yet implemented
-        pass
+        self.executor.resume()
 
     def handle_event(self, args):
         self.executor.handle_event(args)
@@ -126,6 +124,7 @@ class MissionExecutor:
         self.mutex = threading.Lock()
         self.is_idle = threading.Event()
         self.is_idle.set()
+        self.paused = False
 
     def run_mission(self, mission):
         with self.mutex:
@@ -137,6 +136,9 @@ class MissionExecutor:
                 return
             self.is_idle.clear()
             self.mission = mission
+            if self.paused:
+                # Start the mission paused if the executor is paused
+                mission.pause()
             threading.Thread(
                 target=self._run_mission_thread, args=(mission,), daemon=True
             ).start()
@@ -172,6 +174,18 @@ class MissionExecutor:
             if self.mission is not None:
                 self.mission.handle_event(event)
 
+    def pause(self):
+        with self.mutex:
+            self.paused = True
+            if self.mission is not None:
+                self.mission.pause()
+
+    def resume(self):
+        with self.mutex:
+            self.paused = False
+            if self.mission is not None:
+                self.mission.resume()
+
 
 class Mission:
     """
@@ -184,7 +198,7 @@ class Mission:
         """
         self.id = id
         self.label = program["label"]
-        self.start_ts = int(time.time())
+        self.start_ts = int(time.time()) * 1000
         self.end_ts = None
         self.robot_session = robot_session
         self.defaultStepTimeoutMs = None
@@ -196,6 +210,8 @@ class Mission:
         self.data = {}
         # mutex for state, status and current step and reporting
         self.mutex = threading.Lock()
+        self.enabled = threading.Event()
+        self.enabled.set()
 
     def set_data(self, data: dict):
         """
@@ -218,6 +234,8 @@ class Mission:
                 self.current_step_idx = step_idx
                 self.current_step = self.steps[step_idx]
                 self.report()
+            # Wait if the mission is paused
+            self.enabled.wait()
             # HACK(mike) sending two reports without waiting can cause issues
             # in the backend
             time.sleep(5)
@@ -236,7 +254,7 @@ class Mission:
                 self.state = MISSION_STATE_COMPLETED
                 self.current_step_idx += 1
                 self.current_step = None
-            self.end_ts = int(time.time())
+            self.end_ts = int(time.time()) * 1000
             self.report()
 
     def build_report(self):
@@ -292,6 +310,27 @@ class Mission:
                 self.current_step.cancel()
             self.state = MISSION_STATE_CANCELED
             self.status = MISSION_STATUS_OK
+        # Resume to finish processing of cancellation
+        self.resume()
+
+    def pause(self):
+        """
+        Pauses mission execution. The current step is paused and no new steps are
+        executed until the mission is resumed.
+        """
+        with self.mutex:
+            self.enabled.clear()
+            if self.current_step is not None:
+                self.current_step.pause()
+
+    def resume(self):
+        """
+        Resumes mission execution
+        """
+        with self.mutex:
+            self.enabled.set()
+            if self.current_step is not None:
+                self.current_step.resume()
 
     def _build_steps(self, program):
         """
@@ -353,6 +392,16 @@ class Step:
         pass
 
     def handle_event(self, event):
+        pass
+
+    def pause(self):
+        """
+        Stops the execution of this step. Note that only steps that make the robot
+        move implement this method.
+        """
+        pass
+
+    def resume(self):
         pass
 
 
@@ -465,10 +514,14 @@ class MissionStepNavigateTo(Step):
             positionMeters=tolerance["positionMeters"],
             angularRadians=tolerance["angularRadians"],
         )
+        self.mission = None
         self.canceled = False
 
-    def execute(self, mission):
-        mission.robot_session.dispatch_command(
+    def _go_to_waypoint(self):
+        if self.mission is None:
+            # Can't go to the waypoint before knowing the mission
+            return
+        self.mission.robot_session.dispatch_command(
             command_name=COMMAND_NAV_GOAL,
             args=[
                 {
@@ -479,12 +532,23 @@ class MissionStepNavigateTo(Step):
                 }
             ],
         )
+
+    def execute(self, mission):
+        self.mission = mission
+        self._go_to_waypoint()
         while True:
             if mission.robot_session.reached_waypoint(self.waypoint, self.tolerance):
                 return
             if self.canceled:
                 return
             time.sleep(1)
+
+    def pause(self):
+        # It's up to the integrator to handle pause to avoid the robot from moving
+        pass
+
+    def resume(self):
+        self._go_to_waypoint()
 
     def build_from_def(step_def, defaultTimeoutMs):
         return MissionStepNavigateTo(
