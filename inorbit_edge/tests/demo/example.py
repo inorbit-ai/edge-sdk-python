@@ -26,7 +26,7 @@ MAX_YAW = 2 * pi
 
 LIDAR_RANGES = 700
 
-NUM_ROBOTS = 2
+NUM_ROBOTS = 1
 
 
 # TODO: integrate this into the Edge SDK ``RobotSession`` class
@@ -162,8 +162,7 @@ if __name__ == "__main__":
     # Create robot session factory and session pool
     # If a robot_key is specified, use it as for authentication. Otherwise, use
     # the api_key.
-    if inorbit_robot_key:
-        
+    if inorbit_robot_key:        
         robot_session_factory = RobotSessionFactory(
             endpoint=inorbit_api_endpoint,
             robot_key=inorbit_robot_key,
