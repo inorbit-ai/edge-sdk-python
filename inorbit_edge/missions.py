@@ -1,5 +1,6 @@
 # This module provides mission execution capabilities
-# See design doc  https://docs.google.com/document/d/1QqZkqa1LEl8xFFDZ3ygq_uZsB0fNwrDURylSjxmDWG0/edit#heading=h.ibkxl4cmv68t
+# See design doc https://docs.google.com/document/d
+#   /1QqZkqa1LEl8xFFDZ3ygq_uZsB0fNwrDURylSjxmDWG0/edit#heading=h.ibkxl4cmv68t
 #
 # TODO(mike) implement pause/resume
 # TODO(mike) report errors to cloud
