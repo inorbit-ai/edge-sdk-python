@@ -1,15 +1,20 @@
- # Tests the missions functionalities
- #
- # TODO(mike) add tests for wait event step
- # TODO(mike) add tests cancel()
+# Tests the missions functionalities
+#
+# TODO(mike) add tests for wait event step
+# TODO(mike) add tests cancel()
 
-from inorbit_edge.robot import RobotSession, COMMAND_MESSAGE, COMMAND_CUSTOM_COMMAND, \
-  COMMAND_NAV_GOAL
+from inorbit_edge.robot import (
+    RobotSession,
+    COMMAND_MESSAGE,
+    COMMAND_CUSTOM_COMMAND,
+    COMMAND_NAV_GOAL,
+)
 
-def test_mission_end_to_end(mock_mqtt_client, mock_inorbit_api, mocker, mock_sleep,
-  mock_time):
-    """Tests mission execution and tracking
-    """
+
+def test_mission_end_to_end(
+    mock_mqtt_client, mock_inorbit_api, mocker, mock_sleep, mock_time
+):
+    """Tests mission execution and tracking"""
     robot_session = RobotSession(
         robot_id="id_123", robot_name="name_123", api_key="apikey_123"
     )
@@ -82,9 +87,12 @@ def test_mission_end_to_end(mock_mqtt_client, mock_inorbit_api, mocker, mock_sle
     assert robot_session.missions_module.executor.wait_until_idle(5)
 
     # filter out the execute mission command
-    dispatched_commands = [c for c in my_command_handler.call_args_list
-      if c.args[0] != COMMAND_MESSAGE or c.args[1] != message]
-    
+    dispatched_commands = [
+        c
+        for c in my_command_handler.call_args_list
+        if c.args[0] != COMMAND_MESSAGE or c.args[1] != message
+    ]
+
     # check step completed and message published
     call_args, _ = dispatched_commands[0]
     [command_name, command_args, _] = call_args
@@ -107,15 +115,18 @@ def test_mission_end_to_end(mock_mqtt_client, mock_inorbit_api, mocker, mock_sle
     assert command_args == ["turn_on_beep.sh", ["arg1", "arg2"]]
 
     # check mission tracking reports
-    reports = [c.kwargs["key_values"]["mission_tracking"] for c in robot_session.publish_key_values.call_args_list
-                if "key_values" in c.kwargs and "mission_tracking" in c.kwargs["key_values"]]
-    expected_tasks =  [
+    reports = [
+        c.kwargs["key_values"]["mission_tracking"]
+        for c in robot_session.publish_key_values.call_args_list
+        if "key_values" in c.kwargs and "mission_tracking" in c.kwargs["key_values"]
+    ]
+    expected_tasks = [
         {"label": "init data", "taskId": "0"},
         {"label": "my step", "taskId": "1"},
         {"label": "my step 2", "taskId": "2"},
         {"label": "sleep", "taskId": "3"},
         {"label": "go to picking station", "taskId": "4"},
-        {"label": "run a script", "taskId": "5"}
+        {"label": "run a script", "taskId": "5"},
     ]
     expected_reports = [
         {
@@ -125,98 +136,82 @@ def test_mission_end_to_end(mock_mqtt_client, mock_inorbit_api, mocker, mock_sle
             "state": "Executing",
             "label": "Delivery Mission",
             "startTs": 1001,
-            "data": {
-                "order": "#321",
-                "items": ["InOrbito", "Bottle"]
-            },
+            "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
             "status": "OK",
             "completedPercent": 0.0,
-            "tasks": expected_tasks
-        }, {
+            "tasks": expected_tasks,
+        },
+        {
             "missionId": "1234",
             "inProgress": True,
             "currentTaskId": "1",
             "state": "Executing",
             "label": "Delivery Mission",
             "startTs": 1001,
-            "data": {
-                "order": "#321",
-                "items": ["InOrbito", "Bottle"]
-            },
+            "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
             "status": "OK",
             "completedPercent": 0.16666666666666666,
-            "tasks": expected_tasks
-        }, {
+            "tasks": expected_tasks,
+        },
+        {
             "missionId": "1234",
             "inProgress": True,
             "currentTaskId": "2",
             "state": "Executing",
             "label": "Delivery Mission",
             "startTs": 1001,
-            "data": {
-                "order": "#321",
-                "items": ["InOrbito", "Bottle"]
-            },
+            "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
             "status": "OK",
             "completedPercent": 0.3333333333333333,
-            "tasks": expected_tasks
-        }, {
+            "tasks": expected_tasks,
+        },
+        {
             "missionId": "1234",
             "inProgress": True,
             "currentTaskId": "3",
             "state": "Executing",
             "label": "Delivery Mission",
             "startTs": 1001,
-            "data": {
-                "order": "#321",
-                "items": ["InOrbito", "Bottle"]
-            },
+            "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
             "status": "OK",
             "completedPercent": 0.5,
-            "tasks": expected_tasks
-        }, {
+            "tasks": expected_tasks,
+        },
+        {
             "missionId": "1234",
             "inProgress": True,
             "currentTaskId": "4",
             "state": "Executing",
             "label": "Delivery Mission",
             "startTs": 1001,
-            "data": {
-                "order": "#321",
-                "items": ["InOrbito", "Bottle"]
-            },
-            "status":
-            "OK",
+            "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
+            "status": "OK",
             "completedPercent": 0.6666666666666666,
-            "tasks": expected_tasks
-        }, {
+            "tasks": expected_tasks,
+        },
+        {
             "missionId": "1234",
             "inProgress": True,
             "currentTaskId": "5",
             "state": "Executing",
             "label": "Delivery Mission",
             "startTs": 1001,
-            "data": {
-                "order":"#321",
-                "items": ["InOrbito", "Bottle"]
-            },
+            "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
             "status": "OK",
             "completedPercent": 0.8333333333333334,
-            "tasks": expected_tasks
-        }, {
+            "tasks": expected_tasks,
+        },
+        {
             "missionId": "1234",
             "inProgress": False,
             "state": "Completed",
             "label": "Delivery Mission",
             "startTs": 1001,
             "endTs": 1001,
-            "data": {
-                "order": "#321",
-                "items": ["InOrbito", "Bottle"]
-            },
+            "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
             "status": "OK",
             "completedPercent": 1.0,
-            "tasks": expected_tasks
-        }
+            "tasks": expected_tasks,
+        },
     ]
     assert reports == expected_reports
