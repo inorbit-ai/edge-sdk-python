@@ -132,7 +132,7 @@ def test_robot_session_echo(mocker, mock_mqtt_client, mock_inorbit_api):
                     cmd="hello world"
                 ).SerializeToString(),
             },
-            {"command_name": "message", "command_args": ["hello world"]},
+            {"command_name": "message", "command_args": "hello world"},
         ),
     ],
 )
