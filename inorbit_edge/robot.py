@@ -778,11 +778,9 @@ class RobotSession:
                 (waypoint.x, waypoint.y),
             ) <= tolerance.positionMeters
             and (self._last_pose.theta - waypoint.theta) % (2 * math.pi)
-                <= tolerance.angularRadians
+            <= tolerance.angularRadians
         )
-            
-            
-        
+
     def publish_key_values(self, key_values, custom_field="0", is_event=False):
         """Publish key value pairs
 
@@ -792,8 +790,10 @@ class RobotSession:
             is_event (bool): Events are not throttled
         """
 
-        if (not is_event
-            and not self._should_publish_message(method="publish_key_values")):
+        if (
+            not is_event
+            and not self._should_publish_message(method="publish_key_values")
+        ):
             return None
 
         def convert_value(value):

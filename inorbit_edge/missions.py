@@ -97,8 +97,8 @@ class MissionsModule:
         try:
             mission_program = json.loads(mission_program_json)
             mission = Mission(mission_id, mission_program, self.robot_session)
-        except Exception as e:
-            self.logger.error(f"Error parsing program", exc_info=True)
+        except Exception:
+            self.logger.error("Error parsing program", exc_info=True)
             return
         self.executor.run_mission(mission)
 
@@ -130,7 +130,8 @@ class MissionExecutor:
         with self.mutex:
             if self.mission is not None:
                 self.logger.warning(
-                    f"Can't start mission {mission.id} while other mission {self.mission.id} is running"
+                    f"Can't start mission {mission.id} while other mission\
+                        {self.mission.id} is running"
                 )
                 return
             self.is_idle.clear()
@@ -155,10 +156,11 @@ class MissionExecutor:
     def cancel_mission(self, mission_id):
         with self.mutex:
             if self.mission is None:
-                self.logger.warning(f"Can't cancel mission when no mission is running")
+                self.logger.warning("Can't cancel mission when no mission is running")
             elif self.mission.id != mission_id and mission_id != "*":
                 self.logger.warning(
-                    f"Can't cancel mission {mission_id} because the id does not match running mission {self.mission.id}"
+                    f"Can't cancel mission {mission_id} because the id does not match\
+                        running mission {self.mission.id}"
                 )
             self.mission.cancel()
             self.mission = None
@@ -222,7 +224,7 @@ class Mission:
                 self.current_step.execute(self)
                 if not self.current_step.success():
                     raise Exception()
-            except Exception as e:
+            except Exception:
                 with self.mutex:
                     if self.state == MISSION_STATE_EXECUTING:
                         self.state = MISSION_STATE_ABORTED
