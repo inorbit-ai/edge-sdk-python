@@ -777,9 +777,9 @@ class RobotSession:
         if self._last_pose is None:
             return False
         return (
-            math.dist(
-                (self._last_pose.x, self._last_pose.y),
-                (waypoint.x, waypoint.y),
+            math.sqrt(
+                (self._last_pose.x - waypoint.x) ** 2
+                + (self._last_pose.y - waypoint.y) ** 2,
             )
             <= tolerance.positionMeters
             and (self._last_pose.theta - waypoint.theta) % (2 * math.pi)
