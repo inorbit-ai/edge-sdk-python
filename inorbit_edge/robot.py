@@ -74,22 +74,28 @@ ROBOT_PATH_POINTS_LIMIT = 1000
 
 
 class RobotSession:
-    def __init__(self, robot_id, robot_name, api_key, **kwargs) -> None:
+    def __init__(
+        self, robot_id, robot_name, api_key=None, robot_key=None, **kwargs
+    ) -> None:
         """Initialize a robot session.
 
         Args:
             robot_id (str): ID of the robot.
             robot_name (str): Robot name.
             api_key (str): API key for authenticating against InOrbit Cloud services.
+            robot_key(str): Robot key for authenticating against InOrbit Cloud services
+            when using InOrbit Connect (https://connect.inorbit.ai/).
             endpoint (str): InOrbit URL. Defaults: INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL.
             use_ssl (bool): Configures MQTT client to use SSL. Defaults: True.
         """
+
+        self.robot_key = robot_key
+        self.api_key = api_key
 
         self.logger = logging.getLogger(__class__.__name__)
 
         self.robot_id = robot_id
         self.robot_name = robot_name
-        self.api_key = api_key
         # The agent version is generated based on the InOrbit Edge SDK version
         self.agent_version = "{}.edgesdk_py".format(inorbit_edge_version)
         self.endpoint = kwargs.get("endpoint", INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL)
@@ -253,11 +259,15 @@ class RobotSession:
         self.logger.info("Fetching config for robot {}".format(self.robot_id))
         # get params from self
         params = {
-            "appKey": self.api_key,
             "robotId": self.robot_id,
             "hostname": self.robot_name,
             "agentVersion": self.agent_version,
         }
+
+        if self.robot_key:
+            params["robotKey"] = self.robot_key
+        elif self.api_key:
+            params["appKey"] = self.api_key
 
         # post request to fetch robot config
         response = requests.post(self.endpoint, data=params)
