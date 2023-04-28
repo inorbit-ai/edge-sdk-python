@@ -82,25 +82,25 @@ def test_mission_end_to_end(
     }
     """
     # run mission
-    robot_session.dispatch_command(COMMAND_MESSAGE, message)
+    robot_session.dispatch_command(COMMAND_MESSAGE, [message])
     # wait for mission completion
     assert robot_session.missions_module.executor.wait_until_idle(10)
     # filter out the execute mission command
     dispatched_commands = [
         c
         for c in my_command_handler.call_args_list
-        if c[0][0] != COMMAND_MESSAGE or c[0][1] != message
+        if c[0][0] != COMMAND_MESSAGE or c[0][1][0] != message
     ]
     # check step completed and message published
     call_args, _ = dispatched_commands[0]
     [command_name, command_args, _] = call_args
     assert command_name == COMMAND_MESSAGE
-    assert command_args == "hello world"
+    assert command_args == ["hello world"]
     # check step completed and anotehr message published
     call_args, _ = dispatched_commands[1]
     [command_name, command_args, _] = call_args
     assert command_name == COMMAND_MESSAGE
-    assert command_args == "hello world 2"
+    assert command_args == ["hello world 2"]
     # check that navigate step sends navGoal command
     call_args, _ = dispatched_commands[2]
     [command_name, command_args, _] = call_args
@@ -133,7 +133,7 @@ def test_mission_end_to_end(
             "currentTaskId": "0",
             "state": "Executing",
             "label": "Delivery Mission",
-            "startTs": 1001,
+            "startTs": 1001000,
             "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
             "status": "OK",
             "completedPercent": 0.0,
@@ -145,7 +145,7 @@ def test_mission_end_to_end(
             "currentTaskId": "1",
             "state": "Executing",
             "label": "Delivery Mission",
-            "startTs": 1001,
+            "startTs": 1001000,
             "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
             "status": "OK",
             "completedPercent": 0.16666666666666666,
@@ -157,7 +157,7 @@ def test_mission_end_to_end(
             "currentTaskId": "2",
             "state": "Executing",
             "label": "Delivery Mission",
-            "startTs": 1001,
+            "startTs": 1001000,
             "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
             "status": "OK",
             "completedPercent": 0.3333333333333333,
@@ -169,7 +169,7 @@ def test_mission_end_to_end(
             "currentTaskId": "3",
             "state": "Executing",
             "label": "Delivery Mission",
-            "startTs": 1001,
+            "startTs": 1001000,
             "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
             "status": "OK",
             "completedPercent": 0.5,
@@ -181,7 +181,7 @@ def test_mission_end_to_end(
             "currentTaskId": "4",
             "state": "Executing",
             "label": "Delivery Mission",
-            "startTs": 1001,
+            "startTs": 1001000,
             "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
             "status": "OK",
             "completedPercent": 0.6666666666666666,
@@ -193,7 +193,7 @@ def test_mission_end_to_end(
             "currentTaskId": "5",
             "state": "Executing",
             "label": "Delivery Mission",
-            "startTs": 1001,
+            "startTs": 1001000,
             "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
             "status": "OK",
             "completedPercent": 0.8333333333333334,
@@ -204,8 +204,8 @@ def test_mission_end_to_end(
             "inProgress": False,
             "state": "Completed",
             "label": "Delivery Mission",
-            "startTs": 1001,
-            "endTs": 1001,
+            "startTs": 1001000,
+            "endTs": 1001000,
             "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
             "status": "OK",
             "completedPercent": 1.0,
