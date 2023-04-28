@@ -1,6 +1,4 @@
 # This module provides mission execution capabilities
-# See design doc https://docs.google.com/document/d
-#   /1QqZkqa1LEl8xFFDZ3ygq_uZsB0fNwrDURylSjxmDWG0/edit#heading=h.ibkxl4cmv68t
 #
 # TODO(mike) implement pause/resume
 # TODO(mike) report errors to cloud
@@ -46,7 +44,7 @@ class MissionsModule:
     """
 
     def __init__(self, robot_session):
-        self.logger = logging.getLogger(__class__.__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.robot_session = robot_session
         self.robot_session.register_command_callback(self.command_callback)
         self.executor = MissionExecutor(self.robot_session)
@@ -55,7 +53,7 @@ class MissionsModule:
         if command_name != COMMAND_MESSAGE:
             return
 
-        msg = args
+        msg = args[0]
         cmd = msg.split(" ")[0]
         cmd_args = " ".join(msg.split(" ")[1:])
 
@@ -120,7 +118,7 @@ class MissionExecutor:
     """
 
     def __init__(self, robot_session):
-        self.logger = logging.getLogger(__class__.__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.robot_session = robot_session
         self.mission = None
         self.mutex = threading.Lock()
@@ -173,6 +171,11 @@ class MissionExecutor:
                 self.mission.handle_event(event)
 
 
+class FailedMissionStepExecution(Exception):
+    "Raised when mission step fails to execute"
+    pass
+
+
 class Mission:
     """
     Provides execution and tracking of a mission
@@ -184,7 +187,7 @@ class Mission:
         """
         self.id = id
         self.label = program["label"]
-        self.start_ts = int(time.time())
+        self.start_ts = int(time.time()) * 1000
         self.end_ts = None
         self.robot_session = robot_session
         self.defaultStepTimeoutMs = None
@@ -224,7 +227,7 @@ class Mission:
             try:
                 self.current_step.execute(self)
                 if not self.current_step.success():
-                    raise Exception()
+                    raise FailedMissionStepExecution()
             except Exception:
                 with self.mutex:
                     if self.state == MISSION_STATE_EXECUTING:
@@ -236,7 +239,7 @@ class Mission:
                 self.state = MISSION_STATE_COMPLETED
                 self.current_step_idx += 1
                 self.current_step = None
-            self.end_ts = int(time.time())
+            self.end_ts = int(time.time()) * 1000
             self.report()
 
     def build_report(self):
@@ -366,7 +369,7 @@ class MissionStepPublishToTopic(Step):
         self.message = message
 
     def execute(self, mission):
-        mission.robot_session.dispatch_command(COMMAND_MESSAGE, self.message)
+        mission.robot_session.dispatch_command(COMMAND_MESSAGE, [self.message])
 
     def build_from_def(step_def, defaultTimeoutMs):
         return MissionStepPublishToTopic(

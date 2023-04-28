@@ -399,7 +399,7 @@ class RobotSession:
         # Hand over to callback for processing, using the proper format
         self.dispatch_command(
             command_name=COMMAND_MESSAGE,
-            args=custom_command_message.cmd,
+            args=[custom_command_message.cmd],
         )
 
     def _handle_nav_goal(self, msg):
