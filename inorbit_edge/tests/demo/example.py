@@ -150,6 +150,9 @@ if __name__ == "__main__":
     inorbit_api_url = os.environ.get("INORBIT_API_URL")
     inorbit_api_use_ssl = os.environ.get("INORBIT_API_USE_SSL")
     inorbit_api_key = os.environ.get("INORBIT_API_KEY")
+
+    # If using InOrbit connect (https://connect.inorbit.ai/),
+    # set a robot key to authenticate
     inorbit_robot_key = os.environ.get("INORBIT_ROBOT_KEY")
 
     # If configured stream video as if it was a robot camera
@@ -162,7 +165,7 @@ if __name__ == "__main__":
     # Create robot session factory and session pool
     # If a robot_key is specified, use it as for authentication. Otherwise, use
     # the api_key.
-    if inorbit_robot_key:        
+    if inorbit_robot_key:
         robot_session_factory = RobotSessionFactory(
             endpoint=inorbit_api_endpoint,
             robot_key=inorbit_robot_key,

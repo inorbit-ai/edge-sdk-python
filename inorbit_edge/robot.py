@@ -81,7 +81,7 @@ class RobotSession:
             robot_name (str): Robot name.
             api_key (str): API key for authenticating against InOrbit Cloud services.
             robot_key(str): Robot key for authenticating against InOrbit Cloud services
-            when using InOrbit Connect.
+            when using InOrbit Connect (https://connect.inorbit.ai/).
             endpoint (str): InOrbit URL. Defaults: INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL.
             use_ssl (bool): Configures MQTT client to use SSL. Defaults: True.
         """
