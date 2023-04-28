@@ -151,7 +151,7 @@ if __name__ == "__main__":
     inorbit_api_use_ssl = os.environ.get("INORBIT_API_USE_SSL")
     inorbit_api_key = os.environ.get("INORBIT_API_KEY")
 
-    # If using InOrbit connect (https://connect.inorbit.ai/),
+    # If using InOrbit Connect (https://connect.inorbit.ai/),
     # set a robot key to authenticate
     inorbit_robot_key = os.environ.get("INORBIT_ROBOT_KEY")
 
