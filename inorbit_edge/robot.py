@@ -3,6 +3,7 @@
 
 import json
 from inorbit_edge import __version__ as inorbit_edge_version
+from inorbit_edge.types import Pose, SpatialTolerance
 import os
 import logging
 import paho.mqtt.client as mqtt
@@ -26,6 +27,13 @@ from inorbit_edge.inorbit_pb2 import (
     CameraMessage,
 )
 from inorbit_edge.video import CameraStreamer, Camera
+from inorbit_edge.missions import MissionsModule
+from inorbit_edge.commands import (
+    COMMAND_INITIAL_POSE,
+    COMMAND_NAV_GOAL,
+    COMMAND_CUSTOM_COMMAND,
+    COMMAND_MESSAGE,
+)
 import time
 import requests
 import math
@@ -56,11 +64,6 @@ MQTT_CUSTOM_COMMAND_MESSAGE = "custom_command/ros"
 MQTT_SCRIPT_OUTPUT_TOPIC = "custom_command/script/status"
 MQTT_IN_CMD = "in_cmd"
 
-# InOrbit commands
-COMMAND_INITIAL_POSE = "initialPose"
-COMMAND_NAV_GOAL = "navGoal"
-COMMAND_CUSTOM_COMMAND = "customCommand"
-COMMAND_MESSAGE = "message"
 # InOrbit modules
 INORBIT_MODULE_CAMERAS = "RosImageAgentlet"
 # CustomCommand execution status
@@ -90,7 +93,8 @@ class RobotSession:
         # The agent version is generated based on the InOrbit Edge SDK version
         self.agent_version = "{}.edgesdk_py".format(inorbit_edge_version)
         self.endpoint = kwargs.get("endpoint", INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL)
-
+        # Track robot's current pose
+        self._last_pose = None
         # Use SSL by default
         self.use_ssl = kwargs.get("use_ssl", True)
 
@@ -147,6 +151,7 @@ class RobotSession:
         self.message_handlers = {}
 
         self.command_callbacks = []
+        self.missions_module = MissionsModule(self)
         self.camera_streamers = {}
         self.camera_streaming_on = False
         self.camera_streaming_mutex = threading.Lock()
@@ -368,7 +373,7 @@ class RobotSession:
         theta = args[4]
 
         # Hand over to callback for processing, using the proper format
-        self._dispatch_command(
+        self.dispatch_command(
             command_name=COMMAND_INITIAL_POSE,
             args=[{"x": x, "y": y, "theta": theta}],
             execution_id=seq,  # NOTE: Using seq as the execution ID
@@ -380,7 +385,7 @@ class RobotSession:
         custom_script_msg = CustomScriptCommandMessage()
         custom_script_msg.ParseFromString(msg)
         # Hand over to callback for processing, using the proper format
-        self._dispatch_command(
+        self.dispatch_command(
             command_name=COMMAND_CUSTOM_COMMAND,
             args=[custom_script_msg.file_name, custom_script_msg.arg_options],
             execution_id=custom_script_msg.execution_id,
@@ -392,7 +397,7 @@ class RobotSession:
         custom_command_message = CustomCommandRosMessage()
         custom_command_message.ParseFromString(msg)
         # Hand over to callback for processing, using the proper format
-        self._dispatch_command(
+        self.dispatch_command(
             command_name=COMMAND_MESSAGE,
             args=[custom_command_message.cmd],
         )
@@ -407,7 +412,7 @@ class RobotSession:
         y = args[3]
         theta = args[4]
         # Hand over to callback for processing, using the proper format
-        self._dispatch_command(
+        self.dispatch_command(
             command_name=COMMAND_NAV_GOAL,
             args=[{"x": x, "y": y, "theta": theta}],
             execution_id=seq,  # NOTE: Using seq as the execution ID
@@ -457,7 +462,7 @@ class RobotSession:
         msg.image = image
         self.publish_protobuf(MQTT_SUBTOPIC_CAMERA_V2, msg)
 
-    def _dispatch_command(self, command_name, args, execution_id=None):
+    def dispatch_command(self, command_name, args, execution_id=None):
         """Executes registered command callbacks for a specific incoming command."""
         for callback in self.command_callbacks:
 
@@ -765,17 +770,34 @@ class RobotSession:
         msg.pos_y = y
         msg.yaw = yaw
         msg.frame_id = frame_id
+        self._last_pose = Pose(frame_id=frame_id, x=x, y=y, theta=yaw)
         self.publish_protobuf(MQTT_SUBTOPIC_POSE, msg)
 
-    def publish_key_values(self, key_values, custom_field="0"):
+    def reached_waypoint(self, waypoint: Pose, tolerance: SpatialTolerance):
+        if self._last_pose is None:
+            return False
+        return (
+            math.sqrt(
+                (self._last_pose.x - waypoint.x) ** 2
+                + (self._last_pose.y - waypoint.y) ** 2,
+            )
+            <= tolerance.positionMeters
+            and (self._last_pose.theta - waypoint.theta) % (2 * math.pi)
+            <= tolerance.angularRadians
+        )
+
+    def publish_key_values(self, key_values, custom_field="0", is_event=False):
         """Publish key value pairs
 
         Args:
             key_values (dict): Key value mappings to publish
             custom_field (str, optional): ID of the CustomData element. Defaults to "0".
+            is_event (bool): Events are not throttled
         """
 
-        if not self._should_publish_message(method="publish_key_values"):
+        if not is_event and not self._should_publish_message(
+            method="publish_key_values"
+        ):
             return None
 
         def convert_value(value):

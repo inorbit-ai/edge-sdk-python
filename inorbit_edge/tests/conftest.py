@@ -71,3 +71,13 @@ def mock_inorbit_api():
     with requests_mock.Mocker() as mock:
         mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, json=ROBOT_CONFIG_MOCK_RESPONSE)
         yield
+
+
+@pytest.fixture
+def mock_sleep(mocker):
+    return mocker.patch("time.sleep")
+
+
+@pytest.fixture
+def mock_time(mocker):
+    return mocker.patch("time.time", return_value=1001)
