@@ -167,17 +167,20 @@ if __name__ == "__main__":
     # If a robot_key is specified, use it as for authentication. Otherwise, use
     # the api_key.
     if inorbit_robot_key:
+        # NOTE(FlorGrosso): the current implementation of the RobotSessionFactory
+        # allows spawning a single robot session with a unique robot_key.
+        # Consider supporting configuration with multiple keys, one per robot.
         robot_session_factory = RobotSessionFactory(
             endpoint=inorbit_api_endpoint,
             robot_key=inorbit_robot_key,
-            use_ssl=False if inorbit_api_use_ssl == "false" else True,
+            use_ssl=inorbit_api_use_ssl == "true",
         )
     else:
         # Create robot session factory and session pool
         robot_session_factory = RobotSessionFactory(
             endpoint=inorbit_api_endpoint,
             api_key=inorbit_api_key,
-            use_ssl=False if inorbit_api_use_ssl == "false" else True,
+            use_ssl=inorbit_api_use_ssl == "true",
         )
     robot_session_factory.register_command_callback(log_command)
     robot_session_factory.register_command_callback(my_command_handler)
