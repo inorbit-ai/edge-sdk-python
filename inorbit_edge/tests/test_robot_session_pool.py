@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool
+import os
 
 
 def test_robot_session_pool_get_session(mock_mqtt_client, mock_inorbit_api):
@@ -16,6 +17,29 @@ def test_robot_session_pool_get_session(mock_mqtt_client, mock_inorbit_api):
         [
             robot1.robot_id == "id_1",
             robot1.robot_name == "name_1",
+            robot1 is not robot2,
+            robot1 is robot1_copy,
+        ]
+    )
+
+
+# The robot config data (name, robot_key) for the `get_session` method is
+# provided using a config yaml.
+def test_robot_session_pool_get_session_from_yaml(mock_mqtt_client, mock_inorbit_api):
+    dirname = os.path.dirname(__file__)
+    robot_config_yaml = os.path.join(dirname, "config/robots_config_robot_key.yaml")
+
+    factory = RobotSessionFactory()
+    pool = RobotSessionPool(factory, robot_config_yaml=robot_config_yaml)
+
+    robot1 = pool.get_session("test_robot123")
+    robot1_copy = pool.get_session("test_robot123")
+    robot2 = pool.get_session("test_robot456")
+
+    assert all(
+        [
+            robot1.robot_id == "test_robot123",
+            robot1.robot_name == "robot123",
             robot1 is not robot2,
             robot1 is robot1_copy,
         ]
