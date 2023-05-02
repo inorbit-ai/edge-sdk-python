@@ -24,8 +24,8 @@ def test_robot_factory_build(mock_mqtt_client):
         ]
     )
 
-    # Robot session launched using a robot key for authentication, specified
-    # on a config yaml.
+    # Robot session launched using a robot key for authentication. The robot
+    # key and name are specified as kwargs.
     robot_session = robot_session_factory.build(
         "id_123", **{"robot_name": "name_123", "robot_key": "robotkey_123"}
     )
