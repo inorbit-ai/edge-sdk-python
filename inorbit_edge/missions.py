@@ -93,6 +93,8 @@ class MissionsModule:
         mission_program_json = " ".join(args[1:])
         try:
             mission_program = json.loads(mission_program_json)
+            if mission_id == "null":
+                mission_id = str(int(time.time()*1000))
             mission = Mission(mission_id, mission_program, self.robot_session)
         except Exception:
             self.logger.error("Error parsing program", exc_info=True)
