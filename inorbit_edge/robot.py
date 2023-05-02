@@ -11,6 +11,8 @@ from urllib.parse import urlsplit
 import socks
 import ssl
 import threading
+import yaml
+
 from inorbit_edge.inorbit_pb2 import (
     CustomDataMessage,
     KeyValueCustomElement,
@@ -74,28 +76,26 @@ ROBOT_PATH_POINTS_LIMIT = 1000
 
 
 class RobotSession:
-    def __init__(
-        self, robot_id, robot_name, api_key=None, robot_key=None, **kwargs
-    ) -> None:
+    def __init__(self, robot_id, robot_name, api_key=None, **kwargs) -> None:
         """Initialize a robot session.
 
         Args:
             robot_id (str): ID of the robot.
-            robot_name (str): Robot name.
             api_key (str): API key for authenticating against InOrbit Cloud services.
+            robot_name (str): Robot name.
             robot_key(str): Robot key for authenticating against InOrbit Cloud services
             when using InOrbit Connect (https://connect.inorbit.ai/).
             endpoint (str): InOrbit URL. Defaults: INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL.
             use_ssl (bool): Configures MQTT client to use SSL. Defaults: True.
         """
 
-        self.robot_key = robot_key
         self.api_key = api_key
 
         self.logger = logging.getLogger(__class__.__name__)
 
         self.robot_id = robot_id
-        self.robot_name = robot_name
+        self.robot_key = kwargs.get("robot_key")
+        self.robot_name = kwargs.get("robot_name", robot_name)
         # The agent version is generated based on the InOrbit Edge SDK version
         self.agent_version = "{}.edgesdk_py".format(inorbit_edge_version)
         self.endpoint = kwargs.get("endpoint", INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL)
@@ -988,12 +988,15 @@ class RobotSessionFactory:
         self.command_callbacks = []
         self.commands_paths_rules = []
 
-    def build(self, robot_id, robot_name):
+    def build(self, robot_id, robot_name="", **robot_config):
         """Builds a RobotSession object using the provided id and name.
         It also passes the robot_session_kw_args set when creating the factory to the
         RobotSession constructor.
         """
-        session = RobotSession(robot_id, robot_name, **self.robot_session_kw_args)
+
+        session = RobotSession(
+            robot_id, robot_name, **{**robot_config, **self.robot_session_kw_args}
+        )
 
         def build_callback(callback):
             def c(*args):
@@ -1030,7 +1033,7 @@ class RobotSessionPool:
     """Pool of robot sessions that handles connections for many robots in an
     efficient way"""
 
-    def __init__(self, robot_session_factory):
+    def __init__(self, robot_session_factory, robot_config_yaml=None):
         """Creates the pool
         Args:
           - robot_session_factory: factory used to build individual RobotSession
@@ -1038,6 +1041,13 @@ class RobotSessionPool:
         """
         self.robot_session_factory = robot_session_factory
         self.robot_sessions = {}
+
+        # If a robots config yaml file was provided, load it
+        try:
+            with open(robot_config_yaml, "r") as config_yaml:
+                self.robot_config = yaml.safe_load(config_yaml)
+        except Exception:
+            self.robot_config = {}
         self.getting_session_mutex = threading.Lock()
 
     def get_session(self, robot_id, robot_name=""):
@@ -1050,8 +1060,14 @@ class RobotSessionPool:
         new_robot_session = not self.has_robot(robot_id)
         try:
             if new_robot_session:
+                # Get the config params for this robot_id
+                robot_config = self.robot_config.get(robot_id, {})
+                # If there is no robot name in the config yaml, use the one
+                # provided to this method.
+                if not robot_config.get("robot_name"):
+                    robot_config["robot_name"] = robot_name
                 self.robot_sessions[robot_id] = self.robot_session_factory.build(
-                    robot_id, robot_name
+                    robot_id, **robot_config
                 )
                 self.robot_sessions[robot_id].connect()
             return self.robot_sessions[robot_id]

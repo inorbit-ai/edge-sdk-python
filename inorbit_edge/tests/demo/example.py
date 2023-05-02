@@ -26,7 +26,7 @@ MAX_YAW = 2 * pi
 
 LIDAR_RANGES = 700
 
-NUM_ROBOTS = 1
+NUM_ROBOTS = 2
 
 
 # TODO: integrate this into the Edge SDK ``RobotSession`` class
@@ -152,9 +152,10 @@ if __name__ == "__main__":
     inorbit_api_use_ssl = os.environ.get("INORBIT_API_USE_SSL")
     inorbit_api_key = os.environ.get("INORBIT_API_KEY")
 
-    # If using InOrbit Connect (https://connect.inorbit.ai/),
-    # set a robot key to authenticate
-    inorbit_robot_key = os.environ.get("INORBIT_ROBOT_KEY")
+    # For InOrbit Connect (https://connect.inorbit.ai/) certified robots,
+    # use a yaml file to define the robot_key for each robot_id. This
+    # file stores additional params such as robot_name, etc.
+    inorbit_robots_config = os.environ.get("INORBIT_ROBOT_CONFIG_FILE")
 
     # If configured stream video as if it was a robot camera
     video_url = os.environ.get("INORBIT_VIDEO_URL")
@@ -164,29 +165,16 @@ if __name__ == "__main__":
     assert inorbit_api_key, "Environment variable INORBIT_API_KEY not specified"
 
     # Create robot session factory and session pool
-    # If a robot_key is specified, use it as for authentication. Otherwise, use
-    # the api_key.
-    if inorbit_robot_key:
-        # NOTE(FlorGrosso): the current implementation of the RobotSessionFactory
-        # allows spawning a single robot session with a unique robot_key.
-        # Consider supporting configuration with multiple keys, one per robot.
-        robot_session_factory = RobotSessionFactory(
-            endpoint=inorbit_api_endpoint,
-            robot_key=inorbit_robot_key,
-            use_ssl=inorbit_api_use_ssl == "true",
-        )
-    else:
-        # Create robot session factory and session pool
-        robot_session_factory = RobotSessionFactory(
-            endpoint=inorbit_api_endpoint,
-            api_key=inorbit_api_key,
-            use_ssl=inorbit_api_use_ssl == "true",
-        )
+    robot_session_factory = RobotSessionFactory(
+        endpoint=inorbit_api_endpoint,
+        api_key=inorbit_api_key,
+        use_ssl=inorbit_api_use_ssl == "true",
+    )
     robot_session_factory.register_command_callback(log_command)
     robot_session_factory.register_command_callback(my_command_handler)
     robot_session_factory.register_commands_path("./user_scripts", r".*\.sh")
 
-    robot_session_pool = RobotSessionPool(robot_session_factory)
+    robot_session_pool = RobotSessionPool(robot_session_factory, inorbit_robots_config)
     # Dictionary mapping robot ID and fake robot object
     fake_robot_pool = dict()
 
