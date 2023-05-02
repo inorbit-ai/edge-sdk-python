@@ -792,7 +792,7 @@ class RobotSession:
                 + (self._last_pose.y - waypoint.y) ** 2,
             )
             <= tolerance.positionMeters
-            and (self._last_pose.theta - waypoint.theta) % (2 * math.pi)
+            and abs(self._last_pose.theta - waypoint.theta) % (2 * math.pi)
             <= tolerance.angularRadians
         )
 
