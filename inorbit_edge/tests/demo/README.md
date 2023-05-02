@@ -10,8 +10,10 @@ Export required environment variables and execute the `example.py` script. Use t
 export INORBIT_URL="https://control.inorbit.ai"
 export INORBIT_API_URL="https://api.inorbit.ai"
 export INORBIT_API_KEY="foobar123"
-# Set when using InOrbit connect
-export INORBIT_ROBOT_KEY="robot123"
+# Set when using InOrbit connect (make sure to update the robot keys
+# in the example config first through
+# https://api.inorbit.ai/docs/index.html#operation/generateRobotKey)
+export INORBIT_ROBOT_CONFIG_FILE=`pwd`/robots_config_example.yaml
 # Disable SSL for local development only
 export INORBIT_API_USE_SSL="true"
 # Optionally enable video streaming as camera "0"
