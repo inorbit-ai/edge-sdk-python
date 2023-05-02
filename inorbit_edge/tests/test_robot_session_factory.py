@@ -24,6 +24,42 @@ def test_robot_factory_build(mock_mqtt_client):
         ]
     )
 
+    # Robot session launched using a robot key for authentication, specified
+    # on a config yaml.
+    robot_session = robot_session_factory.build(
+        "id_123", **{"robot_name": "name_123", "robot_key": "robotkey_123"}
+    )
+
+    assert all(
+        [
+            robot_session.robot_id == "id_123",
+            robot_session.robot_name == "name_123",
+            robot_session.robot_key == "robotkey_123",
+            robot_session.agent_version.endswith("edgesdk_py"),
+            robot_session.endpoint == "http://myendpoint/",
+            robot_session.http_proxy is None,
+        ]
+    )
+
+    # Robot session launched using an API key for authentication. The robot name
+    # is specified as a kwarg.
+    robot_session_factory = RobotSessionFactory(
+        api_key="apikey_123", endpoint="http://myendpoint/"
+    )
+
+    robot_session = robot_session_factory.build("id_456", **{"robot_name": "name_456"})
+
+    assert all(
+        [
+            robot_session.robot_id == "id_456",
+            robot_session.robot_name == "name_456",
+            robot_session.api_key == "apikey_123",
+            robot_session.agent_version.endswith("edgesdk_py"),
+            robot_session.endpoint == "http://myendpoint/",
+            robot_session.http_proxy is None,
+        ]
+    )
+
 
 def test_built_robot_session_executes_command_callback_on_message(
     mock_mqtt_client, mock_inorbit_api
