@@ -1041,13 +1041,17 @@ class RobotSessionPool:
         """
         self.robot_session_factory = robot_session_factory
         self.robot_sessions = {}
+        self.robot_config = {}
 
         # If a robots config yaml file was provided, load it
-        try:
-            with open(robot_config_yaml, "r") as config_yaml:
-                self.robot_config = yaml.safe_load(config_yaml)
-        except Exception:
-            self.robot_config = {}
+        if robot_config_yaml:
+            try:
+                with open(robot_config_yaml, "r") as config_yaml:
+                    self.robot_config = yaml.safe_load(config_yaml)
+            except Exception:
+                print("Unable to load robot_config_yaml")
+                raise
+
         self.getting_session_mutex = threading.Lock()
 
     def get_session(self, robot_id, robot_name=""):
