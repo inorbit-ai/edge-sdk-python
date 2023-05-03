@@ -1039,6 +1039,9 @@ class RobotSessionPool:
           - robot_session_factory: factory used to build individual RobotSession
           objects
         """
+
+        self.logger = logging.getLogger(__class__.__name__)
+
         self.robot_session_factory = robot_session_factory
         self.robot_sessions = {}
         self.robot_config = {}
@@ -1049,7 +1052,9 @@ class RobotSessionPool:
                 with open(robot_config_yaml, "r") as config_yaml:
                     self.robot_config = yaml.safe_load(config_yaml)
             except Exception:
-                print("Unable to load robot_config_yaml")
+                self.logger.error(
+                    f"Unable to load robots config yaml at {robot_config_yaml}"
+                )
                 raise
 
         self.getting_session_mutex = threading.Lock()
