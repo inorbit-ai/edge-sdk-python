@@ -102,6 +102,7 @@ class MissionsModule:
         self.executor.run_mission(mission)
 
     def handle_cancel_mission(self, args):
+        args = args.split(" ")
         if len(args) != 1:
             self.logger.error(
                 f"Error: {COMMAND_CANCEL_MISSION} expects 1 argument {str(args)}"
@@ -160,6 +161,7 @@ class MissionExecutor:
         with self.mutex:
             if self.mission is None:
                 self.logger.warning("Can't cancel mission when no mission is running")
+                return
             elif self.mission.id != mission_id and mission_id != "*":
                 self.logger.warning(
                     f"Can't cancel mission {mission_id} because the id does not match\
