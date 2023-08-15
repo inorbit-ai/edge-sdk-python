@@ -932,7 +932,7 @@ class RobotSession:
 
         self.publish_protobuf(MQTT_SUBTOPIC_POSE, msg)
 
-    def publish_path(self, path_points, path_id="0", ts=None):
+    def publish_path(self, path_points, path_id="0", frame_id="map", ts=None):
         """Publish robot path
 
         Send a list of points representing the path the robot
@@ -943,6 +943,9 @@ class RobotSession:
         Args:
             path_points (List[Tuple[int. int]]): List of x, y points
                 the robot would go through.
+            path_id (str, optional):
+            frame_id (str, optional): Robot map frame identifier. Defaults to "map".
+            ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
         """
 
         if not self._should_publish_message(method="publish_path"):
@@ -967,6 +970,7 @@ class RobotSession:
         pb_robot_path = RobotPath()
         pb_robot_path.ts = ts if ts else int(time.time() * 1000)
         pb_robot_path.path_id = path_id
+        pb_robot_path.frame_id = frame_id
         pb_robot_path.points.extend(pb_path_points)
 
         # Publish ``PathDataMessage``
