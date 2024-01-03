@@ -27,6 +27,7 @@ from inorbit_edge.inorbit_pb2 import (
     CustomScriptStatusMessage,
     CustomCommandRosMessage,
     CameraMessage,
+    SystemStatsMessage,
 )
 from inorbit_edge.video import CameraStreamer, Camera
 from inorbit_edge.missions import MissionsModule
@@ -56,6 +57,7 @@ MQTT_SUBTOPIC_CUSTOM_COMMAND = "custom_command"
 MQTT_SUBTOPIC_STATE = "state"
 MQTT_SUBTOPIC_CAMERA_V2 = "ros/camera2"
 MQTT_SUBTOPIC_OUT_CMD = "out_cmd"
+MQTT_SUBTOPIC_SYSTEM_STATS = "system/stats"
 
 MQTT_TOPIC_ECHO = "echo"
 MQTT_NAV_GOAL_GOAL = "ros/loc/nav_goal"
@@ -828,6 +830,33 @@ class RobotSession:
         msg.key_value_payload.pairs.extend(map(set_pairs, key_values.keys()))
 
         self.publish_protobuf(MQTT_SUBTOPIC_CUSTOM_DATA, msg)
+
+    def publish_system_stats(self, system_values):
+        """Publishes system information (CPU load, RAM usage, HDD usage, network stats)
+
+        Args:
+            system_values (dict): Key value mappings to publish
+            {
+              cpu_load_percentage (float, value between 0.0 and 1.0): CPU usage.
+              ram_usage_percentage (float, value between 0.0 and 1.0): RAM usage.
+              hdd_usage_percentage (float, value between 0.0 and 1.0): HDD usage.
+              total_tx (int): Total bytes transmitted
+              total_rx (int): Total bytes received
+              ts (int): Timestamp. Defaults to int(time() * 1000). It is needed to calculate the network rate in InOrbit
+              elapsed_seconds (float): Duration of the reported period, It is needed to calculate the network rate in InOrbit
+            }
+        """
+        msg = SystemStatsMessage()
+        msg.cpu_load_percentage = system_values.get("cpu_load_percentage")
+        msg.ram_usage_percentage = system_values.get("ram_usage_percentage")
+        msg.hdd_usage_percentage = system_values.get("hdd_usage_percentage")
+        msg.total_tx = system_values.get("total_tx")
+        msg.total_rx = system_values.get("total_rx")
+        ts = system_values.get("ts")
+        msg.timestamp = ts if ts else int(time.time() * 1000)
+        msg.elapsed_seconds = system_values.get("elapsed_seconds")
+
+        self.publish_protobuf(MQTT_SUBTOPIC_SYSTEM_STATS, msg)
 
     def publish_odometry(
         self,
