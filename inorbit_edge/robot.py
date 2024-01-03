@@ -840,10 +840,7 @@ class RobotSession:
         cpu_load_percentage=None,
         ram_usage_percentage=None,
         hdd_usage_percentage=None,
-        total_tx=None,
-        total_rx=None,
         ts=None,
-        elapsed_seconds=None,
     ):
         """Publishes system information (CPU load, RAM usage, HDD usage, network stats)
 
@@ -851,13 +848,7 @@ class RobotSession:
             cpu_load_percentage (float, value between 0.0 and 1.0): CPU usage.
             ram_usage_percentage (float, value between 0.0 and 1.0): RAM usage.
             hdd_usage_percentage (float, value between 0.0 and 1.0): HDD usage.
-            total_tx (int): Total bytes transmitted
-            total_rx (int): Total bytes received
             ts (int): Timestamp. Defaults to int(time() * 1000).
-              It is needed to calculate the network rate in InOrbit
-            elapsed_seconds (float): Duration of the reported period.
-              It is needed to calculate the network rate in InOrbit
-              If not provided, network rate will not be calculated.
         """
 
         if not self._should_publish_message(method="publish_system_stats"):
@@ -867,10 +858,7 @@ class RobotSession:
         msg.cpu_load_percentage = cpu_load_percentage
         msg.ram_usage_percentage = ram_usage_percentage
         msg.hdd_usage_percentage = hdd_usage_percentage
-        msg.total_tx = total_tx
-        msg.total_rx = total_rx
         msg.timestamp = ts if ts else int(time.time() * 1000)
-        msg.elapsed_seconds = elapsed_seconds if elapsed_seconds else 0
 
         self.publish_protobuf(MQTT_SUBTOPIC_SYSTEM_STATS, msg)
 
