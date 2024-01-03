@@ -842,8 +842,10 @@ class RobotSession:
               hdd_usage_percentage (float, value between 0.0 and 1.0): HDD usage.
               total_tx (int): Total bytes transmitted
               total_rx (int): Total bytes received
-              ts (int): Timestamp. Defaults to int(time() * 1000). It is needed to calculate the network rate in InOrbit
-              elapsed_seconds (float): Duration of the reported period, It is needed to calculate the network rate in InOrbit
+              ts (int): Timestamp. Defaults to int(time() * 1000).
+                It is needed to calculate the network rate in InOrbit
+              elapsed_seconds (float): Duration of the reported period.
+                It is needed to calculate the network rate in InOrbit
             }
         """
         msg = SystemStatsMessage()
