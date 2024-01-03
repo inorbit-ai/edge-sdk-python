@@ -844,15 +844,15 @@ class RobotSession:
         """Publishes system information (CPU load, RAM usage, HDD usage, network stats)
 
         Args:
-              cpu_load_percentage (float, value between 0.0 and 1.0): CPU usage.
-              ram_usage_percentage (float, value between 0.0 and 1.0): RAM usage.
-              hdd_usage_percentage (float, value between 0.0 and 1.0): HDD usage.
-              total_tx (int): Total bytes transmitted
-              total_rx (int): Total bytes received
-              ts (int): Timestamp. Defaults to int(time() * 1000).
-                It is needed to calculate the network rate in InOrbit
-              elapsed_seconds (float): Duration of the reported period.
-                It is needed to calculate the network rate in InOrbit
+            cpu_load_percentage (float, value between 0.0 and 1.0): CPU usage.
+            ram_usage_percentage (float, value between 0.0 and 1.0): RAM usage.
+            hdd_usage_percentage (float, value between 0.0 and 1.0): HDD usage.
+            total_tx (int): Total bytes transmitted
+            total_rx (int): Total bytes received
+            ts (int): Timestamp. Defaults to int(time() * 1000).
+              It is needed to calculate the network rate in InOrbit
+            elapsed_seconds (float): Duration of the reported period.
+              It is needed to calculate the network rate in InOrbit
         """
         msg = SystemStatsMessage()
         msg.cpu_load_percentage = cpu_load_percentage
