@@ -831,12 +831,19 @@ class RobotSession:
 
         self.publish_protobuf(MQTT_SUBTOPIC_CUSTOM_DATA, msg)
 
-    def publish_system_stats(self, system_values):
+    def publish_system_stats(
+        self,
+        cpu_load_percentage=None,
+        ram_usage_percentage=None,
+        hdd_usage_percentage=None,
+        total_tx=None,
+        total_rx=None,
+        ts=None,
+        elapsed_seconds=None,
+    ):
         """Publishes system information (CPU load, RAM usage, HDD usage, network stats)
 
         Args:
-            system_values (dict): Key value mappings to publish
-            {
               cpu_load_percentage (float, value between 0.0 and 1.0): CPU usage.
               ram_usage_percentage (float, value between 0.0 and 1.0): RAM usage.
               hdd_usage_percentage (float, value between 0.0 and 1.0): HDD usage.
@@ -846,17 +853,15 @@ class RobotSession:
                 It is needed to calculate the network rate in InOrbit
               elapsed_seconds (float): Duration of the reported period.
                 It is needed to calculate the network rate in InOrbit
-            }
         """
         msg = SystemStatsMessage()
-        msg.cpu_load_percentage = system_values.get("cpu_load_percentage")
-        msg.ram_usage_percentage = system_values.get("ram_usage_percentage")
-        msg.hdd_usage_percentage = system_values.get("hdd_usage_percentage")
-        msg.total_tx = system_values.get("total_tx")
-        msg.total_rx = system_values.get("total_rx")
-        ts = system_values.get("ts")
+        msg.cpu_load_percentage = cpu_load_percentage
+        msg.ram_usage_percentage = ram_usage_percentage
+        msg.hdd_usage_percentage = hdd_usage_percentage
+        msg.total_tx = total_tx
+        msg.total_rx = total_rx
         msg.timestamp = ts if ts else int(time.time() * 1000)
-        msg.elapsed_seconds = system_values.get("elapsed_seconds")
+        msg.elapsed_seconds = elapsed_seconds
 
         self.publish_protobuf(MQTT_SUBTOPIC_SYSTEM_STATS, msg)
 
