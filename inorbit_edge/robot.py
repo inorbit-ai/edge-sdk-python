@@ -870,7 +870,7 @@ class RobotSession:
         msg.total_tx = total_tx
         msg.total_rx = total_rx
         msg.timestamp = ts if ts else int(time.time() * 1000)
-        msg.elapsed_seconds = elapsed_seconds
+        msg.elapsed_seconds = elapsed_seconds if elapsed_seconds else 0
 
         self.publish_protobuf(MQTT_SUBTOPIC_SYSTEM_STATS, msg)
 
