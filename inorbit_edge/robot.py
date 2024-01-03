@@ -197,6 +197,10 @@ class RobotSession:
                 "last_ts": 0,
                 "min_time_between_calls": 1,  # seconds
             },
+            "publish_system_stats": {
+                "last_ts": 0,
+                "min_time_between_calls": 1,  # seconds
+            },
         }
 
     def _get_robot_subtopic(self, subtopic):
@@ -853,7 +857,12 @@ class RobotSession:
               It is needed to calculate the network rate in InOrbit
             elapsed_seconds (float): Duration of the reported period.
               It is needed to calculate the network rate in InOrbit
+              If not provided, network rate will not be calculated.
         """
+
+        if not self._should_publish_message(method="publish_system_stats"):
+            return None
+
         msg = SystemStatsMessage()
         msg.cpu_load_percentage = cpu_load_percentage
         msg.ram_usage_percentage = ram_usage_percentage
