@@ -855,9 +855,9 @@ class RobotSession:
             return None
 
         msg = SystemStatsMessage()
-        msg.cpu_load_percentage = cpu_load_percentage
-        msg.ram_usage_percentage = ram_usage_percentage
-        msg.hdd_usage_percentage = hdd_usage_percentage
+        msg.cpu_load_percentage = cpu_load_percentage if cpu_load_percentage else 0.0
+        msg.ram_usage_percentage = ram_usage_percentage if ram_usage_percentage else 0.0
+        msg.hdd_usage_percentage = hdd_usage_percentage if hdd_usage_percentage else 0.0
         msg.timestamp = ts if ts else int(time.time() * 1000)
 
         self.publish_protobuf(MQTT_SUBTOPIC_SYSTEM_STATS, msg)
