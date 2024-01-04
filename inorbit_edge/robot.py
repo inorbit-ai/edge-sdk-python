@@ -27,6 +27,7 @@ from inorbit_edge.inorbit_pb2 import (
     CustomScriptStatusMessage,
     CustomCommandRosMessage,
     CameraMessage,
+    SystemStatsMessage,
 )
 from inorbit_edge.video import CameraStreamer, Camera
 from inorbit_edge.missions import MissionsModule
@@ -56,6 +57,7 @@ MQTT_SUBTOPIC_CUSTOM_COMMAND = "custom_command"
 MQTT_SUBTOPIC_STATE = "state"
 MQTT_SUBTOPIC_CAMERA_V2 = "ros/camera2"
 MQTT_SUBTOPIC_OUT_CMD = "out_cmd"
+MQTT_SUBTOPIC_SYSTEM_STATS = "system/stats"
 
 MQTT_TOPIC_ECHO = "echo"
 MQTT_NAV_GOAL_GOAL = "ros/loc/nav_goal"
@@ -192,6 +194,10 @@ class RobotSession:
                 "min_time_between_calls": 1,  # seconds
             },
             "publish_path": {
+                "last_ts": 0,
+                "min_time_between_calls": 1,  # seconds
+            },
+            "publish_system_stats": {
                 "last_ts": 0,
                 "min_time_between_calls": 1,  # seconds
             },
@@ -828,6 +834,33 @@ class RobotSession:
         msg.key_value_payload.pairs.extend(map(set_pairs, key_values.keys()))
 
         self.publish_protobuf(MQTT_SUBTOPIC_CUSTOM_DATA, msg)
+
+    def publish_system_stats(
+        self,
+        cpu_load_percentage=None,
+        ram_usage_percentage=None,
+        hdd_usage_percentage=None,
+        ts=None,
+    ):
+        """Publishes system information (CPU load, RAM usage, HDD usage, network stats)
+
+        Args:
+            cpu_load_percentage (float, value between 0.0 and 1.0): CPU usage.
+            ram_usage_percentage (float, value between 0.0 and 1.0): RAM usage.
+            hdd_usage_percentage (float, value between 0.0 and 1.0): HDD usage.
+            ts (int): Timestamp. Defaults to int(time() * 1000).
+        """
+
+        if not self._should_publish_message(method="publish_system_stats"):
+            return None
+
+        msg = SystemStatsMessage()
+        msg.cpu_load_percentage = cpu_load_percentage if cpu_load_percentage else 0.0
+        msg.ram_usage_percentage = ram_usage_percentage if ram_usage_percentage else 0.0
+        msg.hdd_usage_percentage = hdd_usage_percentage if hdd_usage_percentage else 0.0
+        msg.timestamp = ts if ts else int(time.time() * 1000)
+
+        self.publish_protobuf(MQTT_SUBTOPIC_SYSTEM_STATS, msg)
 
     def publish_odometry(
         self,
