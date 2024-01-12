@@ -3,7 +3,7 @@
 [![Build Status](https://github.com/inorbit-ai/edge-sdk-python/workflows/Build%20Main/badge.svg)](https://github.com/inorbit-ai/edge-sdk-python/actions)
 [![Code Coverage](https://codecov.io/gh/inorbit/edge-sdk-python/branch/main/graph/badge.svg)](https://codecov.io/gh/inorbit/edge-sdk-python)
 
-The `InOrbit Edge SDK` allows Python programs to communicate with `InOrbit` platform on behalf of robots - providing robot data and handling robot actions. It's goal is to ease the integration between `InOrbit` and any other software that handles robot data.
+The `InOrbit Edge SDK` allows Python programs to communicate with `InOrbit` platform on behalf of robots - providing robot data and handling robot actions. Its goal is to ease the integration between `InOrbit` and any other software that handles robot data.
 
 ---
 
@@ -35,7 +35,7 @@ def my_command_handler(robot_id, command_name, args, options):
             has the following signature: `result_function(return_code)`.
             - `progress_function` can be used to report command output and has the
             following signature: `progress_function(output, error)`.
-            - `metadata` is reserved for the future and will contains additional
+            - `metadata` is reserved for the future and will contain additional
             information about the received command request.
     """
     if command_name == "customCommand":
@@ -50,7 +50,7 @@ robot_session_factory = RobotSessionFactory(
 
 # Register commands handlers. Note that all handlers are invoked.
 robot_session_factory.register_command_callback(my_command_handler)
-robot_session_factory.register_executable_commands("./user_scripts", r".*\.sh")
+robot_session_factory.register_commands_path("./user_scripts", r".*\.sh")
 
 robot_session_pool = RobotSessionPool(robot_session_factory)
 
