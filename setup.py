@@ -47,9 +47,11 @@ dev_requirements = [
 ]
 
 requirements = [
+    # TODO(russell): https://devhub.checkmarx.com/cve-details/CVE-2023-32681/
     "requests==2.26.0",
     "paho_mqtt==1.6.1",
     "PySocks==1.7.1",
+    # TODO(russell): https://devhub.checkmarx.com/cve-details/CVE-2022-1941/
     "protobuf==3.19.3",
     "certifi>=2021.10.8",
     "deprecated==1.2.13"
@@ -73,9 +75,10 @@ setup(
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
         "Natural Language :: English",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11"
     ],
     description="InOrbit Python Edge SDK",
     install_requires=requirements,
@@ -85,14 +88,13 @@ setup(
     keywords="inorbit_edge",
     name="inorbit_edge",
     packages=find_packages(exclude=["tests", "*.tests", "*.tests.*"]),
-    python_requires=">=3.7",
+    python_requires=">=3.8, <3.12",
     setup_requires=setup_requirements,
     test_suite="inorbit_edge/tests",
     tests_require=test_requirements,
     extras_require=extra_requirements,
     url="https://github.com/inorbit-ai/edge-sdk-python",
-    # Do not edit this string manually, always use bumpversion
-    # Details in CONTRIBUTING.rst
+    # Do not edit this string manually, always use bumpversion - Details in CONTRIBUTING.rst
     version="1.12.1",
     zip_safe=False,
 )
