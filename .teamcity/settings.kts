@@ -2,6 +2,7 @@ import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildSteps.python
 import jetbrains.buildServer.configs.kotlin.buildSteps.qodana
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
+import jetbrains.buildServer.configs.kotlin.projectFeatures.githubAppConnection
 import jetbrains.buildServer.configs.kotlin.triggers.vcs
 
 /*
@@ -41,6 +42,19 @@ project {
 
     params {
         password("system.qodana.open-source.edge-sdk-python.token", "credentialsJSON:4d17e6f7-909d-4025-8236-194c7941c16c", label = "Qodana Token", description = "Qodana Open-source edge-sdk-python Token", display = ParameterDisplay.HIDDEN, readOnly = true)
+    }
+
+    features {
+        githubAppConnection {
+            id = "PROJECT_EXT_5"
+            displayName = "InOrbit TeamCity"
+            appId = "808539"
+            clientId = "Iv1.3fd5116acf7d0f63"
+            clientSecret = "credentialsJSON:574f1727-67ce-402d-9a03-09a97bf9a000"
+            privateKey = "credentialsJSON:e7709505-4f6c-424f-aed0-12cfbd3fea9b"
+            webhookSecret = "credentialsJSON:c9119862-a262-4295-b53d-8c6e56e749de"
+            ownerUrl = "https://github.com/inorbit-teamcity"
+        }
     }
     buildTypesOrder = arrayListOf(PytestPython38, PytestPython39, PytestPython310, PytestPython311)
 }
