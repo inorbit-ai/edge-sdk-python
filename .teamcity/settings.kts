@@ -1,7 +1,5 @@
 import jetbrains.buildServer.configs.kotlin.*
-import jetbrains.buildServer.configs.kotlin.buildFeatures.PullRequests
 import jetbrains.buildServer.configs.kotlin.buildFeatures.commitStatusPublisher
-import jetbrains.buildServer.configs.kotlin.buildFeatures.pullRequests
 import jetbrains.buildServer.configs.kotlin.buildSteps.python
 import jetbrains.buildServer.configs.kotlin.buildSteps.qodana
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
@@ -207,16 +205,6 @@ object PytestRunner : Template({
                 authType = personalToken {
                     token = "credentialsJSON:4cdab6f6-2273-4bad-a1b5-ae7442084c8b"
                 }
-            }
-        }
-        pullRequests {
-            id = "BUILD_EXT_7"
-            vcsRootExtId = "Developer_EdgeSdkPython_HttpsGithubComInorbitAiEdgeSdkPythonRefsHeadsMain"
-            provider = github {
-                authType = token {
-                    token = "credentialsJSON:4cdab6f6-2273-4bad-a1b5-ae7442084c8b"
-                }
-                filterAuthorRole = PullRequests.GitHubRoleFilter.EVERYBODY
             }
         }
     }
