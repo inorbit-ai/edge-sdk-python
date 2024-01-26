@@ -123,16 +123,6 @@ object QodanaQualityInspections : BuildType({
                 }
             }
         }
-        pullRequests {
-            vcsRootExtId = "Developer_EdgeSdkPython_HttpsGithubComInorbitAiEdgeSdkPythonRefsHeadsMain"
-            provider = github {
-                authType = token {
-                    token = "credentialsJSON:4cdab6f6-2273-4bad-a1b5-ae7442084c8b"
-                }
-                filterTargetBranch = "+:refs/heads/main"
-                filterAuthorRole = PullRequests.GitHubRoleFilter.EVERYBODY
-            }
-        }
     }
 })
 
