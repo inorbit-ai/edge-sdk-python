@@ -1,4 +1,6 @@
 import jetbrains.buildServer.configs.kotlin.*
+import jetbrains.buildServer.configs.kotlin.buildFeatures.PullRequests
+import jetbrains.buildServer.configs.kotlin.buildFeatures.pullRequests
 import jetbrains.buildServer.configs.kotlin.buildSteps.python
 import jetbrains.buildServer.configs.kotlin.buildSteps.qodana
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
@@ -180,6 +182,19 @@ object PytestRunner : Template({
         vcs {
             id = "TRIGGER_6"
             triggerRules = "+:*"
+        }
+    }
+
+    features {
+        pullRequests {
+            id = "BUILD_EXT_3"
+            provider = github {
+                authType = token {
+                    token = "credentialsJSON:dfcd12f5-cec7-45dc-a612-43d2e7f70f5b"
+                }
+                filterTargetBranch = "+:refs/heads/main"
+                filterAuthorRole = PullRequests.GitHubRoleFilter.EVERYBODY
+            }
         }
     }
 })
