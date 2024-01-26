@@ -195,17 +195,4 @@ object PytestRunner : Template({
             triggerRules = "+:*"
         }
     }
-
-    features {
-        commitStatusPublisher {
-            id = "BUILD_EXT_6"
-            vcsRootExtId = "Developer_EdgeSdkPython_HttpsGithubComInorbitAiEdgeSdkPythonRefsHeadsMain"
-            publisher = github {
-                githubUrl = "https://api.github.com"
-                authType = personalToken {
-                    token = "credentialsJSON:4cdab6f6-2273-4bad-a1b5-ae7442084c8b"
-                }
-            }
-        }
-    }
 })
