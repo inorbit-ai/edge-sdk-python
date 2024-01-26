@@ -1,5 +1,6 @@
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildFeatures.PullRequests
+import jetbrains.buildServer.configs.kotlin.buildFeatures.commitStatusPublisher
 import jetbrains.buildServer.configs.kotlin.buildFeatures.pullRequests
 import jetbrains.buildServer.configs.kotlin.buildSteps.python
 import jetbrains.buildServer.configs.kotlin.buildSteps.qodana
@@ -194,6 +195,15 @@ object PytestRunner : Template({
                 }
                 filterTargetBranch = "+:refs/heads/main"
                 filterAuthorRole = PullRequests.GitHubRoleFilter.EVERYBODY
+            }
+        }
+        commitStatusPublisher {
+            id = "BUILD_EXT_8"
+            publisher = github {
+                githubUrl = "https://api.github.com"
+                authType = personalToken {
+                    token = "credentialsJSON:dfcd12f5-cec7-45dc-a612-43d2e7f70f5b"
+                }
             }
         }
     }
