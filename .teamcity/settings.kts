@@ -6,7 +6,6 @@ import jetbrains.buildServer.configs.kotlin.buildSteps.python
 import jetbrains.buildServer.configs.kotlin.buildSteps.qodana
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
 import jetbrains.buildServer.configs.kotlin.triggers.vcs
-import jetbrains.buildServer.configs.kotlin.vcs.GitVcsRoot
 
 /*
 The settings script is an entry point for defining a TeamCity
@@ -34,8 +33,6 @@ version = "2023.11"
 
 project {
     description = "The InOrbit Edge SDK allows Python programs to communicate with InOrbit platform on behalf of robots."
-
-    vcsRoot(HttpsGithubComInorbitAiEdgeSdkPythonRefsHeadsMain)
 
     buildType(QodanaQualityInspections)
     buildType(PytestPython39)
@@ -118,7 +115,7 @@ object QodanaQualityInspections : BuildType({
 
     features {
         commitStatusPublisher {
-            vcsRootExtId = "${HttpsGithubComInorbitAiEdgeSdkPythonRefsHeadsMain.id}"
+            vcsRootExtId = "Developer_EdgeSdkPython_HttpsGithubComInorbitAiEdgeSdkPythonRefsHeadsMain"
             publisher = github {
                 githubUrl = "https://api.github.com"
                 authType = personalToken {
@@ -127,7 +124,7 @@ object QodanaQualityInspections : BuildType({
             }
         }
         pullRequests {
-            vcsRootExtId = "${HttpsGithubComInorbitAiEdgeSdkPythonRefsHeadsMain.id}"
+            vcsRootExtId = "Developer_EdgeSdkPython_HttpsGithubComInorbitAiEdgeSdkPythonRefsHeadsMain"
             provider = github {
                 authType = token {
                     token = "credentialsJSON:4cdab6f6-2273-4bad-a1b5-ae7442084c8b"
@@ -214,7 +211,7 @@ object PytestRunner : Template({
     features {
         commitStatusPublisher {
             id = "BUILD_EXT_6"
-            vcsRootExtId = "${HttpsGithubComInorbitAiEdgeSdkPythonRefsHeadsMain.id}"
+            vcsRootExtId = "Developer_EdgeSdkPython_HttpsGithubComInorbitAiEdgeSdkPythonRefsHeadsMain"
             publisher = github {
                 githubUrl = "https://api.github.com"
                 authType = personalToken {
@@ -224,7 +221,7 @@ object PytestRunner : Template({
         }
         pullRequests {
             id = "BUILD_EXT_7"
-            vcsRootExtId = "${HttpsGithubComInorbitAiEdgeSdkPythonRefsHeadsMain.id}"
+            vcsRootExtId = "Developer_EdgeSdkPython_HttpsGithubComInorbitAiEdgeSdkPythonRefsHeadsMain"
             provider = github {
                 authType = token {
                     token = "credentialsJSON:4cdab6f6-2273-4bad-a1b5-ae7442084c8b"
@@ -232,15 +229,5 @@ object PytestRunner : Template({
                 filterAuthorRole = PullRequests.GitHubRoleFilter.EVERYBODY
             }
         }
-    }
-})
-
-object HttpsGithubComInorbitAiEdgeSdkPythonRefsHeadsMain : GitVcsRoot({
-    name = "https://github.com/inorbit-ai/edge-sdk-python#refs/heads/main"
-    url = "https://github.com/inorbit-ai/edge-sdk-python"
-    branch = "refs/heads/main"
-    authMethod = password {
-        userName = "%system.github.username%"
-        password = "credentialsJSON:4cdab6f6-2273-4bad-a1b5-ae7442084c8b"
     }
 })
