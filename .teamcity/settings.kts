@@ -101,10 +101,6 @@ object QodanaQualityInspections : BuildType({
     name = "Qodana Quality Inspections"
     description = "Qodana based code quality inpsections."
 
-    vcs {
-        root(HttpsGithubComInorbitAiEdgeSdkPythonRefsHeadsMain)
-    }
-
     steps {
         qodana {
             name = "Qodana"
