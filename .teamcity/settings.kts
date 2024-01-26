@@ -81,6 +81,8 @@ object PytestPython38 : BuildType({
         text("python.version", "3.8", label = "Python Version", description = "The version of Python to run this build with.",
               regex = """^(\d+\.)?(\d+\.)?(\*|\d+)${'$'}""", validationMessage = "Please enter a valid version number.")
     }
+    
+    disableSettings("BUILD_EXT_7")
 })
 
 object PytestPython39 : BuildType({
