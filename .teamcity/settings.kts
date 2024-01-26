@@ -1,5 +1,4 @@
 import jetbrains.buildServer.configs.kotlin.*
-import jetbrains.buildServer.configs.kotlin.buildFeatures.commitStatusPublisher
 import jetbrains.buildServer.configs.kotlin.buildSteps.python
 import jetbrains.buildServer.configs.kotlin.buildSteps.qodana
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
@@ -108,18 +107,6 @@ object QodanaQualityInspections : BuildType({
             }
             additionalQodanaArguments = "--baseline qodana.sarif.json"
             cloudToken = "credentialsJSON:809f8c61-4df0-4d12-a554-0f2c13a4b8f2"
-        }
-    }
-
-    features {
-        commitStatusPublisher {
-            vcsRootExtId = "Developer_EdgeSdkPython_HttpsGithubComInorbitAiEdgeSdkPythonRefsHeadsMain"
-            publisher = github {
-                githubUrl = "https://api.github.com"
-                authType = personalToken {
-                    token = "credentialsJSON:4cdab6f6-2273-4bad-a1b5-ae7442084c8b"
-                }
-            }
         }
     }
 })
