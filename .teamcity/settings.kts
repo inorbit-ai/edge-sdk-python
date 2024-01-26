@@ -151,8 +151,6 @@ object PytestRunner : Template({
     }
 
     vcs {
-        root(HttpsGithubComInorbitAiEdgeSdkPythonRefsHeadsMain)
-
         cleanCheckout = true
         branchFilter = ""
     }
