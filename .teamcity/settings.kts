@@ -101,6 +101,10 @@ object QodanaQualityInspections : BuildType({
     name = "Qodana Quality Inspections"
     description = "Qodana based code quality inpsections."
 
+    vcs {
+        root(DslContext.settingsRoot)
+    }
+
     steps {
         qodana {
             name = "Qodana"
