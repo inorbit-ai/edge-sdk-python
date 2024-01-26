@@ -151,6 +151,8 @@ object PytestRunner : Template({
     }
 
     vcs {
+        root(DslContext.settingsRoot)
+
         cleanCheckout = true
         branchFilter = ""
     }
