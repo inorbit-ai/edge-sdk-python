@@ -43,7 +43,7 @@ project {
     template(PytestRunner)
 
     params {
-        password("system.qodana.developers-portal.edge-sdk-python.token", "credentialsJSON:4d17e6f7-909d-4025-8236-194c7941c16c", label = "Qodana Token", description = "Qodana Open-source edge-sdk-python Token", display = ParameterDisplay.HIDDEN)
+        password("system.qodana.developers-portal.edge-sdk-python.token", "credentialsJSON:d06aadf5-c6ee-4c2e-be77-c3395f5e5ad2", label = "Qodana Token", description = "Qodana Open-source edge-sdk-python Token", display = ParameterDisplay.HIDDEN, readOnly = true)
     }
     buildTypesOrder = arrayListOf(PytestPython38, PytestPython39, PytestPython310, PytestPython311)
 }
