@@ -112,6 +112,19 @@ object QodanaQualityInspections : BuildType({
             cloudToken = "credentialsJSON:7e58a4e2-e74e-4cc1-9668-de4ea5117706"
         }
     }
+
+    features {
+        pullRequests {
+            vcsRootExtId = "${DslContext.settingsRoot.id}"
+            provider = github {
+                authType = token {
+                    token = "credentialsJSON:dfcd12f5-cec7-45dc-a612-43d2e7f70f5b"
+                }
+                filterTargetBranch = "+:refs/heads/main"
+                filterAuthorRole = PullRequests.GitHubRoleFilter.EVERYBODY
+            }
+        }
+    }
 })
 
 object PytestRunner : Template({
