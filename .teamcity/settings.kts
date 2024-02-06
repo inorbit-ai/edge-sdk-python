@@ -94,6 +94,10 @@ object QodanaQualityInspections : BuildType({
     name = "Qodana Quality Inspections"
     description = "Qodana based code quality inpsections."
 
+    params {
+        password("system.qodana.developer-portal.edge-python-sdk.token", "credentialsJSON:d06aadf5-c6ee-4c2e-be77-c3395f5e5ad2", label = "Qodana Token", description = "The token for the build's Qodana project.", display = ParameterDisplay.HIDDEN, readOnly = true)
+    }
+
     vcs {
         root(DslContext.settingsRoot)
     }
