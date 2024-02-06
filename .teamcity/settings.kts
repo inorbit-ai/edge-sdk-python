@@ -113,6 +113,12 @@ object QodanaQualityInspections : BuildType({
         }
     }
 
+    triggers {
+        vcs {
+            branchFilter = "+:<default>"
+        }
+    }
+
     features {
         pullRequests {
             vcsRootExtId = "${DslContext.settingsRoot.id}"
