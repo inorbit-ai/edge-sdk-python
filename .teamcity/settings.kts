@@ -109,7 +109,7 @@ object QodanaQualityInspections : BuildType({
             linter = python {
             }
             additionalQodanaArguments = "--baseline qodana.sarif.json"
-            cloudToken = "credentialsJSON:809f8c61-4df0-4d12-a554-0f2c13a4b8f2"
+            cloudToken = "credentialsJSON:7e58a4e2-e74e-4cc1-9668-de4ea5117706"
         }
     }
 })
