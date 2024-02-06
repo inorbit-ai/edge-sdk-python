@@ -124,6 +124,15 @@ object QodanaQualityInspections : BuildType({
                 filterAuthorRole = PullRequests.GitHubRoleFilter.EVERYBODY
             }
         }
+        commitStatusPublisher {
+            vcsRootExtId = "${DslContext.settingsRoot.id}"
+            publisher = github {
+                githubUrl = "https://api.github.com"
+                authType = personalToken {
+                    token = "credentialsJSON:dfcd12f5-cec7-45dc-a612-43d2e7f70f5b"
+                }
+            }
+        }
     }
 })
 
