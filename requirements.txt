@@ -1,0 +1,24 @@
+# video requirements
+opencv-python==4.7.0.68
+
+# test requirements
+black>=19.10b0
+codecov>=2.1.4
+flake8>=3.8.3
+flake8-debugger>=3.2.1
+pytest>=5.4.3
+pytest-cov>=2.9.0
+pytest-mock>=3.10.0
+pytest-raises>=0.11
+pytest-runner>=5.2
+pyyaml>=6.0
+lark>=1.0.0
+requests_mock>=1.9.3
+
+# requirements
+requests==2.26.0
+paho_mqtt==1.6.1
+PySocks==1.7.1
+protobuf==3.19.3
+certifi>=2021.10.8
+deprecated==1.2.13
