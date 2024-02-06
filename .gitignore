@@ -103,3 +103,7 @@ ENV/
 
 # VSCode
 .vscode
+
+# IntelliJ
+.idea/
+*.iml
