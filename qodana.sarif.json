@@ -83,24 +83,6 @@
               "name": "MongoJS"
             },
             {
-              "id": "JavaScript and TypeScript/Code style issues",
-              "name": "Code style issues",
-              "relationships": [
-                {
-                  "target": {
-                    "id": "JavaScript and TypeScript",
-                    "index": 1,
-                    "toolComponent": {
-                      "name": "QDPY"
-                    }
-                  },
-                  "kinds": [
-                    "superset"
-                  ]
-                }
-              ]
-            },
-            {
               "id": "JavaScript and TypeScript/General",
               "name": "General",
               "relationships": [
@@ -119,12 +101,30 @@
               ]
             },
             {
-              "id": "Properties files",
-              "name": "Properties files"
+              "id": "JavaScript and TypeScript/Code style issues",
+              "name": "Code style issues",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 1,
+                    "toolComponent": {
+                      "name": "QDPY"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
             },
             {
               "id": "MySQL",
               "name": "MySQL"
+            },
+            {
+              "id": "Properties files",
+              "name": "Properties files"
             },
             {
               "id": "JavaScript and TypeScript/Potentially undesirable code constructs",
@@ -399,6 +399,10 @@
               ]
             },
             {
+              "id": "Structural search",
+              "name": "Structural search"
+            },
+            {
               "id": "JavaScript and TypeScript/Function metrics",
               "name": "Function metrics",
               "relationships": [
@@ -415,10 +419,6 @@
                   ]
                 }
               ]
-            },
-            {
-              "id": "Structural search",
-              "name": "Structural search"
             },
             {
               "id": "Dependency analysis",
@@ -3017,21 +3017,21 @@
                 ]
               },
               {
-                "id": "CommandLineInspection",
+                "id": "PyComparisonWithNoneInspection",
                 "shortDescription": {
-                  "text": "Incorrect CLI syntax"
+                  "text": "Using equality operators to compare with None"
                 },
                 "fullDescription": {
-                  "text": "Reports the problems if the arguments of the command you type in the console are not in the proper order. The inspection also verifies that option names and arguments are correct. Do not disable the inspection if you are going to use command-line interfaces like manage.py in Django.",
-                  "markdown": "Reports the problems if the arguments of the command you type in the console are not in the proper order. The inspection also verifies\nthat option names and arguments are correct.\n\nDo not disable the inspection if you are going to use command-line interfaces like [manage.py in Django](https://www.jetbrains.com/help/pycharm/running-manage-py.html)."
+                  "text": "Reports comparisons with 'None'. That type of comparisons should always be done with 'is' or 'is not', never the equality operators. Example: 'a = 2\n\n\nif a == None:\n    print(\"Success\")' Once the quick-fix is applied, the code changes to: 'a = 2\n\n\nif a is None:\n    print(\"Success\")'",
+                  "markdown": "Reports comparisons with `None`. That type of comparisons\nshould always be done with `is` or `is not`, never\nthe equality operators.\n\n**Example:**\n\n\n    a = 2\n\n\n    if a == None:\n        print(\"Success\")\n\nOnce the quick-fix is applied, the code changes to:\n\n\n    a = 2\n\n\n    if a is None:\n        print(\"Success\")\n"
                 },
                 "defaultConfiguration": {
                   "enabled": true,
-                  "level": "warning",
+                  "level": "note",
                   "parameters": {
-                    "suppressToolId": "CommandLineInspection",
-                    "ideaSeverity": "WARNING",
-                    "qodanaSeverity": "High"
+                    "suppressToolId": "PyComparisonWithNone",
+                    "ideaSeverity": "WEAK WARNING",
+                    "qodanaSeverity": "Moderate"
                   }
                 },
                 "relationships": [
@@ -3050,21 +3050,21 @@
                 ]
               },
               {
-                "id": "PyComparisonWithNoneInspection",
+                "id": "CommandLineInspection",
                 "shortDescription": {
-                  "text": "Using equality operators to compare with None"
+                  "text": "Incorrect CLI syntax"
                 },
                 "fullDescription": {
-                  "text": "Reports comparisons with 'None'. That type of comparisons should always be done with 'is' or 'is not', never the equality operators. Example: 'a = 2\n\n\nif a == None:\n    print(\"Success\")' Once the quick-fix is applied, the code changes to: 'a = 2\n\n\nif a is None:\n    print(\"Success\")'",
-                  "markdown": "Reports comparisons with `None`. That type of comparisons\nshould always be done with `is` or `is not`, never\nthe equality operators.\n\n**Example:**\n\n\n    a = 2\n\n\n    if a == None:\n        print(\"Success\")\n\nOnce the quick-fix is applied, the code changes to:\n\n\n    a = 2\n\n\n    if a is None:\n        print(\"Success\")\n"
+                  "text": "Reports the problems if the arguments of the command you type in the console are not in the proper order. The inspection also verifies that option names and arguments are correct. Do not disable the inspection if you are going to use command-line interfaces like manage.py in Django.",
+                  "markdown": "Reports the problems if the arguments of the command you type in the console are not in the proper order. The inspection also verifies\nthat option names and arguments are correct.\n\nDo not disable the inspection if you are going to use command-line interfaces like [manage.py in Django](https://www.jetbrains.com/help/pycharm/running-manage-py.html)."
                 },
                 "defaultConfiguration": {
                   "enabled": true,
-                  "level": "note",
+                  "level": "warning",
                   "parameters": {
-                    "suppressToolId": "PyComparisonWithNone",
-                    "ideaSeverity": "WEAK WARNING",
-                    "qodanaSeverity": "Moderate"
+                    "suppressToolId": "CommandLineInspection",
+                    "ideaSeverity": "WARNING",
+                    "qodanaSeverity": "High"
                   }
                 },
                 "relationships": [
@@ -4172,19 +4172,19 @@
                 ]
               },
               {
-                "id": "PyprojectInspection",
+                "id": "PyClassicStyleClassInspection",
                 "shortDescription": {
-                  "text": "Depencencies in pyproject.toml"
+                  "text": "Classic style class usage"
                 },
                 "fullDescription": {
-                  "text": "Reports unsatisfied dependencies, declared [project.dependencies] table in pyproject.toml. Shows a quick-fix to install missing packages.",
-                  "markdown": "Reports unsatisfied dependencies, declared \\[project.dependencies\\] table in pyproject.toml.\n\n\nShows a quick-fix to install missing packages."
+                  "text": "Reports classic style classes usage. This inspection applies only to Python 2. Example: 'class A:\n    pass' With quick-fixes provided by the IDE, this code fragment changes to: 'class A(object):\n    def __init__(self):\n        pass'",
+                  "markdown": "Reports [classic style classes](https://docs.python.org/2/reference/datamodel.html#new-style-and-classic-classes) usage. This inspection applies only to Python 2.\n\n**Example:**\n\n\n    class A:\n        pass\n\nWith quick-fixes provided by the IDE, this code fragment changes to:\n\n\n    class A(object):\n        def __init__(self):\n            pass\n"
                 },
                 "defaultConfiguration": {
-                  "enabled": true,
+                  "enabled": false,
                   "level": "warning",
                   "parameters": {
-                    "suppressToolId": "PyprojectInspection",
+                    "suppressToolId": "PyClassicStyleClass",
                     "ideaSeverity": "WARNING",
                     "qodanaSeverity": "High"
                   }
@@ -4205,19 +4205,19 @@
                 ]
               },
               {
-                "id": "PyClassicStyleClassInspection",
+                "id": "PyprojectInspection",
                 "shortDescription": {
-                  "text": "Classic style class usage"
+                  "text": "Depencencies in pyproject.toml"
                 },
                 "fullDescription": {
-                  "text": "Reports classic style classes usage. This inspection applies only to Python 2. Example: 'class A:\n    pass' With quick-fixes provided by the IDE, this code fragment changes to: 'class A(object):\n    def __init__(self):\n        pass'",
-                  "markdown": "Reports [classic style classes](https://docs.python.org/2/reference/datamodel.html#new-style-and-classic-classes) usage. This inspection applies only to Python 2.\n\n**Example:**\n\n\n    class A:\n        pass\n\nWith quick-fixes provided by the IDE, this code fragment changes to:\n\n\n    class A(object):\n        def __init__(self):\n            pass\n"
+                  "text": "Reports unsatisfied dependencies, declared [project.dependencies] table in pyproject.toml. Shows a quick-fix to install missing packages.",
+                  "markdown": "Reports unsatisfied dependencies, declared \\[project.dependencies\\] table in pyproject.toml.\n\n\nShows a quick-fix to install missing packages."
                 },
                 "defaultConfiguration": {
-                  "enabled": false,
+                  "enabled": true,
                   "level": "warning",
                   "parameters": {
-                    "suppressToolId": "PyClassicStyleClass",
+                    "suppressToolId": "PyprojectInspection",
                     "ideaSeverity": "WARNING",
                     "qodanaSeverity": "High"
                   }
@@ -4448,39 +4448,6 @@
                 ]
               },
               {
-                "id": "NonBlockStatementBodyJS",
-                "shortDescription": {
-                  "text": "Statement body without braces"
-                },
-                "fullDescription": {
-                  "text": "Reports a 'if', 'while', 'for', or 'with' statements whose body is not a block statement. Using code block in statement bodies is usually safer for downstream maintenance.",
-                  "markdown": "Reports a `if`, `while`, `for`, or `with` statements whose body is not a block statement. Using code block in statement bodies is usually safer for downstream maintenance."
-                },
-                "defaultConfiguration": {
-                  "enabled": false,
-                  "level": "warning",
-                  "parameters": {
-                    "suppressToolId": "NonBlockStatementBodyJS",
-                    "ideaSeverity": "WARNING",
-                    "qodanaSeverity": "High"
-                  }
-                },
-                "relationships": [
-                  {
-                    "target": {
-                      "id": "JavaScript and TypeScript/Code style issues",
-                      "index": 11,
-                      "toolComponent": {
-                        "name": "QDPY"
-                      }
-                    },
-                    "kinds": [
-                      "superset"
-                    ]
-                  }
-                ]
-              },
-              {
                 "id": "JSValidateJSDoc",
                 "shortDescription": {
                   "text": "Syntax errors and unresolved references in JSDoc"
@@ -4502,7 +4469,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -4536,6 +4503,39 @@
                     "target": {
                       "id": "JavaScript and TypeScript/Control flow issues",
                       "index": 2,
+                      "toolComponent": {
+                        "name": "QDPY"
+                      }
+                    },
+                    "kinds": [
+                      "superset"
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "NonBlockStatementBodyJS",
+                "shortDescription": {
+                  "text": "Statement body without braces"
+                },
+                "fullDescription": {
+                  "text": "Reports a 'if', 'while', 'for', or 'with' statements whose body is not a block statement. Using code block in statement bodies is usually safer for downstream maintenance.",
+                  "markdown": "Reports a `if`, `while`, `for`, or `with` statements whose body is not a block statement. Using code block in statement bodies is usually safer for downstream maintenance."
+                },
+                "defaultConfiguration": {
+                  "enabled": false,
+                  "level": "warning",
+                  "parameters": {
+                    "suppressToolId": "NonBlockStatementBodyJS",
+                    "ideaSeverity": "WARNING",
+                    "qodanaSeverity": "High"
+                  }
+                },
+                "relationships": [
+                  {
+                    "target": {
+                      "id": "JavaScript and TypeScript/Code style issues",
+                      "index": 12,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -4811,6 +4811,39 @@
                 ]
               },
               {
+                "id": "JSClosureCompilerSyntax",
+                "shortDescription": {
+                  "text": "Incorrect usage of JSDoc tags"
+                },
+                "fullDescription": {
+                  "text": "Reports warnings implied by Google Closure Compiler annotations including correct use of '@abstract', '@interface', and '@implements' tags.",
+                  "markdown": "Reports warnings implied by *Google Closure Compiler* annotations including correct use of `@abstract`, `@interface`, and `@implements` tags."
+                },
+                "defaultConfiguration": {
+                  "enabled": false,
+                  "level": "warning",
+                  "parameters": {
+                    "suppressToolId": "JSClosureCompilerSyntax",
+                    "ideaSeverity": "WARNING",
+                    "qodanaSeverity": "High"
+                  }
+                },
+                "relationships": [
+                  {
+                    "target": {
+                      "id": "JavaScript and TypeScript/General",
+                      "index": 11,
+                      "toolComponent": {
+                        "name": "QDPY"
+                      }
+                    },
+                    "kinds": [
+                      "superset"
+                    ]
+                  }
+                ]
+              },
+              {
                 "id": "UnnecessaryContinueJS",
                 "shortDescription": {
                   "text": "Unnecessary 'continue' statement"
@@ -4833,39 +4866,6 @@
                     "target": {
                       "id": "JavaScript and TypeScript/Control flow issues",
                       "index": 2,
-                      "toolComponent": {
-                        "name": "QDPY"
-                      }
-                    },
-                    "kinds": [
-                      "superset"
-                    ]
-                  }
-                ]
-              },
-              {
-                "id": "JSClosureCompilerSyntax",
-                "shortDescription": {
-                  "text": "Incorrect usage of JSDoc tags"
-                },
-                "fullDescription": {
-                  "text": "Reports warnings implied by Google Closure Compiler annotations including correct use of '@abstract', '@interface', and '@implements' tags.",
-                  "markdown": "Reports warnings implied by *Google Closure Compiler* annotations including correct use of `@abstract`, `@interface`, and `@implements` tags."
-                },
-                "defaultConfiguration": {
-                  "enabled": false,
-                  "level": "warning",
-                  "parameters": {
-                    "suppressToolId": "JSClosureCompilerSyntax",
-                    "ideaSeverity": "WARNING",
-                    "qodanaSeverity": "High"
-                  }
-                },
-                "relationships": [
-                  {
-                    "target": {
-                      "id": "JavaScript and TypeScript/General",
-                      "index": 12,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -5129,7 +5129,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/Function metrics",
-                      "index": 34,
+                      "index": 35,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -5195,7 +5195,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -5228,7 +5228,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/Code style issues",
-                      "index": 11,
+                      "index": 12,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -5360,7 +5360,40 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
+                      "toolComponent": {
+                        "name": "QDPY"
+                      }
+                    },
+                    "kinds": [
+                      "superset"
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "ES6ShorthandObjectProperty",
+                "shortDescription": {
+                  "text": "Property can be replaced with shorthand"
+                },
+                "fullDescription": {
+                  "text": "Reports an object property that can be converted to ES6 shorthand style and provides a quick-fix to do it. Example: 'var obj = {foo:foo}' After applying the quick-fix the code looks as follows: 'var obj = {foo}'",
+                  "markdown": "Reports an object property that can be converted to ES6 shorthand style and provides a quick-fix to do it.\n\nExample:\n\n\n    var obj = {foo:foo}\n\nAfter applying the quick-fix the code looks as follows:\n\n\n    var obj = {foo}\n"
+                },
+                "defaultConfiguration": {
+                  "enabled": false,
+                  "level": "note",
+                  "parameters": {
+                    "suppressToolId": "ES6ShorthandObjectProperty",
+                    "ideaSeverity": "INFORMATION",
+                    "qodanaSeverity": "Info"
+                  }
+                },
+                "relationships": [
+                  {
+                    "target": {
+                      "id": "JavaScript and TypeScript/General",
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -5394,39 +5427,6 @@
                     "target": {
                       "id": "JavaScript and TypeScript/Control flow issues",
                       "index": 2,
-                      "toolComponent": {
-                        "name": "QDPY"
-                      }
-                    },
-                    "kinds": [
-                      "superset"
-                    ]
-                  }
-                ]
-              },
-              {
-                "id": "ES6ShorthandObjectProperty",
-                "shortDescription": {
-                  "text": "Property can be replaced with shorthand"
-                },
-                "fullDescription": {
-                  "text": "Reports an object property that can be converted to ES6 shorthand style and provides a quick-fix to do it. Example: 'var obj = {foo:foo}' After applying the quick-fix the code looks as follows: 'var obj = {foo}'",
-                  "markdown": "Reports an object property that can be converted to ES6 shorthand style and provides a quick-fix to do it.\n\nExample:\n\n\n    var obj = {foo:foo}\n\nAfter applying the quick-fix the code looks as follows:\n\n\n    var obj = {foo}\n"
-                },
-                "defaultConfiguration": {
-                  "enabled": false,
-                  "level": "note",
-                  "parameters": {
-                    "suppressToolId": "ES6ShorthandObjectProperty",
-                    "ideaSeverity": "INFORMATION",
-                    "qodanaSeverity": "Info"
-                  }
-                },
-                "relationships": [
-                  {
-                    "target": {
-                      "id": "JavaScript and TypeScript/General",
-                      "index": 12,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -5624,7 +5624,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -5690,7 +5690,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -5789,7 +5789,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -5867,6 +5867,39 @@
                 ]
               },
               {
+                "id": "JSReferencingMutableVariableFromClosure",
+                "shortDescription": {
+                  "text": "Referencing mutable variable from closure"
+                },
+                "fullDescription": {
+                  "text": "Reports access to outer mutable variables from functions. Example: 'for (var i = 1; i <= 3; i++) {\n    setTimeout(function() {\n        console.log(i); // bad\n    }, 0);\n  }'",
+                  "markdown": "Reports access to outer mutable variables from functions.\n\nExample:\n\n\n      for (var i = 1; i <= 3; i++) {\n        setTimeout(function() {\n            console.log(i); // bad\n        }, 0);\n      }\n"
+                },
+                "defaultConfiguration": {
+                  "enabled": false,
+                  "level": "warning",
+                  "parameters": {
+                    "suppressToolId": "JSReferencingMutableVariableFromClosure",
+                    "ideaSeverity": "WARNING",
+                    "qodanaSeverity": "High"
+                  }
+                },
+                "relationships": [
+                  {
+                    "target": {
+                      "id": "JavaScript and TypeScript/General",
+                      "index": 11,
+                      "toolComponent": {
+                        "name": "QDPY"
+                      }
+                    },
+                    "kinds": [
+                      "superset"
+                    ]
+                  }
+                ]
+              },
+              {
                 "id": "PointlessBooleanExpressionJS",
                 "shortDescription": {
                   "text": "Pointless statement or boolean expression"
@@ -5889,39 +5922,6 @@
                     "target": {
                       "id": "JavaScript and TypeScript/Control flow issues",
                       "index": 2,
-                      "toolComponent": {
-                        "name": "QDPY"
-                      }
-                    },
-                    "kinds": [
-                      "superset"
-                    ]
-                  }
-                ]
-              },
-              {
-                "id": "JSReferencingMutableVariableFromClosure",
-                "shortDescription": {
-                  "text": "Referencing mutable variable from closure"
-                },
-                "fullDescription": {
-                  "text": "Reports access to outer mutable variables from functions. Example: 'for (var i = 1; i <= 3; i++) {\n    setTimeout(function() {\n        console.log(i); // bad\n    }, 0);\n  }'",
-                  "markdown": "Reports access to outer mutable variables from functions.\n\nExample:\n\n\n      for (var i = 1; i <= 3; i++) {\n        setTimeout(function() {\n            console.log(i); // bad\n        }, 0);\n      }\n"
-                },
-                "defaultConfiguration": {
-                  "enabled": false,
-                  "level": "warning",
-                  "parameters": {
-                    "suppressToolId": "JSReferencingMutableVariableFromClosure",
-                    "ideaSeverity": "WARNING",
-                    "qodanaSeverity": "High"
-                  }
-                },
-                "relationships": [
-                  {
-                    "target": {
-                      "id": "JavaScript and TypeScript/General",
-                      "index": 12,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -6086,7 +6086,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/Code style issues",
-                      "index": 11,
+                      "index": 12,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -6185,7 +6185,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -6251,7 +6251,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/Function metrics",
-                      "index": 34,
+                      "index": 35,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -6548,7 +6548,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -6581,7 +6581,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -7241,7 +7241,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -7439,7 +7439,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/Function metrics",
-                      "index": 34,
+                      "index": 35,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -7472,7 +7472,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -7637,7 +7637,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -7670,7 +7670,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -7802,7 +7802,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/Code style issues",
-                      "index": 11,
+                      "index": 12,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -7868,7 +7868,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -8000,7 +8000,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -8330,7 +8330,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -8594,40 +8594,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
-                      "toolComponent": {
-                        "name": "QDPY"
-                      }
-                    },
-                    "kinds": [
-                      "superset"
-                    ]
-                  }
-                ]
-              },
-              {
-                "id": "JSAnnotator",
-                "shortDescription": {
-                  "text": "ECMAScript specification is not followed"
-                },
-                "fullDescription": {
-                  "text": "Reports basic syntax issues and inconsistencies with language specification, such as invalid usages of keywords, usages of incompatible numeric format, or multiple parameters to getters/setters. Generally, such errors must always be reported and shouldn't be disabled. But in some cases, such as issues due to the dynamic nature of JavaScript, the use of not yet supported language features, or bugs in IDE's checker, it may be handy to disable reporting these very basic errors.",
-                  "markdown": "Reports basic syntax issues and inconsistencies with language specification, such as invalid usages of keywords, usages of incompatible numeric format, or multiple parameters to getters/setters.   \nGenerally, such errors must always be reported and shouldn't be disabled. But in some cases, such as issues due to the dynamic nature of JavaScript, the use of not yet supported language features, or bugs in IDE's checker, it may be handy to disable reporting these very basic errors."
-                },
-                "defaultConfiguration": {
-                  "enabled": false,
-                  "level": "error",
-                  "parameters": {
-                    "suppressToolId": "JSAnnotator",
-                    "ideaSeverity": "ERROR",
-                    "qodanaSeverity": "Critical"
-                  }
-                },
-                "relationships": [
-                  {
-                    "target": {
-                      "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -8672,6 +8639,39 @@
                 ]
               },
               {
+                "id": "JSAnnotator",
+                "shortDescription": {
+                  "text": "ECMAScript specification is not followed"
+                },
+                "fullDescription": {
+                  "text": "Reports basic syntax issues and inconsistencies with language specification, such as invalid usages of keywords, usages of incompatible numeric format, or multiple parameters to getters/setters. Generally, such errors must always be reported and shouldn't be disabled. But in some cases, such as issues due to the dynamic nature of JavaScript, the use of not yet supported language features, or bugs in IDE's checker, it may be handy to disable reporting these very basic errors.",
+                  "markdown": "Reports basic syntax issues and inconsistencies with language specification, such as invalid usages of keywords, usages of incompatible numeric format, or multiple parameters to getters/setters.   \nGenerally, such errors must always be reported and shouldn't be disabled. But in some cases, such as issues due to the dynamic nature of JavaScript, the use of not yet supported language features, or bugs in IDE's checker, it may be handy to disable reporting these very basic errors."
+                },
+                "defaultConfiguration": {
+                  "enabled": false,
+                  "level": "error",
+                  "parameters": {
+                    "suppressToolId": "JSAnnotator",
+                    "ideaSeverity": "ERROR",
+                    "qodanaSeverity": "Critical"
+                  }
+                },
+                "relationships": [
+                  {
+                    "target": {
+                      "id": "JavaScript and TypeScript/General",
+                      "index": 11,
+                      "toolComponent": {
+                        "name": "QDPY"
+                      }
+                    },
+                    "kinds": [
+                      "superset"
+                    ]
+                  }
+                ]
+              },
+              {
                 "id": "JSLastCommaInObjectLiteral",
                 "shortDescription": {
                   "text": "Unneeded last comma in object literal"
@@ -8693,7 +8693,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -8957,7 +8957,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/Code style issues",
-                      "index": 11,
+                      "index": 12,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -9023,7 +9023,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/Function metrics",
-                      "index": 34,
+                      "index": 35,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -9188,7 +9188,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -9287,7 +9287,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -9419,7 +9419,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -9518,7 +9518,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/Function metrics",
-                      "index": 34,
+                      "index": 35,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -9584,7 +9584,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/Function metrics",
-                      "index": 34,
+                      "index": 35,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -9617,7 +9617,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/Code style issues",
-                      "index": 11,
+                      "index": 12,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -9716,7 +9716,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -9782,7 +9782,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/Function metrics",
-                      "index": 34,
+                      "index": 35,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -9848,7 +9848,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/Code style issues",
-                      "index": 11,
+                      "index": 12,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -9914,7 +9914,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/Code style issues",
-                      "index": 11,
+                      "index": 12,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -10046,7 +10046,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/Code style issues",
-                      "index": 11,
+                      "index": 12,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -10079,7 +10079,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -10178,7 +10178,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/Code style issues",
-                      "index": 11,
+                      "index": 12,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -10244,7 +10244,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -10376,7 +10376,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -10409,7 +10409,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -10508,40 +10508,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/Code style issues",
-                      "index": 11,
-                      "toolComponent": {
-                        "name": "QDPY"
-                      }
-                    },
-                    "kinds": [
-                      "superset"
-                    ]
-                  }
-                ]
-              },
-              {
-                "id": "PlatformDetectionJS",
-                "shortDescription": {
-                  "text": "Inaccurate platform detection"
-                },
-                "fullDescription": {
-                  "text": "Reports a common JavaScript pattern for detecting the browser or operating system in which the script is run. In addition to pointing out non-portable constructs, these platform detection patterns are often incomplete and easily fooled. For most cases, detection of individual environment features is preferable to attempting to detect the entire platform. Patterns detected include: 'document.all' 'document.layers' 'navigator.userAgent' 'navigator.oscpu' 'navigator.appName' 'navigator.appCodeName' 'navigator.platform'",
-                  "markdown": "Reports a common JavaScript pattern for detecting the browser or operating system in which the script is run. In addition to pointing out non-portable constructs, these platform detection patterns are often incomplete and easily fooled. For most cases, detection of individual environment features is preferable to attempting to detect the entire platform.\n\nPatterns detected include:\n\n* `document.all`\n* `document.layers`\n* `navigator.userAgent`\n* `navigator.oscpu`\n* `navigator.appName`\n* `navigator.appCodeName`\n* `navigator.platform`"
-                },
-                "defaultConfiguration": {
-                  "enabled": false,
-                  "level": "warning",
-                  "parameters": {
-                    "suppressToolId": "PlatformDetectionJS",
-                    "ideaSeverity": "WARNING",
-                    "qodanaSeverity": "High"
-                  }
-                },
-                "relationships": [
-                  {
-                    "target": {
-                      "id": "JavaScript and TypeScript/DOM issues",
-                      "index": 52,
+                      "index": 12,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -10575,6 +10542,39 @@
                     "target": {
                       "id": "JavaScript and TypeScript/Control flow issues",
                       "index": 2,
+                      "toolComponent": {
+                        "name": "QDPY"
+                      }
+                    },
+                    "kinds": [
+                      "superset"
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "PlatformDetectionJS",
+                "shortDescription": {
+                  "text": "Inaccurate platform detection"
+                },
+                "fullDescription": {
+                  "text": "Reports a common JavaScript pattern for detecting the browser or operating system in which the script is run. In addition to pointing out non-portable constructs, these platform detection patterns are often incomplete and easily fooled. For most cases, detection of individual environment features is preferable to attempting to detect the entire platform. Patterns detected include: 'document.all' 'document.layers' 'navigator.userAgent' 'navigator.oscpu' 'navigator.appName' 'navigator.appCodeName' 'navigator.platform'",
+                  "markdown": "Reports a common JavaScript pattern for detecting the browser or operating system in which the script is run. In addition to pointing out non-portable constructs, these platform detection patterns are often incomplete and easily fooled. For most cases, detection of individual environment features is preferable to attempting to detect the entire platform.\n\nPatterns detected include:\n\n* `document.all`\n* `document.layers`\n* `navigator.userAgent`\n* `navigator.oscpu`\n* `navigator.appName`\n* `navigator.appCodeName`\n* `navigator.platform`"
+                },
+                "defaultConfiguration": {
+                  "enabled": false,
+                  "level": "warning",
+                  "parameters": {
+                    "suppressToolId": "PlatformDetectionJS",
+                    "ideaSeverity": "WARNING",
+                    "qodanaSeverity": "High"
+                  }
+                },
+                "relationships": [
+                  {
+                    "target": {
+                      "id": "JavaScript and TypeScript/DOM issues",
+                      "index": 52,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -10817,39 +10817,6 @@
                 ]
               },
               {
-                "id": "TypeScriptDuplicateUnionOrIntersectionType",
-                "shortDescription": {
-                  "text": "Duplicate union or intersection type component"
-                },
-                "fullDescription": {
-                  "text": "Reports a duplicate type inside a union or intersection.",
-                  "markdown": "Reports a duplicate type inside a union or intersection."
-                },
-                "defaultConfiguration": {
-                  "enabled": false,
-                  "level": "warning",
-                  "parameters": {
-                    "suppressToolId": "TypeScriptDuplicateUnionOrIntersectionType",
-                    "ideaSeverity": "WARNING",
-                    "qodanaSeverity": "High"
-                  }
-                },
-                "relationships": [
-                  {
-                    "target": {
-                      "id": "JavaScript and TypeScript/TypeScript",
-                      "index": 27,
-                      "toolComponent": {
-                        "name": "QDPY"
-                      }
-                    },
-                    "kinds": [
-                      "superset"
-                    ]
-                  }
-                ]
-              },
-              {
                 "id": "TrivialConditionalJS",
                 "shortDescription": {
                   "text": "Redundant conditional expression"
@@ -10872,6 +10839,39 @@
                     "target": {
                       "id": "JavaScript and TypeScript/Control flow issues",
                       "index": 2,
+                      "toolComponent": {
+                        "name": "QDPY"
+                      }
+                    },
+                    "kinds": [
+                      "superset"
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "TypeScriptDuplicateUnionOrIntersectionType",
+                "shortDescription": {
+                  "text": "Duplicate union or intersection type component"
+                },
+                "fullDescription": {
+                  "text": "Reports a duplicate type inside a union or intersection.",
+                  "markdown": "Reports a duplicate type inside a union or intersection."
+                },
+                "defaultConfiguration": {
+                  "enabled": false,
+                  "level": "warning",
+                  "parameters": {
+                    "suppressToolId": "TypeScriptDuplicateUnionOrIntersectionType",
+                    "ideaSeverity": "WARNING",
+                    "qodanaSeverity": "High"
+                  }
+                },
+                "relationships": [
+                  {
+                    "target": {
+                      "id": "JavaScript and TypeScript/TypeScript",
+                      "index": 27,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -11069,7 +11069,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -11366,7 +11366,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -13055,7 +13055,7 @@
                   {
                     "target": {
                       "id": "Structural search",
-                      "index": 35,
+                      "index": 34,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -14651,19 +14651,19 @@
                 ]
               },
               {
-                "id": "RegExpRepeatedSpace",
+                "id": "RegExpDuplicateAlternationBranch",
                 "shortDescription": {
-                  "text": "Consecutive spaces"
+                  "text": "Duplicate branch in alternation"
                 },
                 "fullDescription": {
-                  "text": "Reports multiple consecutive spaces in a RegExp. Because spaces are not visible by default, it can be hard to see how many spaces are required. The RegExp can be made more clear by replacing the consecutive spaces with a single space and a counted quantifier. Example: '(     )' After the quick-fix is applied: '( {5})' New in 2017.1",
-                  "markdown": "Reports multiple consecutive spaces in a RegExp. Because spaces are not visible by default, it can be hard to see how many spaces are required. The RegExp can be made more clear by replacing the consecutive spaces with a single space and a counted quantifier.\n\n**Example:**\n\n\n      (     )\n\nAfter the quick-fix is applied:\n\n\n      ( {5})\n\n\nNew in 2017.1"
+                  "text": "Reports duplicate branches in a RegExp alternation. Duplicate branches slow down matching and obscure the intent of the expression. Example: '(alpha|bravo|charlie|alpha)' After the quick-fix is applied: '(alpha|bravo|charlie)' New in 2017.1",
+                  "markdown": "Reports duplicate branches in a RegExp alternation. Duplicate branches slow down matching and obscure the intent of the expression.\n\n**Example:**\n\n\n      (alpha|bravo|charlie|alpha)\n\nAfter the quick-fix is applied:\n\n\n      (alpha|bravo|charlie)\n\nNew in 2017.1"
                 },
                 "defaultConfiguration": {
                   "enabled": true,
                   "level": "warning",
                   "parameters": {
-                    "suppressToolId": "RegExpRepeatedSpace",
+                    "suppressToolId": "RegExpDuplicateAlternationBranch",
                     "ideaSeverity": "WARNING",
                     "qodanaSeverity": "High"
                   }
@@ -14684,19 +14684,19 @@
                 ]
               },
               {
-                "id": "RegExpDuplicateAlternationBranch",
+                "id": "RegExpRepeatedSpace",
                 "shortDescription": {
-                  "text": "Duplicate branch in alternation"
+                  "text": "Consecutive spaces"
                 },
                 "fullDescription": {
-                  "text": "Reports duplicate branches in a RegExp alternation. Duplicate branches slow down matching and obscure the intent of the expression. Example: '(alpha|bravo|charlie|alpha)' After the quick-fix is applied: '(alpha|bravo|charlie)' New in 2017.1",
-                  "markdown": "Reports duplicate branches in a RegExp alternation. Duplicate branches slow down matching and obscure the intent of the expression.\n\n**Example:**\n\n\n      (alpha|bravo|charlie|alpha)\n\nAfter the quick-fix is applied:\n\n\n      (alpha|bravo|charlie)\n\nNew in 2017.1"
+                  "text": "Reports multiple consecutive spaces in a RegExp. Because spaces are not visible by default, it can be hard to see how many spaces are required. The RegExp can be made more clear by replacing the consecutive spaces with a single space and a counted quantifier. Example: '(     )' After the quick-fix is applied: '( {5})' New in 2017.1",
+                  "markdown": "Reports multiple consecutive spaces in a RegExp. Because spaces are not visible by default, it can be hard to see how many spaces are required. The RegExp can be made more clear by replacing the consecutive spaces with a single space and a counted quantifier.\n\n**Example:**\n\n\n      (     )\n\nAfter the quick-fix is applied:\n\n\n      ( {5})\n\n\nNew in 2017.1"
                 },
                 "defaultConfiguration": {
                   "enabled": true,
                   "level": "warning",
                   "parameters": {
-                    "suppressToolId": "RegExpDuplicateAlternationBranch",
+                    "suppressToolId": "RegExpRepeatedSpace",
                     "ideaSeverity": "WARNING",
                     "qodanaSeverity": "High"
                   }
@@ -14882,7 +14882,7 @@
                   {
                     "target": {
                       "id": "MySQL",
-                      "index": 14,
+                      "index": 13,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -14948,7 +14948,7 @@
                   {
                     "target": {
                       "id": "MySQL",
-                      "index": 14,
+                      "index": 13,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -15158,19 +15158,19 @@
                 ]
               },
               {
-                "id": "SqlSideEffectsInspection",
+                "id": "SqlDtInspection",
                 "shortDescription": {
-                  "text": "Statement with side effects"
+                  "text": "Ill-formed date/time literals"
                 },
                 "fullDescription": {
-                  "text": "Reports statements that might lead to modification of a database during a read-only connection. To enable read-only mode for a connection, right-click a data source in the Database tool window (View | Tool Windows | Database) and select Properties. In the Data Sources and Drivers dialog, click the Options tab and select the Read-only checkbox. Example (MySQL): 'CREATE TABLE foo(a INT);\nINSERT INTO foo VALUES (1);' As 'CREATE TABLE' and 'INSERT INTO' statements lead to a database modification, these statements will be highlighted in read-only connection mode.",
-                  "markdown": "Reports statements that might lead to modification of a database during a read-only connection.\n\nTo enable read-only mode for a\nconnection,\nright-click a data source in the **Database** tool window (**View \\| Tool Windows \\| Database** ) and select **Properties** .\nIn the **Data Sources and Drivers** dialog, click the **Options** tab and select the **Read-only** checkbox.\n\nExample (MySQL):\n\n    CREATE TABLE foo(a INT);\n    INSERT INTO foo VALUES (1);\n\nAs `CREATE TABLE` and `INSERT INTO` statements lead to a database modification, these statements will be highlighted\nin read-only connection mode."
+                  "text": "Reports errors in date and time literals. This inspection is available in MySQL, Oracle, Db2, and H2. Example (MySQL): 'SELECT TIME '10 -12:13:14' FROM dual;\nSELECT TIME ' 12 : 13 : 14 ' FROM dual;\nSELECT TIME '12 13 14' FROM dual;\nSELECT TIME '12-13-14' FROM dual;\nSELECT TIME '12.13.14' FROM dual;\nSELECT TIME '12:13:' FROM dual;\nSELECT TIME '12:13' FROM dual;\nSELECT TIME '12:' FROM dual;' In this example, dates ignore the MySQL standard for date and time literals. Therefore, they will be highlighted. For more information about date and time literals in MySQL, see Date and Time Literals at dev.mysql.com. The following date and type literals are valid for MySQL. 'SELECT TIME '12:13:14' FROM dual;\nSELECT TIME '12:13:14.555' FROM dual;\nSELECT TIME '12:13:14.' FROM dual;\nSELECT TIME '-12:13:14' FROM dual;\nSELECT TIME '10 12:13:14' FROM dual;\nSELECT TIME '-10 12:13:14' FROM dual;'",
+                  "markdown": "Reports errors in date and time literals. This inspection is available in MySQL, Oracle, Db2, and H2.\n\nExample (MySQL):\n\n    SELECT TIME '10 -12:13:14' FROM dual;\n    SELECT TIME ' 12 : 13 : 14 ' FROM dual;\n    SELECT TIME '12 13 14' FROM dual;\n    SELECT TIME '12-13-14' FROM dual;\n    SELECT TIME '12.13.14' FROM dual;\n    SELECT TIME '12:13:' FROM dual;\n    SELECT TIME '12:13' FROM dual;\n    SELECT TIME '12:' FROM dual;\n\nIn this example, dates ignore the MySQL standard for date and time literals. Therefore, they will be highlighted.\nFor more information about date and time literals in MySQL, see [Date and Time Literals at dev.mysql.com](https://dev.mysql.com/doc/refman/8.0/en/date-and-time-literals.html).\n\nThe following date and type literals are valid for MySQL.\n\n    SELECT TIME '12:13:14' FROM dual;\n    SELECT TIME '12:13:14.555' FROM dual;\n    SELECT TIME '12:13:14.' FROM dual;\n    SELECT TIME '-12:13:14' FROM dual;\n    SELECT TIME '10 12:13:14' FROM dual;\n    SELECT TIME '-10 12:13:14' FROM dual;\n"
                 },
                 "defaultConfiguration": {
                   "enabled": false,
                   "level": "warning",
                   "parameters": {
-                    "suppressToolId": "SqlSideEffects",
+                    "suppressToolId": "SqlDateTime",
                     "ideaSeverity": "WARNING",
                     "qodanaSeverity": "High"
                   }
@@ -15191,19 +15191,19 @@
                 ]
               },
               {
-                "id": "SqlDtInspection",
+                "id": "SqlSideEffectsInspection",
                 "shortDescription": {
-                  "text": "Ill-formed date/time literals"
+                  "text": "Statement with side effects"
                 },
                 "fullDescription": {
-                  "text": "Reports errors in date and time literals. This inspection is available in MySQL, Oracle, Db2, and H2. Example (MySQL): 'SELECT TIME '10 -12:13:14' FROM dual;\nSELECT TIME ' 12 : 13 : 14 ' FROM dual;\nSELECT TIME '12 13 14' FROM dual;\nSELECT TIME '12-13-14' FROM dual;\nSELECT TIME '12.13.14' FROM dual;\nSELECT TIME '12:13:' FROM dual;\nSELECT TIME '12:13' FROM dual;\nSELECT TIME '12:' FROM dual;' In this example, dates ignore the MySQL standard for date and time literals. Therefore, they will be highlighted. For more information about date and time literals in MySQL, see Date and Time Literals at dev.mysql.com. The following date and type literals are valid for MySQL. 'SELECT TIME '12:13:14' FROM dual;\nSELECT TIME '12:13:14.555' FROM dual;\nSELECT TIME '12:13:14.' FROM dual;\nSELECT TIME '-12:13:14' FROM dual;\nSELECT TIME '10 12:13:14' FROM dual;\nSELECT TIME '-10 12:13:14' FROM dual;'",
-                  "markdown": "Reports errors in date and time literals. This inspection is available in MySQL, Oracle, Db2, and H2.\n\nExample (MySQL):\n\n    SELECT TIME '10 -12:13:14' FROM dual;\n    SELECT TIME ' 12 : 13 : 14 ' FROM dual;\n    SELECT TIME '12 13 14' FROM dual;\n    SELECT TIME '12-13-14' FROM dual;\n    SELECT TIME '12.13.14' FROM dual;\n    SELECT TIME '12:13:' FROM dual;\n    SELECT TIME '12:13' FROM dual;\n    SELECT TIME '12:' FROM dual;\n\nIn this example, dates ignore the MySQL standard for date and time literals. Therefore, they will be highlighted.\nFor more information about date and time literals in MySQL, see [Date and Time Literals at dev.mysql.com](https://dev.mysql.com/doc/refman/8.0/en/date-and-time-literals.html).\n\nThe following date and type literals are valid for MySQL.\n\n    SELECT TIME '12:13:14' FROM dual;\n    SELECT TIME '12:13:14.555' FROM dual;\n    SELECT TIME '12:13:14.' FROM dual;\n    SELECT TIME '-12:13:14' FROM dual;\n    SELECT TIME '10 12:13:14' FROM dual;\n    SELECT TIME '-10 12:13:14' FROM dual;\n"
+                  "text": "Reports statements that might lead to modification of a database during a read-only connection. To enable read-only mode for a connection, right-click a data source in the Database tool window (View | Tool Windows | Database) and select Properties. In the Data Sources and Drivers dialog, click the Options tab and select the Read-only checkbox. Example (MySQL): 'CREATE TABLE foo(a INT);\nINSERT INTO foo VALUES (1);' As 'CREATE TABLE' and 'INSERT INTO' statements lead to a database modification, these statements will be highlighted in read-only connection mode.",
+                  "markdown": "Reports statements that might lead to modification of a database during a read-only connection.\n\nTo enable read-only mode for a\nconnection,\nright-click a data source in the **Database** tool window (**View \\| Tool Windows \\| Database** ) and select **Properties** .\nIn the **Data Sources and Drivers** dialog, click the **Options** tab and select the **Read-only** checkbox.\n\nExample (MySQL):\n\n    CREATE TABLE foo(a INT);\n    INSERT INTO foo VALUES (1);\n\nAs `CREATE TABLE` and `INSERT INTO` statements lead to a database modification, these statements will be highlighted\nin read-only connection mode."
                 },
                 "defaultConfiguration": {
                   "enabled": false,
                   "level": "warning",
                   "parameters": {
-                    "suppressToolId": "SqlDateTime",
+                    "suppressToolId": "SqlSideEffects",
                     "ideaSeverity": "WARNING",
                     "qodanaSeverity": "High"
                   }
@@ -15488,6 +15488,39 @@
                 ]
               },
               {
+                "id": "MysqlParsingInspection",
+                "shortDescription": {
+                  "text": "Unsupported syntax in pre-8.0 versions"
+                },
+                "fullDescription": {
+                  "text": "Reports invalid usages of UNION in queries. The inspection works in MySQL versions that are earlier than 8.0. Example (MySQL): 'SELECT * FROM (SELECT 1 UNION (SELECT 1 UNION SELECT 2)) a;'",
+                  "markdown": "Reports invalid usages of UNION in queries.\n\nThe inspection works in MySQL versions that are earlier than 8.0.\n\nExample (MySQL):\n\n\n    SELECT * FROM (SELECT 1 UNION (SELECT 1 UNION SELECT 2)) a;\n"
+                },
+                "defaultConfiguration": {
+                  "enabled": false,
+                  "level": "warning",
+                  "parameters": {
+                    "suppressToolId": "MysqlParsing",
+                    "ideaSeverity": "WARNING",
+                    "qodanaSeverity": "High"
+                  }
+                },
+                "relationships": [
+                  {
+                    "target": {
+                      "id": "MySQL",
+                      "index": 13,
+                      "toolComponent": {
+                        "name": "QDPY"
+                      }
+                    },
+                    "kinds": [
+                      "superset"
+                    ]
+                  }
+                ]
+              },
+              {
                 "id": "SqlCallNotationInspection",
                 "shortDescription": {
                   "text": "Using of named and positional arguments"
@@ -15510,39 +15543,6 @@
                     "target": {
                       "id": "SQL",
                       "index": 32,
-                      "toolComponent": {
-                        "name": "QDPY"
-                      }
-                    },
-                    "kinds": [
-                      "superset"
-                    ]
-                  }
-                ]
-              },
-              {
-                "id": "MysqlParsingInspection",
-                "shortDescription": {
-                  "text": "Unsupported syntax in pre-8.0 versions"
-                },
-                "fullDescription": {
-                  "text": "Reports invalid usages of UNION in queries. The inspection works in MySQL versions that are earlier than 8.0. Example (MySQL): 'SELECT * FROM (SELECT 1 UNION (SELECT 1 UNION SELECT 2)) a;'",
-                  "markdown": "Reports invalid usages of UNION in queries.\n\nThe inspection works in MySQL versions that are earlier than 8.0.\n\nExample (MySQL):\n\n\n    SELECT * FROM (SELECT 1 UNION (SELECT 1 UNION SELECT 2)) a;\n"
-                },
-                "defaultConfiguration": {
-                  "enabled": false,
-                  "level": "warning",
-                  "parameters": {
-                    "suppressToolId": "MysqlParsing",
-                    "ideaSeverity": "WARNING",
-                    "qodanaSeverity": "High"
-                  }
-                },
-                "relationships": [
-                  {
-                    "target": {
-                      "id": "MySQL",
-                      "index": 14,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -16181,19 +16181,19 @@
                 ]
               },
               {
-                "id": "SqlMultipleLimitClausesInspection",
+                "id": "SqlNamedArgumentsInspection",
                 "shortDescription": {
-                  "text": "Multiple row limiting/offset clauses in queries"
+                  "text": "Named arguments should be used"
                 },
                 "fullDescription": {
-                  "text": "Reports usages of multiple row limiting clauses in a single query. Example (Microsoft SQL Server): 'create table foo(a int);\nselect top 1 * from foo order by a offset 10 rows fetch next 20 rows only;' The SELECT TOP clause is used to specify that only 1 record must be returned. The FETCH clause specifies the number of rows to return after the OFFSET clause has been processed. But as we already have the SELECT TOP limiting clause, the FETCH clause might be redundant.",
-                  "markdown": "Reports usages of multiple row limiting clauses in a single query.\n\nExample (Microsoft SQL Server):\n\n    create table foo(a int);\n    select top 1 * from foo order by a offset 10 rows fetch next 20 rows only;\n\nThe SELECT TOP clause is used to specify that only 1 record must be\nreturned. The FETCH clause specifies the number of rows to return after the OFFSET\nclause has been processed. But as we already have the SELECT TOP limiting clause, the FETCH clause might be redundant."
+                  "text": "Reports arguments that are used without names in routine calls. By default, this inspection is disabled. For more information about the difference between named and unnamed parameters, see Binding Parameters by Name (Named Parameters) at docs.microsoft.com . Example (Microsoft SQL Server): 'CREATE FUNCTION foo(n INT, m INT) RETURNS INT AS\nBEGIN\n    RETURN n + m;\nEND;\n\nCREATE PROCEDURE test AS\nBEGIN\n    foo n = 1, m = 2;\n\n--- The following call misses parameter names and will be highlighted\n    foo 1, 2;\nEND;' Parameters '1, 2' in the 'foo 1, 2;' call are highlighted because they miss names.",
+                  "markdown": "Reports arguments that are used without names in routine calls. By default, this inspection is disabled.\n\nFor more information about the difference between named and unnamed parameters, see [Binding Parameters by Name (Named Parameters) at docs.microsoft.com](https://docs.microsoft.com/en-us/sql/odbc/reference/develop-app/binding-parameters-by-name-named-parameters).\n\nExample (Microsoft SQL Server):\n\n    CREATE FUNCTION foo(n INT, m INT) RETURNS INT AS\n    BEGIN\n        RETURN n + m;\n    END;\n\n    CREATE PROCEDURE test AS\n    BEGIN\n        foo n = 1, m = 2;\n\n    --- The following call misses parameter names and will be highlighted\n        foo 1, 2;\n    END;\n\nParameters `1, 2` in the `foo 1, 2;` call are highlighted because they miss names."
                 },
                 "defaultConfiguration": {
                   "enabled": false,
                   "level": "warning",
                   "parameters": {
-                    "suppressToolId": "SqlMultipleLimitClauses",
+                    "suppressToolId": "SqlNamedArguments",
                     "ideaSeverity": "WARNING",
                     "qodanaSeverity": "High"
                   }
@@ -16214,19 +16214,19 @@
                 ]
               },
               {
-                "id": "SqlNamedArgumentsInspection",
+                "id": "SqlMultipleLimitClausesInspection",
                 "shortDescription": {
-                  "text": "Named arguments should be used"
+                  "text": "Multiple row limiting/offset clauses in queries"
                 },
                 "fullDescription": {
-                  "text": "Reports arguments that are used without names in routine calls. By default, this inspection is disabled. For more information about the difference between named and unnamed parameters, see Binding Parameters by Name (Named Parameters) at docs.microsoft.com . Example (Microsoft SQL Server): 'CREATE FUNCTION foo(n INT, m INT) RETURNS INT AS\nBEGIN\n    RETURN n + m;\nEND;\n\nCREATE PROCEDURE test AS\nBEGIN\n    foo n = 1, m = 2;\n\n--- The following call misses parameter names and will be highlighted\n    foo 1, 2;\nEND;' Parameters '1, 2' in the 'foo 1, 2;' call are highlighted because they miss names.",
-                  "markdown": "Reports arguments that are used without names in routine calls. By default, this inspection is disabled.\n\nFor more information about the difference between named and unnamed parameters, see [Binding Parameters by Name (Named Parameters) at docs.microsoft.com](https://docs.microsoft.com/en-us/sql/odbc/reference/develop-app/binding-parameters-by-name-named-parameters).\n\nExample (Microsoft SQL Server):\n\n    CREATE FUNCTION foo(n INT, m INT) RETURNS INT AS\n    BEGIN\n        RETURN n + m;\n    END;\n\n    CREATE PROCEDURE test AS\n    BEGIN\n        foo n = 1, m = 2;\n\n    --- The following call misses parameter names and will be highlighted\n        foo 1, 2;\n    END;\n\nParameters `1, 2` in the `foo 1, 2;` call are highlighted because they miss names."
+                  "text": "Reports usages of multiple row limiting clauses in a single query. Example (Microsoft SQL Server): 'create table foo(a int);\nselect top 1 * from foo order by a offset 10 rows fetch next 20 rows only;' The SELECT TOP clause is used to specify that only 1 record must be returned. The FETCH clause specifies the number of rows to return after the OFFSET clause has been processed. But as we already have the SELECT TOP limiting clause, the FETCH clause might be redundant.",
+                  "markdown": "Reports usages of multiple row limiting clauses in a single query.\n\nExample (Microsoft SQL Server):\n\n    create table foo(a int);\n    select top 1 * from foo order by a offset 10 rows fetch next 20 rows only;\n\nThe SELECT TOP clause is used to specify that only 1 record must be\nreturned. The FETCH clause specifies the number of rows to return after the OFFSET\nclause has been processed. But as we already have the SELECT TOP limiting clause, the FETCH clause might be redundant."
                 },
                 "defaultConfiguration": {
                   "enabled": false,
                   "level": "warning",
                   "parameters": {
-                    "suppressToolId": "SqlNamedArguments",
+                    "suppressToolId": "SqlMultipleLimitClauses",
                     "ideaSeverity": "WARNING",
                     "qodanaSeverity": "High"
                   }
@@ -16280,19 +16280,19 @@
                 ]
               },
               {
-                "id": "SqlRedundantAliasInspection",
+                "id": "SqlIdentifierInspection",
                 "shortDescription": {
-                  "text": "Redundant alias expressions"
+                  "text": "Identifier should be quoted"
                 },
                 "fullDescription": {
-                  "text": "Reports alias expressions that duplicate names of columns in tables and might be redundant. Example (PostgreSQL): 'CREATE TABLE foo(a INT, b INT);\n\nSELECT * FROM foo foo(a, b);\nSELECT * FROM foo foo(a);\nSELECT * FROM foo foo(x);\nSELECT * FROM foo foo(x, y);' The first two aliases use the same column names as in the 'foo' table. They are considered redundant because they column names are identical.",
-                  "markdown": "Reports alias expressions that duplicate names of columns in tables and might be redundant.\n\nExample (PostgreSQL):\n\n    CREATE TABLE foo(a INT, b INT);\n\n    SELECT * FROM foo foo(a, b);\n    SELECT * FROM foo foo(a);\n    SELECT * FROM foo foo(x);\n    SELECT * FROM foo foo(x, y);\n\nThe first two aliases use the same column names as in the `foo` table. They are considered redundant because they\ncolumn names are identical."
+                  "text": "Reports situations when you use SQL reserved keywords as identifier names in your query. Example (Microsoft SQL Server): 'CREATE TABLE select (identity INT IDENTITY NOT NULL, order INT NOT NULL);' We use 'select', 'identity', and 'order' as table and column names. But they are also reserved keywords in Microsoft SQL Server. Therefore, in order to use them as object names in the query, you must quote these identifiers. To quote them, you can use the Quote identifier quick-fix. After the quick-fix is applied: 'CREATE TABLE [select] ([identity] INT IDENTITY NOT NULL, [order] INT NOT NULL);'",
+                  "markdown": "Reports situations when you use SQL reserved keywords as identifier names in your query.\n\nExample (Microsoft SQL Server):\n\n    CREATE TABLE select (identity INT IDENTITY NOT NULL, order INT NOT NULL);\n\nWe use `select`, `identity`, and `order` as table and column names.\nBut they are also reserved keywords in Microsoft SQL Server.\nTherefore, in order to use them as object names in the query, you must quote these identifiers. To quote them, you can use the\n**Quote identifier** quick-fix.\n\nAfter the quick-fix is applied:\n\n    CREATE TABLE [select] ([identity] INT IDENTITY NOT NULL, [order] INT NOT NULL);\n"
                 },
                 "defaultConfiguration": {
                   "enabled": false,
                   "level": "warning",
                   "parameters": {
-                    "suppressToolId": "SqlRedundantAlias",
+                    "suppressToolId": "SqlIdentifier",
                     "ideaSeverity": "WARNING",
                     "qodanaSeverity": "High"
                   }
@@ -16313,19 +16313,19 @@
                 ]
               },
               {
-                "id": "SqlIdentifierInspection",
+                "id": "SqlRedundantAliasInspection",
                 "shortDescription": {
-                  "text": "Identifier should be quoted"
+                  "text": "Redundant alias expressions"
                 },
                 "fullDescription": {
-                  "text": "Reports situations when you use SQL reserved keywords as identifier names in your query. Example (Microsoft SQL Server): 'CREATE TABLE select (identity INT IDENTITY NOT NULL, order INT NOT NULL);' We use 'select', 'identity', and 'order' as table and column names. But they are also reserved keywords in Microsoft SQL Server. Therefore, in order to use them as object names in the query, you must quote these identifiers. To quote them, you can use the Quote identifier quick-fix. After the quick-fix is applied: 'CREATE TABLE [select] ([identity] INT IDENTITY NOT NULL, [order] INT NOT NULL);'",
-                  "markdown": "Reports situations when you use SQL reserved keywords as identifier names in your query.\n\nExample (Microsoft SQL Server):\n\n    CREATE TABLE select (identity INT IDENTITY NOT NULL, order INT NOT NULL);\n\nWe use `select`, `identity`, and `order` as table and column names.\nBut they are also reserved keywords in Microsoft SQL Server.\nTherefore, in order to use them as object names in the query, you must quote these identifiers. To quote them, you can use the\n**Quote identifier** quick-fix.\n\nAfter the quick-fix is applied:\n\n    CREATE TABLE [select] ([identity] INT IDENTITY NOT NULL, [order] INT NOT NULL);\n"
+                  "text": "Reports alias expressions that duplicate names of columns in tables and might be redundant. Example (PostgreSQL): 'CREATE TABLE foo(a INT, b INT);\n\nSELECT * FROM foo foo(a, b);\nSELECT * FROM foo foo(a);\nSELECT * FROM foo foo(x);\nSELECT * FROM foo foo(x, y);' The first two aliases use the same column names as in the 'foo' table. They are considered redundant because they column names are identical.",
+                  "markdown": "Reports alias expressions that duplicate names of columns in tables and might be redundant.\n\nExample (PostgreSQL):\n\n    CREATE TABLE foo(a INT, b INT);\n\n    SELECT * FROM foo foo(a, b);\n    SELECT * FROM foo foo(a);\n    SELECT * FROM foo foo(x);\n    SELECT * FROM foo foo(x, y);\n\nThe first two aliases use the same column names as in the `foo` table. They are considered redundant because they\ncolumn names are identical."
                 },
                 "defaultConfiguration": {
                   "enabled": false,
                   "level": "warning",
                   "parameters": {
-                    "suppressToolId": "SqlIdentifier",
+                    "suppressToolId": "SqlRedundantAlias",
                     "ideaSeverity": "WARNING",
                     "qodanaSeverity": "High"
                   }
@@ -17072,7 +17072,7 @@
                   {
                     "target": {
                       "id": "Properties files",
-                      "index": 13,
+                      "index": 14,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -17105,7 +17105,7 @@
                   {
                     "target": {
                       "id": "Properties files",
-                      "index": 13,
+                      "index": 14,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -17138,7 +17138,7 @@
                   {
                     "target": {
                       "id": "Properties files",
-                      "index": 13,
+                      "index": 14,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -17171,7 +17171,7 @@
                   {
                     "target": {
                       "id": "Properties files",
-                      "index": 13,
+                      "index": 14,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -17204,7 +17204,7 @@
                   {
                     "target": {
                       "id": "Properties files",
-                      "index": 13,
+                      "index": 14,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -17237,7 +17237,7 @@
                   {
                     "target": {
                       "id": "Properties files",
-                      "index": 13,
+                      "index": 14,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -19682,7 +19682,7 @@
                   {
                     "target": {
                       "id": "JavaScript and TypeScript/General",
-                      "index": 12,
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -19783,7 +19783,7 @@
       },
       "invocations": [
         {
-          "startTimeUtc": "2024-02-07T22:33:16.018356927Z",
+          "startTimeUtc": "2024-02-07T23:39:27.90745428Z",
           "exitCode": 0,
           "executionSuccessful": true
         }
@@ -19791,7 +19791,7 @@
       "language": "en-US",
       "versionControlProvenance": [
         {
-          "revisionId": "58a9687ff0ac23345a2f25040c8c5b776b6f9f56",
+          "revisionId": "22a643cf693129f38b6bb751d7ab57a46fb719f4",
           "properties": {
             "repoUrl": "",
             "lastAuthorName": "Russell Toris",
@@ -19801,61 +19801,6 @@
         }
       ],
       "results": [
-        {
-          "ruleId": "CheckDependencyLicenses",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Transitive dependency: 'packaging' ('23.1') licenses cannot be recognized",
-            "markdown": "Transitive dependency: 'packaging' ('23.1') licenses cannot be recognized"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "requirements.txt",
-                  "uriBaseId": "SRCROOT"
-                },
-                "region": {
-                  "startLine": 1,
-                  "startColumn": 2,
-                  "charOffset": 1,
-                  "charLength": 131,
-                  "snippet": {
-                    "text": " video requirements\nopencv-python==4.7.0.68\n\n# test requirements\nblack>=19.10b0\ncodecov>=2.1.4\nflake8>=3.8.3\nflake8-debugger>=3.2.1"
-                  },
-                  "sourceLanguage": "Requirements"
-                },
-                "contextRegion": {
-                  "startLine": 1,
-                  "startColumn": 1,
-                  "charOffset": 0,
-                  "charLength": 164,
-                  "snippet": {
-                    "text": "# video requirements\nopencv-python==4.7.0.68\n\n# test requirements\nblack>=19.10b0\ncodecov>=2.1.4\nflake8>=3.8.3\nflake8-debugger>=3.2.1\npytest>=5.4.3\npytest-cov>=2.9.0"
-                  },
-                  "sourceLanguage": "Requirements"
-                }
-              },
-              "logicalLocations": [
-                {
-                  "fullyQualifiedName": "project",
-                  "kind": "module"
-                }
-              ]
-            }
-          ],
-          "partialFingerprints": {
-            "equalIndicator/v1": "19401a56ccb941b592d2b66a277607064c6f15e8f83f89eeed228a15c996a9e2"
-          },
-          "properties": {
-            "ideaSeverity": "WARNING",
-            "qodanaSeverity": "High",
-            "tags": [
-              "Requirements"
-            ]
-          }
-        },
         {
           "ruleId": "PyArgumentListInspection",
           "kind": "fail",
@@ -33072,6 +33017,61 @@
                   "uriBaseId": "SRCROOT"
                 },
                 "region": {
+                  "startLine": 725,
+                  "startColumn": 61,
+                  "charOffset": 41145,
+                  "charLength": 32,
+                  "snippet": {
+                    "text": "_descriptor._internal_create_key"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 723,
+                  "startColumn": 1,
+                  "charOffset": 40974,
+                  "charLength": 312,
+                  "snippet": {
+                    "text": "      message_type=None, enum_type=None, containing_type=None,\n      is_extension=False, extension_scope=None,\n      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),\n    _descriptor.FieldDescriptor(\n      name='frame_id', full_name='inorbit.MapMessage.frame_id', index=10,"
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "5941ff3c23e11090847d2f3526e42983c08ce1c2127f123c329228445493943b"
+          },
+          "properties": {
+            "ideaSeverity": "WEAK WARNING",
+            "qodanaSeverity": "Moderate",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyProtectedMemberInspection",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "Access to a protected member _internal_create_key of a module",
+            "markdown": "Access to a protected member _internal_create_key of a module"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/inorbit_pb2.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
                   "startLine": 1128,
                   "startColumn": 61,
                   "charOffset": 57880,
@@ -36702,6 +36702,61 @@
                   "uriBaseId": "SRCROOT"
                 },
                 "region": {
+                  "startLine": 232,
+                  "startColumn": 61,
+                  "charOffset": 20158,
+                  "charLength": 32,
+                  "snippet": {
+                    "text": "_descriptor._internal_create_key"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 230,
+                  "startColumn": 1,
+                  "charOffset": 19987,
+                  "charLength": 342,
+                  "snippet": {
+                    "text": "      message_type=None, enum_type=None, containing_type=None,\n      is_extension=False, extension_scope=None,\n      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),\n    _descriptor.FieldDescriptor(\n      name='optional_disks_data', full_name='inorbit.SystemStatsMessage.optional_disks_data', index=11,"
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "8dd15697a7ba408361184d2a617107ab67e66fe7b101d4e19dcd8388803f6d2b"
+          },
+          "properties": {
+            "ideaSeverity": "WEAK WARNING",
+            "qodanaSeverity": "Moderate",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyProtectedMemberInspection",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "Access to a protected member _internal_create_key of a module",
+            "markdown": "Access to a protected member _internal_create_key of a module"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/inorbit_pb2.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
                   "startLine": 2309,
                   "startColumn": 61,
                   "charOffset": 104706,
@@ -37557,6 +37612,61 @@
           ],
           "partialFingerprints": {
             "equalIndicator/v1": "a28b8d74bd065b705ecd6f60f518af94d31aecaac56be8f74326f0286b58f0f2"
+          },
+          "properties": {
+            "ideaSeverity": "WEAK WARNING",
+            "qodanaSeverity": "Moderate",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyProtectedMemberInspection",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "Access to a protected member _internal_create_key of a module",
+            "markdown": "Access to a protected member _internal_create_key of a module"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/inorbit_pb2.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 2004,
+                  "startColumn": 14,
+                  "charOffset": 92638,
+                  "charLength": 32,
+                  "snippet": {
+                    "text": "_descriptor._internal_create_key"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 2002,
+                  "startColumn": 1,
+                  "charOffset": 92582,
+                  "charLength": 133,
+                  "snippet": {
+                    "text": "  file=DESCRIPTOR,\n  containing_type=None,\n  create_key=_descriptor._internal_create_key,\n  fields=[\n    _descriptor.FieldDescriptor("
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "a3a3c28db7d12bfac2918157066bf6e79fa5a4d16ed531dbc51a5f6d09d286b5"
           },
           "properties": {
             "ideaSeverity": "WEAK WARNING",
@@ -38877,6 +38987,61 @@
           ],
           "partialFingerprints": {
             "equalIndicator/v1": "b9d5ba1036b4ecd46bc5348629133917327fa03f34c6324e3adcab3cd058998f"
+          },
+          "properties": {
+            "ideaSeverity": "WEAK WARNING",
+            "qodanaSeverity": "Moderate",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyProtectedMemberInspection",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "Access to a protected member _internal_create_key of a module",
+            "markdown": "Access to a protected member _internal_create_key of a module"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/inorbit_pb2.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 204,
+                  "startColumn": 61,
+                  "charOffset": 18390,
+                  "charLength": 32,
+                  "snippet": {
+                    "text": "_descriptor._internal_create_key"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 202,
+                  "startColumn": 1,
+                  "charOffset": 18219,
+                  "charLength": 323,
+                  "snippet": {
+                    "text": "      message_type=None, enum_type=None, containing_type=None,\n      is_extension=False, extension_scope=None,\n      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),\n    _descriptor.FieldDescriptor(\n      name='inorbit_rx', full_name='inorbit.SystemStatsMessage.inorbit_rx', index=7,"
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "badd03fa4694f6a22a163ac626357f617bd0eaa082a75464313a44f238fa2b58"
           },
           "properties": {
             "ideaSeverity": "WEAK WARNING",
@@ -44774,9 +44939,9 @@
       ],
       "automationDetails": {
         "id": "project/qodana/2024-02-07",
-        "guid": "a55147d8-27f1-4c68-b470-0bf1a40d7614",
+        "guid": "7da86de3-07ce-42e5-bb1d-9684fdbcd2a7",
         "properties": {
-          "jobUrl": "https://inorbit.teamcity.com/viewLog.html?buildId=425&buildTypeId=DeveloperPortal_EdgeSdkPython_QodanaQualityInspections"
+          "jobUrl": "https://inorbit.teamcity.com/viewLog.html?buildId=426&buildTypeId=DeveloperPortal_EdgeSdkPython_QodanaQualityInspections"
         }
       },
       "newlineSequences": [
@@ -45309,9 +45474,9 @@
         "configProfile": "starter",
         "deviceId": "200820300000000-be96-1d8d-9419-aaaba90f7778",
         "qodanaNewResultSummary": {
-          "high": 25,
+          "high": 24,
           "moderate": 433,
-          "total": 458
+          "total": 457
         }
       }
     }
