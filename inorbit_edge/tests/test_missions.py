@@ -133,7 +133,11 @@ def test_mission_end_to_end(
             "currentTaskId": "0",
             "state": "Executing",
             "label": "Delivery Mission",
+<<<<<<< HEAD
             "startTs": 1001000,
+=======
+            "startTs": mock_time.return_value * 1000,
+>>>>>>> cb766a2 (add pause and resume support)
             "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
             "status": "OK",
             "completedPercent": 0.0,
@@ -145,7 +149,11 @@ def test_mission_end_to_end(
             "currentTaskId": "1",
             "state": "Executing",
             "label": "Delivery Mission",
+<<<<<<< HEAD
             "startTs": 1001000,
+=======
+            "startTs": mock_time.return_value * 1000,
+>>>>>>> cb766a2 (add pause and resume support)
             "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
             "status": "OK",
             "completedPercent": 0.16666666666666666,
@@ -157,7 +165,11 @@ def test_mission_end_to_end(
             "currentTaskId": "2",
             "state": "Executing",
             "label": "Delivery Mission",
+<<<<<<< HEAD
             "startTs": 1001000,
+=======
+            "startTs": mock_time.return_value * 1000,
+>>>>>>> cb766a2 (add pause and resume support)
             "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
             "status": "OK",
             "completedPercent": 0.3333333333333333,
@@ -169,7 +181,11 @@ def test_mission_end_to_end(
             "currentTaskId": "3",
             "state": "Executing",
             "label": "Delivery Mission",
+<<<<<<< HEAD
             "startTs": 1001000,
+=======
+            "startTs": mock_time.return_value * 1000,
+>>>>>>> cb766a2 (add pause and resume support)
             "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
             "status": "OK",
             "completedPercent": 0.5,
@@ -181,7 +197,11 @@ def test_mission_end_to_end(
             "currentTaskId": "4",
             "state": "Executing",
             "label": "Delivery Mission",
+<<<<<<< HEAD
             "startTs": 1001000,
+=======
+            "startTs": mock_time.return_value * 1000,
+>>>>>>> cb766a2 (add pause and resume support)
             "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
             "status": "OK",
             "completedPercent": 0.6666666666666666,
@@ -193,7 +213,11 @@ def test_mission_end_to_end(
             "currentTaskId": "5",
             "state": "Executing",
             "label": "Delivery Mission",
+<<<<<<< HEAD
             "startTs": 1001000,
+=======
+            "startTs": mock_time.return_value * 1000,
+>>>>>>> cb766a2 (add pause and resume support)
             "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
             "status": "OK",
             "completedPercent": 0.8333333333333334,
@@ -204,8 +228,13 @@ def test_mission_end_to_end(
             "inProgress": False,
             "state": "Completed",
             "label": "Delivery Mission",
+<<<<<<< HEAD
             "startTs": 1001000,
             "endTs": 1001000,
+=======
+            "startTs": mock_time.return_value * 1000,
+            "endTs": mock_time.return_value * 1000,
+>>>>>>> cb766a2 (add pause and resume support)
             "data": {"order": "#321", "items": ["InOrbito", "Bottle"]},
             "status": "OK",
             "completedPercent": 1.0,
