@@ -105,4 +105,5 @@ ENV/
 .vscode
 
 # IntelliJ
+.idea/
 *.iml
