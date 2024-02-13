@@ -3,7 +3,14 @@
 [![Build Status](https://github.com/inorbit-ai/edge-sdk-python/workflows/Build%20Main/badge.svg)](https://github.com/inorbit-ai/edge-sdk-python/actions)
 [![Code Coverage](https://codecov.io/gh/inorbit/edge-sdk-python/branch/main/graph/badge.svg)](https://codecov.io/gh/inorbit/edge-sdk-python)
 
-The `InOrbit Edge SDK` allows Python programs to communicate with `InOrbit` platform on behalf of robots - providing robot data and handling robot actions. It's goal is to ease the integration between `InOrbit` and any other software that handles robot data.
+|                                                                Python 3.8                                                                 |                                                                Python 3.9                                                                 |                                                                Python 3.10                                                                 |                                                                 Python 3.11                                                                 |
+|:-----------------------------------------------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------:|:------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------------------------------------------:|
+| ![TeamCity](https://inorbit.teamcity.com/app/rest/builds/buildType:id:DeveloperPortal_EdgeSdkPython_Python38QualityRunner/statusIcon.svg) | ![TeamCity](https://inorbit.teamcity.com/app/rest/builds/buildType:id:DeveloperPortal_EdgeSdkPython_Python39QualityRunner/statusIcon.svg) | ![TeamCity](https://inorbit.teamcity.com/app/rest/builds/buildType:id:DeveloperPortal_EdgeSdkPython_Python310QualityRunner/statusIcon.svg) | ![TeamCity](https://inorbit.teamcity.com/app/rest/builds/buildType:id:DeveloperPortal_EdgeSdkPython_Python311QualityRunner/statusIcon.svg)  |
+
+The `InOrbit Edge SDK` allows Python programs to communicate with `InOrbit`
+platform on behalf of robots - providing robot data and handling robot actions.
+Its goal is to ease the integration between `InOrbit` and any other software
+that handles robot data.
 
 ---
 
@@ -31,11 +38,11 @@ def my_command_handler(robot_id, command_name, args, options):
         command_name (str): InOrbit command e.g. 'customCommand'
         args (list): Command arguments
         options (dict): object that includes
-            - `result_function` can be called to report command execution result. It
-            has the following signature: `result_function(return_code)`.
-            - `progress_function` can be used to report command output and has the
-            following signature: `progress_function(output, error)`.
-            - `metadata` is reserved for the future and will contains additional
+            - `result_function` can be called to report command execution
+            result with the following signature: `result_function(return_code)`
+            - `progress_function` can be used to report command output with
+            the following signature: `progress_function(output, error)`
+            - `metadata` is reserved for the future and will contain additional
             information about the received command request.
     """
     if command_name == "customCommand":
@@ -50,7 +57,7 @@ robot_session_factory = RobotSessionFactory(
 
 # Register commands handlers. Note that all handlers are invoked.
 robot_session_factory.register_command_callback(my_command_handler)
-robot_session_factory.register_executable_commands("./user_scripts", r".*\.sh")
+robot_session_factory.register_commands_path("./user_scripts", r".*\.sh")
 
 robot_session_pool = RobotSessionPool(robot_session_factory)
 
@@ -72,21 +79,22 @@ For full package documentation please visit [InOrbit Developer Portal](https://d
 
 ## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for information related to developing the code.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for information related to developing
+the code.
 
 ## The Three Commands You Need To Know
 
 1. `pip install -e .[dev]`
 
-    This will install your package in editable mode with all the required development
-    dependencies (i.e. `tox`).
+    This will install your package in editable mode with all the required
+    development dependencies (i.e. `tox`).
 
 2. `make build`
 
-    This will run `tox` which will run all your tests in both Python 3.7
-    and Python 3.8 as well as linting your code.
+    This will run `tox` which will run all your tests in Python 3.8 - 3.11 as
+    well as linting your code.
 
 3. `make clean`
 
-    This will clean up various Python and build generated files so that you can ensure
-    that you are working in a clean environment.
+    This will clean up various Python and build generated files so that you can
+    ensure that you are working in a clean environment.
