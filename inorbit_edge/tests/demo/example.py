@@ -27,6 +27,7 @@ MAX_YAW = 2 * pi
 LIDAR_RANGES = 700
 
 NUM_ROBOTS = 2
+NUM_LASERS = 3
 
 
 # TODO: integrate this into the Edge SDK ``RobotSession`` class
@@ -232,16 +233,21 @@ if __name__ == "__main__":
                     ]
                 )
 
-                # Generate random lidar ranges within arbitrary limits
-                lidar = [max(2, random() * 3.2) for _ in range(LIDAR_RANGES)]
-                # Make ranges over threshold infinite
-                lidar = [inf if r >= 3 else r for r in lidar]
-                robot_session.publish_laser(
+                # Publish multiple lasers
+                ranges, angles = [], []
+                for i in range(NUM_LASERS):
+                    # Generate random lidar ranges within arbitrary limits
+                    lidar = [max(2, random() * 3.2) for _ in range(700)]
+                    # Make ranges over threshold infinite
+                    lidar = [inf if r >= 3 else r for r in lidar]
+                    ranges.append(lidar)
+                    angles.append((-pi / (i + 1), pi / (i + 1)))
+                robot_session.publish_lasers(
                     x=fake_robot.x,
                     y=fake_robot.y,
                     yaw=fake_robot.yaw,
-                    ranges=lidar,
-                    angle=(-pi / 3, pi / 3),  # show lidar ranges on a cone
+                    ranges=ranges,
+                    angles=angles,  # show lidar ranges on a cone
                 )
 
             sleep(1)
