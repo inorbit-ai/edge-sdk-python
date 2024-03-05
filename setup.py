@@ -47,11 +47,11 @@ dev_requirements = [
 ]
 
 requirements = [
-    "requests==2.26.0",
+    "requests==2.31.0",
     "paho_mqtt==1.6.1",
     "PySocks==1.7.1",
     "protobuf==3.19.3",
-    "certifi>=2021.10.8",
+    "certifi>=2024.2.2",
     "deprecated==1.2.13"
 ]
 
