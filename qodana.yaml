@@ -2,6 +2,10 @@ version: "1.0"
 profile:
   name: qodana.recommended
 bootstrap: pip install -r requirements.txt
+exclude:
+  - name: All
+    paths:
+      - "inorbit_edge/inorbit_pb2.py"
 include:
   - name: CheckDependencyLicenses
 dependencyOverrides:
