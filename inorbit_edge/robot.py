@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from dataclasses import dataclass, field
 import json
+from typing import Tuple
+
 from inorbit_edge import __version__ as inorbit_edge_version
 from inorbit_edge.types import Pose, SpatialTolerance
 import os
@@ -75,6 +78,24 @@ CUSTOM_COMMAND_STATUS_FINISHED = "finished"
 CUSTOM_COMMAND_STATUS_ABORTED = "aborted"
 
 ROBOT_PATH_POINTS_LIMIT = 1000
+
+
+@dataclass
+class LaserConfig:
+    """
+    A class specifying the configuration parameters of a LiDAR.
+    """
+
+    x: float = field(metadata={"help": "The x position of the laser."})
+    y: float = field(metadata={"help": "The y position of the laser."})
+    yaw: float = field(metadata={"help": "The yaw angle of the laser."})
+    angle: Tuple[float, float] = field(
+        metadata={"help": "The min/max angle of the laser."}
+    )
+    range: Tuple[float, float] = field(
+        metadata={"help": "The min/max range value of the laser."}
+    )
+    n_points: int = field(metadata={"help": "The number of points the laser provides."})
 
 
 class RobotSession:
@@ -902,8 +923,10 @@ class RobotSession:
         msg.speed_available = True
         self.publish_protobuf(MQTT_SUBTOPIC_ODOMETRY, msg)
 
-    def publish_lasers(self, x, y, yaw, ranges, angles, frame_id="map", ts=None):
+    def publish_lasers(self, x, y, yaw, ranges, frame_id="map", ts=None):
         """Publish an array of lasers.
+
+        Note: :func:`register_lasers` must be called prior to publishing.
 
         Args:
             x (float): Robot pose x coordinate.
@@ -911,17 +934,10 @@ class RobotSession:
             yaw (float): Robot yaw (radians).
             ranges (List[List[float]]): A list of Laser scan range data. This list of
                 ``float`` number may have infinite values represented as ``math.inf``.
-            angles (List[tuple]): Laser scan range angle (radians). This parameter
-                defines the cone in which the laser points will be shown. For full 360
-                degrees scans use (-math.pi, math.pi). This list must match the length
-                of ranges.
             frame_id (str, optional): Robot map frame identifier. Defaults to "map".
             ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
         """
-        if len(ranges) != len(angles):
-            self.logger.error("Different number of laser ranges and angles")
-            return None
-        elif not self._should_publish_message(method="publish_lasers"):
+        if not self._should_publish_message(method="publish_lasers"):
             return None
 
         # Populate LocationAndPoseMessage with current pose and laser data,
@@ -938,6 +954,12 @@ class RobotSession:
             # Names are based on the index
             name = str(i)
 
+            # Check for a config
+            topic = MQTT_SUBTOPIC_LASER_CONFIG_BASE + name
+            if topic not in self._laser_config_names:
+                self.logger.warning(f"No laser config found for {name}... skipping")
+                continue
+
             pb_lasers_message = LaserMessage()
             pb_lasers_message.name = name
 
@@ -950,22 +972,13 @@ class RobotSession:
 
             msg.lasers.append(pb_lasers_message)
 
-            # Publish laser configuration once.
-            self._publish_laser_config_once(
-                name,
-                angles[i],
-                min(pb_lasers_message.ranges.values),
-                max(pb_lasers_message.ranges.values),
-                len(current),
-            )
-
+        # Now publish all lasers
         self.publish_protobuf(MQTT_SUBTOPIC_POSE, msg)
 
-    def publish_laser(
-        self, x, y, yaw, ranges, angle=(-math.pi, math.pi), frame_id="map", ts=None
-    ):
+    def publish_laser(self, x, y, yaw, ranges, frame_id="map", ts=None):
         """Publish a single robot laser scan.
 
+        Note: :func:`register_lasers` must be called prior to publishing.
         Note: If using multiple lasers, see :func:`publish_lasers`.
 
         Args:
@@ -974,55 +987,46 @@ class RobotSession:
             yaw (float): Robot yaw (radians).
             ranges (List[float]): Laser scan range data. This list of ``float``
                 number may have infinite values represented as ``math.inf``.
-            angle (tuple, optional): Laser scan range angle (radians). This parameter
-                defines the cone in which the laser points will be shown. For full 360
-                degrees scans use (-math.pi, math.pi). Defaults to (-math.pi, math.pi).
             frame_id (str, optional): Robot map frame identifier. Defaults to "map".
             ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
         """
 
-        self.publish_lasers(x, y, yaw, [ranges], [angle], frame_id, ts)
+        self.publish_lasers(x, y, yaw, [ranges], frame_id, ts)
 
-    def _publish_laser_config_once(self, name, angle, range_min, range_max, n_points):
-        """Publish laser configuration once based on provided or inferred parameters.
-
-        Note: x, y & yaw should be used if there is a robot to laser transform.
-        As this is not supported they are explicitly set to zero.
+    def register_lasers(self, configs):
+        """Register a list of lasers to the system. Note that this order should
+        be the same as the order used when using publish_laser(s). This function
+        is intended to be used once during initialization.
 
         Args:
-            name (string): Unique name of the laser config.
-            angle (tuple, optional): Laser scan range angle (radians). This parameter
-                defines the cone in which the laser points will be shown. For full 360
-                degrees scans use (-math.pi, math.pi). Defaults to (-math.pi, math.pi).
-            range_min (float): Min range value the laser supports.
-            range_max (float): Max range value the laser supports.
-            n_points (int): The number of points the laser sends.
+            configs (List[LaserConfig]): A list of laser configs to register.
         """
 
-        topic = MQTT_SUBTOPIC_LASER_CONFIG_BASE + name
-        if topic not in self._laser_config_names:
-            self._laser_config_names.append(topic)
-            self.logger.debug(f"Adding new laser config at {topic}")
-            self.publish(
-                topic=self._get_robot_subtopic(topic),
-                message=(
-                    "{ts:d}|{x:.4g}|{y:.4g}|{yaw:.6g}|"
-                    "{angle_min:.6g}|{angle_max:.6g}|"
-                    "{range_min:.4g}|{range_max:.4g}|{n_points:d}"
-                ).format(
-                    ts=int(time.time() * 1000),
-                    x=0,
-                    y=0,
-                    yaw=0,
-                    angle_min=angle[0],
-                    angle_max=angle[1],
-                    range_min=range_min,
-                    range_max=range_max,
-                    n_points=n_points,
-                ),
-                qos=1,
-                retain=True,
-            )
+        for i, config in enumerate(configs):
+            topic = MQTT_SUBTOPIC_LASER_CONFIG_BASE + str(i)
+            if topic not in self._laser_config_names:
+                self._laser_config_names.append(topic)
+                self.logger.debug(f"Adding new laser config at {topic}")
+                self.publish(
+                    topic=self._get_robot_subtopic(topic),
+                    message=(
+                        "{ts:d}|{x:.4g}|{y:.4g}|{yaw:.6g}|"
+                        "{angle_min:.6g}|{angle_max:.6g}|"
+                        "{range_min:.4g}|{range_max:.4g}|{n_points:d}"
+                    ).format(
+                        ts=int(time.time() * 1000),
+                        x=config.x,
+                        y=config.y,
+                        yaw=config.yaw,
+                        angle_min=config.angle[0],
+                        angle_max=config.angle[1],
+                        range_min=config.range[0],
+                        range_max=config.range[1],
+                        n_points=config.n_points,
+                    ),
+                    qos=1,
+                    retain=True,
+                )
 
     def publish_path(self, path_points, path_id="0", frame_id="map", ts=None):
         """Publish robot path

@@ -10,7 +10,7 @@ import requests
 import sys
 from math import inf
 
-from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool
+from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool, LaserConfig
 from inorbit_edge.video import OpenCVCamera
 
 logging.basicConfig(
@@ -25,6 +25,8 @@ MAX_Y = 20
 MAX_YAW = 2 * pi
 
 LIDAR_RANGES = 700
+LIDAR_MIN = 2.0
+LIDAR_MAX = 3.2
 
 NUM_ROBOTS = 2
 NUM_LASERS = 3
@@ -197,6 +199,21 @@ if __name__ == "__main__":
         if video_url is not None:
             robot_session.register_camera("0", OpenCVCamera(video_url))
 
+        # Configure lasers
+        configs = []
+        for j in range(NUM_LASERS):
+            configs.append(
+                LaserConfig(
+                    j * random(),
+                    j * random(),
+                    pi * j * random(),
+                    (-pi / (j + 1), pi / (j + 1)),
+                    (LIDAR_MIN, LIDAR_MAX),
+                    LIDAR_RANGES,
+                )
+            )
+        robot_session.register_lasers(configs)
+
     # Go through every fake robot and simulate robot movement
     while True:
         try:
@@ -237,17 +254,15 @@ if __name__ == "__main__":
                 ranges, angles = [], []
                 for i in range(NUM_LASERS):
                     # Generate random lidar ranges within arbitrary limits
-                    lidar = [max(2, random() * 3.2) for _ in range(700)]
+                    lidar = [max(LIDAR_MIN, random() * LIDAR_MAX) for _ in range(700)]
                     # Make ranges over threshold infinite
                     lidar = [inf if r >= 3 else r for r in lidar]
                     ranges.append(lidar)
-                    angles.append((-pi / (i + 1), pi / (i + 1)))
                 robot_session.publish_lasers(
                     x=fake_robot.x,
                     y=fake_robot.y,
                     yaw=fake_robot.yaw,
                     ranges=ranges,
-                    angles=angles,  # show lidar ranges on a cone
                 )
 
             sleep(1)
