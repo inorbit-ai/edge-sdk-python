@@ -1,11 +1,10 @@
 # InOrbit Python Edge SDK
 
-[![Build Status](https://github.com/inorbit-ai/edge-sdk-python/workflows/Build%20Main/badge.svg)](https://github.com/inorbit-ai/edge-sdk-python/actions)
-[![Code Coverage](https://codecov.io/gh/inorbit/edge-sdk-python/branch/main/graph/badge.svg)](https://codecov.io/gh/inorbit/edge-sdk-python)
-
-|                                                                Python 3.8                                                                 |                                                                Python 3.9                                                                 |                                                                Python 3.10                                                                 |                                                                 Python 3.11                                                                 |
-|:-----------------------------------------------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------:|:------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------------------------------------------:|
-| ![TeamCity](https://inorbit.teamcity.com/app/rest/builds/buildType:id:DeveloperPortal_EdgeSdkPython_Python38QualityRunner/statusIcon.svg) | ![TeamCity](https://inorbit.teamcity.com/app/rest/builds/buildType:id:DeveloperPortal_EdgeSdkPython_Python39QualityRunner/statusIcon.svg) | ![TeamCity](https://inorbit.teamcity.com/app/rest/builds/buildType:id:DeveloperPortal_EdgeSdkPython_Python310QualityRunner/statusIcon.svg) | ![TeamCity](https://inorbit.teamcity.com/app/rest/builds/buildType:id:DeveloperPortal_EdgeSdkPython_Python311QualityRunner/statusIcon.svg)  |
+|   OS    |                                                                                                                                         Python 3.8                                                                                                                                          |                                                                                                                                         Python 3.9                                                                                                                                          |                                                                                                                                          Python 3.10                                                                                                                                          |                                                                                                                                          Python 3.11                                                                                                                                          |
+|:-------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
+|  Linux  | [![TeamCity](https://inorbit.teamcity.com/app/rest/builds/buildType:id:DeveloperPortal_EdgeSdkPython_LinuxPython38QualityRunner/statusIcon.svg)](https://inorbit.teamcity.com/buildConfiguration/DeveloperPortal_EdgeSdkPython_LinuxPython38QualityRunner?branch=%3Cdefault%3E&mode=builds) | [![TeamCity](https://inorbit.teamcity.com/app/rest/builds/buildType:id:DeveloperPortal_EdgeSdkPython_LinuxPython39QualityRunner/statusIcon.svg)](https://inorbit.teamcity.com/buildConfiguration/DeveloperPortal_EdgeSdkPython_LinuxPython39QualityRunner?branch=%3Cdefault%3E&mode=builds) | [![TeamCity](https://inorbit.teamcity.com/app/rest/builds/buildType:id:DeveloperPortal_EdgeSdkPython_LinuxPython310QualityRunner/statusIcon.svg)](https://inorbit.teamcity.com/buildConfiguration/DeveloperPortal_EdgeSdkPython_LinuxPython310QualityRunner?branch=%3Cdefault%3E&mode=builds) | [![TeamCity](https://inorbit.teamcity.com/app/rest/builds/buildType:id:DeveloperPortal_EdgeSdkPython_LinuxPython311QualityRunner/statusIcon.svg)](https://inorbit.teamcity.com/buildConfiguration/DeveloperPortal_EdgeSdkPython_LinuxPython311QualityRunner?branch=%3Cdefault%3E&mode=builds) |
+|   Mac   |   [![TeamCity](https://inorbit.teamcity.com/app/rest/builds/buildType:id:DeveloperPortal_EdgeSdkPython_MacPython38QualityRunner/statusIcon.svg)](https://inorbit.teamcity.com/buildConfiguration/DeveloperPortal_EdgeSdkPython_MacPython38QualityRunner?branch=%3Cdefault%3E&mode=builds)   |   [![TeamCity](https://inorbit.teamcity.com/app/rest/builds/buildType:id:DeveloperPortal_EdgeSdkPython_MacPython39QualityRunner/statusIcon.svg)](https://inorbit.teamcity.com/buildConfiguration/DeveloperPortal_EdgeSdkPython_MacPython39QualityRunner?branch=%3Cdefault%3E&mode=builds)   |   [![TeamCity](https://inorbit.teamcity.com/app/rest/builds/buildType:id:DeveloperPortal_EdgeSdkPython_MacPython310QualityRunner/statusIcon.svg)](https://inorbit.teamcity.com/buildConfiguration/DeveloperPortal_EdgeSdkPython_MacPython310QualityRunner?branch=%3Cdefault%3E&mode=builds)   |   [![TeamCity](https://inorbit.teamcity.com/app/rest/builds/buildType:id:DeveloperPortal_EdgeSdkPython_MacPython311QualityRunner/statusIcon.svg)](https://inorbit.teamcity.com/buildConfiguration/DeveloperPortal_EdgeSdkPython_MacPython311QualityRunner?branch=%3Cdefault%3E&mode=builds)   |
+| Windows |                                                                  [![Build Status](https://github.com/inorbit-ai/edge-sdk-python/workflows/Build%20Main/badge.svg)](https://github.com/inorbit-ai/edge-sdk-python/actions)                                                                   |                                                                  [![Build Status](https://github.com/inorbit-ai/edge-sdk-python/workflows/Build%20Main/badge.svg)](https://github.com/inorbit-ai/edge-sdk-python/actions)                                                                   |                                                                   [![Build Status](https://github.com/inorbit-ai/edge-sdk-python/workflows/Build%20Main/badge.svg)](https://github.com/inorbit-ai/edge-sdk-python/actions)                                                                    |                                                                   [![Build Status](https://github.com/inorbit-ai/edge-sdk-python/workflows/Build%20Main/badge.svg)](https://github.com/inorbit-ai/edge-sdk-python/actions)                                                                    |
 
 The `InOrbit Edge SDK` allows Python programs to communicate with `InOrbit`
 platform on behalf of robots - providing robot data and handling robot actions.
@@ -29,6 +28,7 @@ that handles robot data.
 
 ```python
 from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool
+
 
 def my_command_handler(robot_id, command_name, args, options):
     """Callback for processing custom command calls.
@@ -71,11 +71,13 @@ robot_session.publish_pose(x=0.0, y=0.0, yaw=0.0)
 ## Installation
 
 **Stable Release:** `pip install inorbit-edge`<br>
-**Development Head:** `pip install git+https://github.com/inorbit-ai/edge-sdk-python.git`
+**Development Head:
+** `pip install git+https://github.com/inorbit-ai/edge-sdk-python.git`
 
 ## Documentation
 
-For full package documentation please visit [InOrbit Developer Portal](https://developer.inorbit.ai/docs?hsLang=en#edge-sdk).
+For full package documentation please
+visit [InOrbit Developer Portal](https://developer.inorbit.ai/docs?hsLang=en#edge-sdk).
 
 ## Development
 
@@ -86,15 +88,15 @@ the code.
 
 1. `pip install -e .[dev]`
 
-    This will install your package in editable mode with all the required
-    development dependencies (i.e. `tox`).
+   This will install your package in editable mode with all the required
+   development dependencies (i.e. `tox`).
 
 2. `make build`
 
-    This will run `tox` which will run all your tests in Python 3.8 - 3.11 as
-    well as linting your code.
+   This will run `tox` which will run all your tests in Python 3.8 - 3.11 as
+   well as linting your code.
 
 3. `make clean`
 
-    This will clean up various Python and build generated files so that you can
-    ensure that you are working in a clean environment.
+   This will clean up various Python and build generated files so that you can
+   ensure that you are working in a clean environment.
