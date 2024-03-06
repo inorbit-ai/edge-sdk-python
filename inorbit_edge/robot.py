@@ -114,6 +114,7 @@ class RobotSession:
         """
 
         self.api_key = api_key
+        self.robot_api_key = None
 
         self.logger = logging.getLogger(__class__.__name__)
 
@@ -139,7 +140,7 @@ class RobotSession:
         # TODO: enable explicit proxy configuration on ``RobotSession`` constructor.
         self.http_proxy = os.getenv("HTTP_PROXY")
         if self.http_proxy == "":
-            self.logger.warn("Found empty HTTP_PROXY variable. Ignoring.")
+            self.logger.warning("Found empty HTTP_PROXY variable. Ignoring.")
             self.http_proxy = None
         if self.http_proxy is not None:
             self.logger.info(
@@ -163,7 +164,7 @@ class RobotSession:
             proxy_port = parts.port
 
             if not proxy_port:
-                self.logger.warn("Empty proxy port. Is 'HTTP_PROXY' correct?")
+                self.logger.warning("Empty proxy port. Is 'HTTP_PROXY' correct?")
 
             self.logger.debug(
                 "Configuring client proxy: {}:{}".format(proxy_hostname, proxy_port)
@@ -323,7 +324,7 @@ class RobotSession:
         if rc == 0:
             self.logger.info("Connected to MQTT")
         else:
-            self.logger.warn("Unable to connect. rc = {:d}.".format(rc))
+            self.logger.warning("Unable to connect. rc = {:d}.".format(rc))
             return
 
         # Send robot online status.
@@ -383,7 +384,7 @@ class RobotSession:
         """
 
         if rc != 0:
-            self.logger.warn(
+            self.logger.warning(
                 "Unexpected disconnection: {}".format(mqtt.error_string(rc))
             )
         else:
@@ -402,8 +403,8 @@ class RobotSession:
         msg.string_payload = payload.decode("utf-8", errors="ignore")
         self.publish_protobuf(subtopic=MQTT_TOPIC_ECHO, message=msg)
 
-    def _handle_initial_pose(self, msg):
-        """Handle incoming MQTT_INITIAL_POSE message."""
+    def _handle_pose_msg_helper(self, msg, cmd):
+        """A helper to abstract handling pose messages."""
 
         args = msg.decode("utf-8").split("|")
         seq = args[0]
@@ -414,10 +415,15 @@ class RobotSession:
 
         # Hand over to callback for processing, using the proper format
         self.dispatch_command(
-            command_name=COMMAND_INITIAL_POSE,
+            command_name=cmd,
             args=[{"x": x, "y": y, "theta": theta}],
             execution_id=seq,  # NOTE: Using seq as the execution ID
         )
+
+    def _handle_initial_pose(self, msg):
+        """Handle incoming MQTT_INITIAL_POSE message."""
+
+        self._handle_pose_msg_helper(msg, COMMAND_INITIAL_POSE)
 
     def _handle_custom_command(self, msg):
         """Handle incoming MQTT_CUSTOM_COMMAND message."""
@@ -445,18 +451,7 @@ class RobotSession:
     def _handle_nav_goal(self, msg):
         """Handle incoming MQTT_NAV_GOAL_GOAL message."""
 
-        args = msg.decode("utf-8").split("|")
-        seq = args[0]
-        ts = args[1]  # noqa: F841
-        x = args[2]
-        y = args[3]
-        theta = args[4]
-        # Hand over to callback for processing, using the proper format
-        self.dispatch_command(
-            command_name=COMMAND_NAV_GOAL,
-            args=[{"x": x, "y": y, "theta": theta}],
-            execution_id=seq,  # NOTE: Using seq as the execution ID
-        )
+        self._handle_pose_msg_helper(msg, COMMAND_NAV_GOAL)
 
     def _handle_in_cmd(self, msg):
         """Handles an in_cmd message"""
@@ -579,7 +574,7 @@ class RobotSession:
                     It has the following signature: `result_function(return_code)`.
                   - `progress_function` can be used to report command output and has
                     the following signature: `progress_function(output, error)`.
-                  - `metadata` is reserved for the future and will contains additional
+                  - `metadata` is reserved for the future and contains additional
                     information about the received command request.
         """
 
@@ -749,7 +744,7 @@ class RobotSession:
 
         Args:
             topic (str): Topic where the message will be published.
-            message (str): The actual message to send.
+            message (bytearray, str): The actual message to send.
             qos (int, optional): The quality of service level to use. Defaults to 0.
             retain (bool, optional): If set to true, the message will be set as
                 the "last known good"/retained message for the topic. Defaults to False.
@@ -762,9 +757,10 @@ class RobotSession:
             )
         except ValueError:
             self.logger.error("Payload greater than 268435455 bytes is not allowed")
+            return None
 
         if info.rc != mqtt.MQTT_ERR_SUCCESS:
-            self.logger.warn(
+            self.logger.warning(
                 "There was a problem sending message {}: {}".format(
                     info.mid, mqtt.error_string(info.rc)
                 )
@@ -787,7 +783,10 @@ class RobotSession:
         topic = self._get_robot_subtopic(subtopic=subtopic)
         self.logger.debug("Publishing to topic {}".format(topic))
         ret = self.publish(
-            topic, bytearray(message.SerializeToString()), qos=qos, retain=retain
+            topic,
+            bytearray(message.SerializeToString()),
+            qos=qos,
+            retain=retain,
         )
         self.logger.debug("Return code: {}".format(ret))
 
@@ -1048,7 +1047,7 @@ class RobotSession:
             return None
 
         if len(path_points) > ROBOT_PATH_POINTS_LIMIT:
-            self.logger.warn(
+            self.logger.warning(
                 "Path has {} points. Only the first {} points will be used.".format(
                     len(path_points), ROBOT_PATH_POINTS_LIMIT
                 )
@@ -1136,8 +1135,7 @@ class RobotSessionPool:
     def __init__(self, robot_session_factory, robot_config_yaml=None):
         """Creates the pool
         Args:
-          - robot_session_factory: factory used to build individual RobotSession
-          objects
+          - robot_session_factory: factory used to build individual RobotSessions
         """
 
         self.logger = logging.getLogger(__class__.__name__)
