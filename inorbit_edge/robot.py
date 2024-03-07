@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+import io
 from dataclasses import dataclass, field
 import json
 from typing import Tuple
@@ -10,6 +10,7 @@ from inorbit_edge.types import Pose, SpatialTolerance
 import os
 import logging
 import paho.mqtt.client as mqtt
+from PIL import Image
 from urllib.parse import urlsplit
 import socks
 import ssl
@@ -31,6 +32,7 @@ from inorbit_edge.inorbit_pb2 import (
     CustomCommandRosMessage,
     CameraMessage,
     SystemStatsMessage,
+    MapMessage,
 )
 from inorbit_edge.video import CameraStreamer, Camera
 from inorbit_edge.missions import MissionsModule
@@ -66,6 +68,7 @@ MQTT_TOPIC_ECHO = "echo"
 MQTT_NAV_GOAL_GOAL = "ros/loc/nav_goal"
 MQTT_NAV_GOAL_MULTI = "ros/loc/goal_path"
 MQTT_INITIAL_POSE = "ros/loc/set_pose"
+MQTT_MAP_TOPIC = "ros/loc/map2"
 MQTT_CUSTOM_COMMAND = "custom_command/script/command"
 MQTT_CUSTOM_COMMAND_MESSAGE = "custom_command/ros"
 MQTT_SCRIPT_OUTPUT_TOPIC = "custom_command/script/status"
@@ -223,6 +226,10 @@ class RobotSession:
                 "min_time_between_calls": 1,  # seconds
             },
             "publish_system_stats": {
+                "last_ts": 0,
+                "min_time_between_calls": 1,  # seconds
+            },
+            "publish_map": {
                 "last_ts": 0,
                 "min_time_between_calls": 1,  # seconds
             },
@@ -486,6 +493,63 @@ class RobotSession:
             self.camera_streaming_on = False
             for s in self.camera_streamers.values():
                 s.stop()
+
+    def publish_map(
+        self,
+        file,
+        map_id="map",
+        frame_id="map",
+        x=0,
+        y=0,
+        resolution=0.05,
+        ts=None,
+        is_update=False,
+    ):
+        """
+        Sends the information about a map and optionally its contents. The map message
+        data is passed as a separate variable to indicate that the map data needs to
+        be actually sent. An is_update flag can be provided to inform in the message
+        that this is an update message, aimed to correct a previous one, currently
+        used for frame_id/map_id updates.
+        """
+        try:
+            # Open the image file
+            img = Image.open(file)
+            # Check if image file is a png image
+            if img.format != "PNG":
+                self.logger.error(f"{file} is not a PNG image")
+                return None
+            # Verify opens and reads the entire image file
+            img.verify()
+        except IOError:
+            self.logger.error(f"{file} is not accessible.")
+            return None
+
+        # img.verify() closes the file, reload it now that its validated
+        img = Image.open(file)
+
+        # Create a BytesIO object
+        img_byte_arr = io.BytesIO()
+        img.save(img_byte_arr, format="PNG")
+        img_byte_arr = img_byte_arr.getvalue()
+
+        # Build the protobuf message
+        data = MapMessage()
+        data.width = img.width
+        data.height = img.height
+        data.data_hash = hash(tuple(img_byte_arr))
+        data.pixels = img_byte_arr
+        data.label = map_id
+        data.map_id = map_id
+        data.frame_id = frame_id
+        data.x = x
+        data.y = y
+        data.resolution = resolution
+        data.ts = ts if ts else int(time.time() * 1000)
+        data.is_update = is_update
+
+        # Publish the map
+        self.publish_protobuf(MQTT_MAP_TOPIC, data, qos=1, retain=True)
 
     def publish_camera_frame(self, camera_id, image, width, height, ts):
         """Publishes a camera frame"""
