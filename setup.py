@@ -49,6 +49,7 @@ dev_requirements = [
 requirements = [
     "requests==2.31.0",
     "paho_mqtt==1.6.1",
+    "Pillow==10.2.0",
     "PySocks==1.7.1",
     "protobuf==3.19.3",
     "certifi>=2024.2.2",

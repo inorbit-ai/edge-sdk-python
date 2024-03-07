@@ -6,7 +6,6 @@ from time import sleep
 from random import randint, uniform, random
 from math import pi
 import os
-import requests
 import sys
 from math import inf
 
@@ -30,24 +29,6 @@ LIDAR_MAX = 3.2
 
 NUM_ROBOTS = 2
 NUM_LASERS = 3
-
-
-# TODO: integrate this into the Edge SDK ``RobotSession`` class
-def publish_robot_map(inorbit_api_url, inorbit_api_key, robot_id, map_file):
-    url = inorbit_api_url + "/robots/" + robot_id + "/maps"
-
-    payload = {
-        "metadata": '{"mapId":"map", "label": "map", "resolution": 0.1, "x": -15, "y": -15}'  # noqa: E501
-    }
-    files = [
-        (
-            "image",
-            ("map.png", open(map_file, "rb"), "image/png"),
-        )
-    ]
-    headers = {"x-auth-inorbit-app-key": inorbit_api_key}
-
-    requests.request("POST", url, headers=headers, data=payload, files=files)
 
 
 class FakeRobot:
@@ -188,14 +169,8 @@ if __name__ == "__main__":
             robot_id=robot_id, robot_name=robot_id
         )
         fake_robot_pool[robot_id] = FakeRobot(robot_id=robot_id, robot_name=robot_id)
-        publish_robot_map(
-            inorbit_api_url=inorbit_api_url,
-            inorbit_api_key=inorbit_api_key,
-            robot_id=robot_id,
-            map_file=os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "map.png"
-            ),
-        )
+        img = os.path.join(os.path.dirname(os.path.abspath(__file__)), "map.png")
+        robot_session.publish_map(img, "map", "map", -1.5, -1.5, 0.05)
         if video_url is not None:
             robot_session.register_camera("0", OpenCVCamera(video_url))
 
