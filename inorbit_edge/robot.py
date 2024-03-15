@@ -209,7 +209,7 @@ class RobotSession:
                 "last_ts": 0,
                 "min_time_between_calls": 1,  # seconds
             },
-            "publish_key_values": {}, # this supports key-level throttling
+            "publish_key_values": {},  # this supports key-level throttling
             "publish_odometry": {
                 "last_ts": 0,
                 "min_time_between_calls": 1,  # seconds
