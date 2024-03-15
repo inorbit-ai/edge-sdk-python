@@ -915,10 +915,10 @@ class RobotSession:
             else:
                 return str(value)
 
-        def set_pairs(key):
+        def set_pairs(k):
             item = KeyValueCustomElement()
-            item.key = key
-            item.value = convert_value(key_values[key])
+            item.key = k
+            item.value = convert_value(key_values[k])
             return item
 
         msg = CustomDataMessage()
