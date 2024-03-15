@@ -100,3 +100,15 @@ def test_method_throttling():
     assert not robot_session._should_publish_message(method="publish_pose")
     robot_session._publish_throttling["publish_pose"]["last_ts"] = 0
     assert robot_session._should_publish_message(method="publish_pose")
+
+    # Also test key based throttling
+    assert robot_session._should_publish_message(method="publish_key_values", key="foo")
+    assert not robot_session._should_publish_message(method="publish_key_values", key="foo")
+    robot_session._publish_throttling["publish_key_values"]["foo"]["last_ts"] = 0
+    assert robot_session._should_publish_message(method="publish_key_values", key="foo")
+
+    assert robot_session._should_publish_message(method="publish_key_values", key="bar")
+    assert not robot_session._should_publish_message(method="publish_key_values", key="bar")
+    robot_session._publish_throttling["publish_key_values"]["bar"]["last_ts"] = 0
+    assert robot_session._should_publish_message(method="publish_key_values", key="bar")
+

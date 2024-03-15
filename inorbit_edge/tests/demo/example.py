@@ -203,11 +203,18 @@ if __name__ == "__main__":
                     yaw=fake_robot.yaw,
                     frame_id=fake_robot.frame_id,
                 )
+                robot_session.publish_system_stats(
+                    cpu_load_percentage=random()
+                )
                 robot_session.publish_key_values(
                     {
                         "battery": fake_robot.battery,
                         "status": fake_robot.status,
-                        "cpu": fake_robot.cpu,
+                    }
+                )
+                robot_session.publish_key_values(
+                    {
+                        "foo": "bar",
                     }
                 )
                 robot_session.publish_odometry(
@@ -233,6 +240,8 @@ if __name__ == "__main__":
                     # Make ranges over threshold infinite
                     lidar = [inf if r >= 3 else r for r in lidar]
                     ranges.append(lidar)
+                # NOTE: for publishing laser scans the robot pose is needed.
+                # In that case, avoid using publish_pose method.
                 robot_session.publish_lasers(
                     x=fake_robot.x,
                     y=fake_robot.y,
