@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 from paho.mqtt.client import MQTTMessage
 from inorbit_edge.robot import RobotSessionFactory
 from inorbit_edge.inorbit_pb2 import CustomScriptCommandMessage
+from inorbit_edge.tests.utils.helpers import test_robot_session_connect_helper
 
 
 def test_robot_factory_build(mock_mqtt_client):
@@ -90,24 +91,13 @@ def test_built_robot_session_executes_command_callback_on_message(
 
     robot_session._on_message(..., ..., msg)
 
-    my_command_handler.assert_called_once()
-    call_args, call_kwargs = my_command_handler.call_args_list[0]
+    _test_command_handler_helper(my_command_handler)
+    _test_command_handler_helper(another_command_handler)
 
-    # No kwargs are expected
-    assert not call_kwargs
 
-    # TODO: refactor for duplicate code
-    [robot_id, command_name, command_args, command_options] = call_args
-    assert robot_id == "id_123"
-    assert command_name == "customCommand"
-    assert command_args == ["foo", ["a", "b"]]
-    assert callable(command_options["result_function"])
-    assert callable(command_options["progress_function"])
-    assert command_options["metadata"] == {}
-
-    # TODO: refactor for duplicate code
-    another_command_handler.assert_called_once()
-    call_args, call_kwargs = another_command_handler.call_args_list[0]
+def _test_command_handler_helper(command_handler):
+    command_handler.assert_called_once()
+    call_args, call_kwargs = command_handler.call_args_list[0]
 
     # No kwargs are expected
     assert not call_kwargs
@@ -129,23 +119,5 @@ def test_built_robot_session_executes_commands(
 
     robot_session = robot_session_factory.build("id_123", "name_123")
 
-    # connect robot_session, so it populates properties with API response data
-    robot_session.connect()
-    # manually execute on_connect callback so the ``custom_command_callback``
-    # callback gets registered
-    robot_session._on_connect(..., ..., ..., 0)
-
-    msg = MQTTMessage(topic=b"r/id_123/custom_command/script/command")
-    # TODO: refactor for duplicate code
-    msg.payload = CustomScriptCommandMessage(
-        file_name="my_script.sh", arg_options=["a", "b"], execution_id="1"
-    ).SerializeToString()
-
-    robot_session._on_message(..., ..., msg)
-
-    mock_popen.assert_called_once()
-    call_args, call_kwargs = mock_popen.call_args_list[0]
-
-    [program_args] = call_args
-    assert program_args == ["./user_scripts/my_script.sh", "a", "b"]
-    assert call_kwargs["env"]["INORBIT_ROBOT_ID"] == "id_123"
+    # Tests asserted here
+    test_robot_session_connect_helper(robot_session, mock_popen)
