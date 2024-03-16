@@ -25,13 +25,13 @@ def test_mission_end_to_end(
     my_command_handler.configure_mock(**{"__name__": "my_command_handler"})
     robot_session.publish_key_values = mocker.MagicMock()
     robot_session.register_command_callback(my_command_handler)
-    # Set this pose so the go to waypoint step succeeds
+    # Set this pose so the goto waypoint step succeeds
     robot_session.publish_pose(10, 15.5, 0.5, "map")
-    message = """inorbit_run_mission 1234 
+    message = """inorbit_run_mission 1234
     {
       "label": "Delivery Mission",
       "steps": [
-        { 
+        {
           "type": "SetData",
           "label": "init data",
           "data": {
@@ -39,7 +39,7 @@ def test_mission_end_to_end(
             "items": ["InOrbito", "Bottle"]
           }
         },
-        { 
+        {
           "type": "Action",
           "label": "my step",
           "action": {
@@ -47,7 +47,7 @@ def test_mission_end_to_end(
             "message": "hello world"
           }
         },
-        { 
+        {
           "type": "Action",
           "label": "my step 2",
           "action": {
@@ -55,12 +55,12 @@ def test_mission_end_to_end(
             "message": "hello world 2"
           }
         },
-        { 
+        {
           "type": "WaitSeconds",
           "label": "sleep",
           "seconds": 1.32
         },
-        { 
+        {
           "type": "Action",
           "label": "go to picking station",
           "action": {
@@ -69,7 +69,7 @@ def test_mission_end_to_end(
           },
           "tolerance": { "positionMeters": 0.05, "angularRadians": 0.25 }
         },
-        { 
+        {
           "type": "Action",
           "label": "run a script",
           "action": {
@@ -96,7 +96,7 @@ def test_mission_end_to_end(
     [command_name, command_args, _] = call_args
     assert command_name == COMMAND_MESSAGE
     assert command_args == ["hello world"]
-    # check step completed and anotehr message published
+    # check step completed and another message published
     call_args, _ = dispatched_commands[1]
     [command_name, command_args, _] = call_args
     assert command_name == COMMAND_MESSAGE
@@ -128,7 +128,7 @@ def test_mission_end_to_end(
     ]
     expected_reports = [
         {
-            "missionId": "1234",
+            "missionId": "1234\n",
             "inProgress": True,
             "currentTaskId": "0",
             "state": "Executing",
@@ -140,7 +140,7 @@ def test_mission_end_to_end(
             "tasks": expected_tasks,
         },
         {
-            "missionId": "1234",
+            "missionId": "1234\n",
             "inProgress": True,
             "currentTaskId": "1",
             "state": "Executing",
@@ -152,7 +152,7 @@ def test_mission_end_to_end(
             "tasks": expected_tasks,
         },
         {
-            "missionId": "1234",
+            "missionId": "1234\n",
             "inProgress": True,
             "currentTaskId": "2",
             "state": "Executing",
@@ -164,7 +164,7 @@ def test_mission_end_to_end(
             "tasks": expected_tasks,
         },
         {
-            "missionId": "1234",
+            "missionId": "1234\n",
             "inProgress": True,
             "currentTaskId": "3",
             "state": "Executing",
@@ -176,7 +176,7 @@ def test_mission_end_to_end(
             "tasks": expected_tasks,
         },
         {
-            "missionId": "1234",
+            "missionId": "1234\n",
             "inProgress": True,
             "currentTaskId": "4",
             "state": "Executing",
@@ -188,7 +188,7 @@ def test_mission_end_to_end(
             "tasks": expected_tasks,
         },
         {
-            "missionId": "1234",
+            "missionId": "1234\n",
             "inProgress": True,
             "currentTaskId": "5",
             "state": "Executing",
@@ -200,7 +200,7 @@ def test_mission_end_to_end(
             "tasks": expected_tasks,
         },
         {
-            "missionId": "1234",
+            "missionId": "1234\n",
             "inProgress": False,
             "state": "Completed",
             "label": "Delivery Mission",
