@@ -16,7 +16,7 @@ def test_builtin_callbacks(mock_mqtt_client, mock_inorbit_api):
         robot_name="name_123",
         api_key="apikey_123",
     )
-    # connect robot_session so it populates properties with API response data
+    # connect robot_session, so it populates properties with API response data
     robot_session.connect()
     robot_session._on_connect(..., ..., ..., 0)
 
@@ -24,11 +24,10 @@ def test_builtin_callbacks(mock_mqtt_client, mock_inorbit_api):
     robot_session.client.subscribe.assert_any_call(
         topic="r/id_123/custom_command/script/command"
     )
-    robot_session.client.subscribe.call_count == 2
 
 
 def test_robot_session_register_command_callback(mock_mqtt_client, mock_inorbit_api):
-    def my_command_handler(command_name, args, options):
+    def my_command_handler(*_):
         pass
 
     robot_session = RobotSession(
@@ -38,9 +37,9 @@ def test_robot_session_register_command_callback(mock_mqtt_client, mock_inorbit_
     )
     robot_session.register_command_callback(my_command_handler)
 
-    # connect robot_session so it populates properties with API response data
+    # connect robot_session, so it populates properties with API response data
     robot_session.connect()
-    # manually execute on_connect callback so the ``custom_command_callback``
+    # manually execute on_connect callback, so the ``custom_command_callback``
     # callback gets registered
     robot_session._on_connect(..., ..., ..., 0)
 
@@ -58,7 +57,7 @@ def test_robot_session_register_command_callback(mock_mqtt_client, mock_inorbit_
 
 
 def test_robot_session_echo(mocker, mock_mqtt_client, mock_inorbit_api):
-    def my_command_handler(command_name, args, options):
+    def my_command_handler(*_):
         pass
 
     robot_session = RobotSession(
@@ -68,9 +67,9 @@ def test_robot_session_echo(mocker, mock_mqtt_client, mock_inorbit_api):
     )
     robot_session.register_command_callback(my_command_handler)
 
-    # connect robot_session so it populates properties with API response data
+    # connect robot_session, so it populates properties with API response data
     robot_session.connect()
-    # manually execute on_connect callback so the ``custom_command_callback``
+    # manually execute on_connect callback, so the ``custom_command_callback``
     # callback gets registered
     robot_session._on_connect(..., ..., ..., 0)
 
@@ -151,9 +150,9 @@ def test_robot_session_executes_command_callback_on_message(
     )
     robot_session.register_command_callback(my_command_handler)
 
-    # connect robot_session so it populates properties with API response data
+    # connect robot_session, so it populates properties with API response data
     robot_session.connect()
-    # manually execute on_connect callback so the ``custom_command_callback``
+    # manually execute on_connect callback, so the ``custom_command_callback``
     # callback gets registered
     robot_session._on_connect(..., ..., ..., 0)
 
@@ -172,7 +171,7 @@ def test_robot_session_executes_command_callback_on_message(
     assert command_name == expected["command_name"]
     assert command_args == expected["command_args"]
     # `command_options` is an object that contains two local methods (see
-    # `RobotSession._dispatch_command` method) so given they cannot be
+    # `RobotSession._dispatch_command` method), so given they cannot be
     # referenced, only check if values are callable
     assert callable(command_options["result_function"])
     assert callable(command_options["progress_function"])
@@ -190,9 +189,10 @@ def test_robot_session_executes_commands(
 
     robot_session.register_commands_path("./user_scripts", r".*\.sh")
 
-    # connect robot_session so it populates properties with API response data
+    # connect robot_session, so it populates properties with API response data
+    # TODO: duplicate code fragment
     robot_session.connect()
-    # manually execute on_connect callback so the ``custom_command_callback``
+    # manually execute on_connect callback, so the ``custom_command_callback``
     # callback gets registered
     robot_session._on_connect(..., ..., ..., 0)
 

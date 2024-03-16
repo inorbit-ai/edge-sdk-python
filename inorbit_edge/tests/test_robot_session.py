@@ -27,8 +27,9 @@ def test_robot_session_init(monkeypatch):
     )
 
     # test proxy environment variable
+    # noinspection PyArgumentList
     with monkeypatch.context() as m:
-        m.setenv("HTTP_PROXY", "http://foo_bar.com:1234")
+        m.setenv("HTTP_PROXY", "https://foo_bar.com:1234")
         robot_session = RobotSession(
             robot_id="id_123", robot_name="name_123", api_key="apikey_123"
         )
@@ -37,7 +38,7 @@ def test_robot_session_init(monkeypatch):
             [
                 robot_session.use_websockets,
                 robot_session.client._transport == "websockets",
-                robot_session.http_proxy == "http://foo_bar.com:1234",
+                robot_session.http_proxy == "https://foo_bar.com:1234",
             ]
         )
 
