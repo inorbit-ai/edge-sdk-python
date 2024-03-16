@@ -43,6 +43,7 @@ def test_get_robot_config_from_session():
         robot_id="id_123", robot_name="name_123", api_key="apikey_123"
     )
 
+    # TODO: duplicate code segment with line 72
     with requests_mock.Mocker() as mock:
         mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, json=ROBOT_CONFIG_MOCK_RESPONSE)
         robot_config = robot_session._fetch_robot_config()
@@ -68,6 +69,7 @@ def test_get_robot_config_from_session():
         robot_id="id_123", robot_name="name_123", robot_key="robotkey_123"
     )
 
+    # TODO: see comment above on duplicate code
     with requests_mock.Mocker() as mock:
         mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, json=ROBOT_CONFIG_MOCK_RESPONSE)
         robot_config = robot_session._fetch_robot_config()
