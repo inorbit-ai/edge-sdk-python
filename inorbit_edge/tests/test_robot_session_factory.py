@@ -77,7 +77,7 @@ def test_built_robot_session_executes_command_callback_on_message(
 
     robot_session = robot_session_factory.build("id_123", "name_123")
 
-    # connect robot_session so it populates properties with API response data
+    # connect robot_session, so it populates properties with API response data
     robot_session.connect()
     # manually execute on_connect callback so the ``custom_command_callback``
     # callback gets registered
@@ -96,6 +96,7 @@ def test_built_robot_session_executes_command_callback_on_message(
     # No kwargs are expected
     assert not call_kwargs
 
+    # TODO: refactor for duplicate code
     [robot_id, command_name, command_args, command_options] = call_args
     assert robot_id == "id_123"
     assert command_name == "customCommand"
@@ -104,6 +105,7 @@ def test_built_robot_session_executes_command_callback_on_message(
     assert callable(command_options["progress_function"])
     assert command_options["metadata"] == {}
 
+    # TODO: refactor for duplicate code
     another_command_handler.assert_called_once()
     call_args, call_kwargs = another_command_handler.call_args_list[0]
 
@@ -127,13 +129,14 @@ def test_built_robot_session_executes_commands(
 
     robot_session = robot_session_factory.build("id_123", "name_123")
 
-    # connect robot_session so it populates properties with API response data
+    # connect robot_session, so it populates properties with API response data
     robot_session.connect()
     # manually execute on_connect callback so the ``custom_command_callback``
     # callback gets registered
     robot_session._on_connect(..., ..., ..., 0)
 
     msg = MQTTMessage(topic=b"r/id_123/custom_command/script/command")
+    # TODO: refactor for duplicate code
     msg.payload = CustomScriptCommandMessage(
         file_name="my_script.sh", arg_options=["a", "b"], execution_id="1"
     ).SerializeToString()

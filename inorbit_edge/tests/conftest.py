@@ -52,7 +52,7 @@ def mock_popen(mocker):
 @pytest.fixture
 def mock_inorbit_api():
     # Dummy cloud_sdk_robot_config sample response for testing
-    ROBOT_CONFIG_MOCK_RESPONSE = {
+    robot_config_mock_response = {
         "hostname": "localdev.com",
         "port": 1883,
         "protocol": "mqtt://",
@@ -69,7 +69,7 @@ def mock_inorbit_api():
         },
     }
     with requests_mock.Mocker() as mock:
-        mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, json=ROBOT_CONFIG_MOCK_RESPONSE)
+        mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, json=robot_config_mock_response)
         yield
 
 
