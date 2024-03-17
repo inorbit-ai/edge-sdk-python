@@ -3,8 +3,8 @@
 # https://api.inorbit.ai/docs/index.html#operation/generateRobotKey
 ---
 edgesdk_py_0:
-  robot_name: 'edgesdk_py_0'
-  robot_key: 'robotkey_0'
+    robot_name: 'edgesdk_py_0'
+    robot_key: 'robotkey_0'
 edgesdk_py_1:
-  robot_name: 'edgesdk_py_1'
-  robot_key: 'robotkey_1'
+    robot_name: 'edgesdk_py_1'
+    robot_key: 'robotkey_1'
