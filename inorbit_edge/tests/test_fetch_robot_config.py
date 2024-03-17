@@ -43,25 +43,10 @@ def test_get_robot_config_from_session():
         robot_id="id_123", robot_name="name_123", api_key="apikey_123"
     )
 
+    # TODO: duplicate code segment with line 72
     with requests_mock.Mocker() as mock:
         mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, json=ROBOT_CONFIG_MOCK_RESPONSE)
-        robot_config = robot_session._fetch_robot_config()
-
-        assert robot_config is not None
-
-        assert all(
-            [
-                robot_config["hostname"] == "localdev.com",
-                robot_config["port"] == 1883,
-                robot_config["protocol"] == "mqtt://",
-                robot_config["websocket_port"] == 9001,
-                robot_config["websocket_protocol"] == "ws://",
-                robot_config["username"] == "test",
-                robot_config["password"] == "mytest123",
-                robot_config["robotApiKey"] == "robot_apikey_123",
-                robot_config["awsUploadCredentials"] is not None,
-            ]
-        )
+        _test_fetch_robot_config_helper(robot_session._fetch_robot_config())
 
     # test with robot_key instead of api_key
     robot_session = RobotSession(
@@ -70,7 +55,12 @@ def test_get_robot_config_from_session():
 
     with requests_mock.Mocker() as mock:
         mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, json=ROBOT_CONFIG_MOCK_RESPONSE)
-        robot_config = robot_session._fetch_robot_config()
+        _test_fetch_robot_config_helper(robot_session._fetch_robot_config())
+
+
+def _test_fetch_robot_config_helper(robot_config):
+    with requests_mock.Mocker() as mock:
+        mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, json=ROBOT_CONFIG_MOCK_RESPONSE)
 
         assert robot_config is not None
 
