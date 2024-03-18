@@ -209,10 +209,7 @@ class RobotSession:
                 "last_ts": 0,
                 "min_time_between_calls": 1,  # seconds
             },
-            "publish_key_values": {
-                "last_ts": 0,
-                "min_time_between_calls": 1,  # seconds
-            },
+            "publish_key_values": {},  # this supports key-level throttling
             "publish_odometry": {
                 "last_ts": 0,
                 "min_time_between_calls": 1,  # seconds
@@ -254,7 +251,7 @@ class RobotSession:
             robot_id=self.robot_id, subtopic=subtopic
         )
 
-    def _should_publish_message(self, method):
+    def _should_publish_message(self, method, key=None):
         """Determine if the method should be executed or not
 
         It uses robot session property ``self._publish_throttling`` to
@@ -264,12 +261,26 @@ class RobotSession:
 
         Args:
             method (str): method name.
+            key (str): key for supporting fine grained throttling.
 
         Returns:
             bool: True if the method can be called.
         """
         try:
             throttling_cfg = self._publish_throttling[method]
+            # If a throttling key is provided, add an additional level
+            # to the throttling configuration for that method and populate
+            # it with last_ts and min_time_between_calls.
+            # NOTE(lpineda.io): throttling by keys is dynamic, so they don't
+            # need to be defined on __init__.
+            # TODO(lpineda.io): add support for configuring min_time_between_calls 
+            if key:
+                if key not in self._publish_throttling[method]:
+                    self._publish_throttling[method][key] = {
+                        "last_ts": 0,
+                        "min_time_between_calls": 1,  # seconds
+                    }
+                throttling_cfg = self._publish_throttling[method][key]
         except KeyError:
             self.logger.error(
                 "Trying to publish using a method with no throttling configured."
@@ -898,27 +909,27 @@ class RobotSession:
             is_event (bool): Events are not throttled
         """
 
-        if not is_event and not self._should_publish_message(
-            method="publish_key_values"
-        ):
-            return None
-
         def convert_value(value):
             if isinstance(value, object):
                 return json.dumps(value)
             else:
                 return str(value)
 
-        def set_pairs(key):
+        def set_pairs(k):
             item = KeyValueCustomElement()
-            item.key = key
-            item.value = convert_value(key_values[key])
+            item.key = k
+            item.value = convert_value(key_values[k])
             return item
 
         msg = CustomDataMessage()
         msg.custom_field = custom_field
 
-        msg.key_value_payload.pairs.extend(map(set_pairs, key_values.keys()))
+        for key in key_values.keys():
+            if not is_event and not self._should_publish_message(
+                method="publish_key_values", key=key
+            ):
+                pass
+            msg.key_value_payload.pairs.append(set_pairs(key))
 
         self.publish_protobuf(MQTT_SUBTOPIC_CUSTOM_DATA, msg)
 
