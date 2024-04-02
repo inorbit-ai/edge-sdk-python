@@ -10,10 +10,10 @@ include:
     -   name: CheckDependencyLicenses
 dependencyOverrides:
     -   name: "packaging"
-        version: "23.1"
+        version: "24.0"
         url: "https://github.com/pypa/packaging"
         licenses:
             -   key: "Apache-2.0"
-                url: "https://github.com/pypa/packaging/blob/main/LICENSE.APACHE"
+                url: "https://github.com/pypa/packaging/blob/24.0/LICENSE.APACHE"
             -   key: "BSD-2-Clause"
-                url: "https://github.com/pypa/packaging/blob/main/LICENSE.BSD"
+                url: "https://github.com/pypa/packaging/blob/24.0/LICENSE.BSD"
