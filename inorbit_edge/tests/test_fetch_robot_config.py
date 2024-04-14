@@ -12,10 +12,11 @@ Docs: https://docs.pytest.org/en/latest/
       https://docs.pytest.org/en/latest/goodpractices.html#conventions-for-python-test-discovery
 """
 
-from inorbit_edge.robot import RobotSession
-from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL
-import requests_mock
 import pytest
+import requests_mock
+
+from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL
+from inorbit_edge.robot import RobotSession
 
 # Dummy cloud_sdk_robot_config sample response for testing
 ROBOT_CONFIG_MOCK_RESPONSE = {
@@ -45,7 +46,8 @@ def test_get_robot_config_from_session():
 
     # TODO: duplicate code segment with line 72
     with requests_mock.Mocker() as mock:
-        mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, json=ROBOT_CONFIG_MOCK_RESPONSE)
+        mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL,
+                  json=ROBOT_CONFIG_MOCK_RESPONSE)
         _test_fetch_robot_config_helper(robot_session._fetch_robot_config())
 
     # test with robot_key instead of api_key
@@ -54,13 +56,15 @@ def test_get_robot_config_from_session():
     )
 
     with requests_mock.Mocker() as mock:
-        mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, json=ROBOT_CONFIG_MOCK_RESPONSE)
+        mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL,
+                  json=ROBOT_CONFIG_MOCK_RESPONSE)
         _test_fetch_robot_config_helper(robot_session._fetch_robot_config())
 
 
 def _test_fetch_robot_config_helper(robot_config):
     with requests_mock.Mocker() as mock:
-        mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, json=ROBOT_CONFIG_MOCK_RESPONSE)
+        mock.post(INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL,
+                  json=ROBOT_CONFIG_MOCK_RESPONSE)
 
         assert robot_config is not None
 

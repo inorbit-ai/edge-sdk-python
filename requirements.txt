@@ -1,22 +1,8 @@
-# video requirements
-opencv-python==4.7.0.68
-
-# test requirements
-black>=19.10b0
-coverage>=5.1
-flake8>=3.8.3
-pytest>=5.4.3
-pytest-mock>=3.10.0
-pytest-raises>=0.11
-pyyaml>=6.0
-requests-mock>=1.9.3
-tox>=3.15.2
-
-# requirements
-requests==2.31.0
-paho-mqtt==1.6.1
-Pillow==10.2.0
-PySocks==1.7.1
-protobuf==3.19.3
-certifi>=2024.2.2
-deprecated==1.2.13
+requests>=2.31,<3.0
+paho-mqtt>=1.6.1,<2.0
+pillow>=10.3,<11.0
+pyaml>=23.12,<24.0
+pysocks>=1.7,<2.0
+protobuf>=3.20,<4.0
+certifi>=2024.2
+deprecated>=1.2,<2.0

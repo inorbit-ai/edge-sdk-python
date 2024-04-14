@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 
 from unittest.mock import MagicMock
+
 from paho.mqtt.client import MQTTMessage
-from inorbit_edge.robot import RobotSessionFactory
+
 from inorbit_edge.inorbit_pb2 import CustomScriptCommandMessage
+from inorbit_edge.robot import RobotSessionFactory
 from inorbit_edge.tests.utils.helpers import test_robot_session_connect_helper
 
 
@@ -42,13 +44,14 @@ def test_robot_factory_build(mock_mqtt_client):
         ]
     )
 
-    # Robot session launched using an API key for authentication. The robot name
-    # is specified as a kwarg.
+    # Robot session launched using an API key for authentication.
+    # The robot name is specified as a kwarg.
     robot_session_factory = RobotSessionFactory(
         api_key="apikey_123", endpoint="http://myendpoint/"
     )
 
-    robot_session = robot_session_factory.build("id_456", **{"robot_name": "name_456"})
+    robot_session = robot_session_factory.build("id_456",
+                                                **{"robot_name": "name_456"})
 
     assert all(
         [
@@ -63,14 +66,15 @@ def test_robot_factory_build(mock_mqtt_client):
 
 
 def test_built_robot_session_executes_command_callback_on_message(
-    mock_mqtt_client, mock_inorbit_api
+        mock_mqtt_client, mock_inorbit_api
 ):
     # Mock command handler.
     my_command_handler = MagicMock()
     another_command_handler = MagicMock()
-    # Set command handler mock method's name as it's accessed by the RobotSession class
+    # Set command handler mock method's name as accessed by RobotSession
     my_command_handler.configure_mock(**{"__name__": "my_command_handler"})
-    another_command_handler.configure_mock(**{"__name__": "another_command_handler"})
+    another_command_handler.configure_mock(
+        **{"__name__": "another_command_handler"})
 
     robot_session_factory = RobotSessionFactory(api_key="apikey_123")
     robot_session_factory.register_command_callback(another_command_handler)
@@ -112,7 +116,7 @@ def _test_command_handler_helper(command_handler):
 
 
 def test_built_robot_session_executes_commands(
-    mock_mqtt_client, mock_inorbit_api, mock_popen
+        mock_mqtt_client, mock_inorbit_api, mock_popen
 ):
     robot_session_factory = RobotSessionFactory(api_key="apikey_123")
     robot_session_factory.register_commands_path("./user_scripts", r".*\.sh")

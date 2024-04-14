@@ -1,6 +1,6 @@
 test_robot123:
-    robot_name: 'robot123'
-    robot_key: 'key123'
+  robot_name: 'robot123'
+  robot_key: 'key123'
 test_robot456:
-    robot_name: 'robot456'
-    robot_key: 'key456'
+  robot_name: 'robot456'
+  robot_key: 'key456'

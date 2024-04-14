@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool
 import os
+
+from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool
 
 
 def test_robot_session_pool_get_session(mock_mqtt_client, mock_inorbit_api):
@@ -25,9 +26,13 @@ def test_robot_session_pool_get_session(mock_mqtt_client, mock_inorbit_api):
 
 # The robot config data (name, robot_key) for the `get_session` method is
 # provided using a config yaml.
-def test_robot_session_pool_get_session_from_yaml(mock_mqtt_client, mock_inorbit_api):
+def test_robot_session_pool_get_session_from_yaml(
+        mock_mqtt_client,
+        mock_inorbit_api,
+):
     dirname = os.path.dirname(__file__)
-    robot_config_yaml = os.path.join(dirname, "config/robots_config_robot_key.yaml")
+    robot_config_yaml = os.path.join(dirname,
+                                     "config/robots_config_robot_key.yaml")
 
     factory = RobotSessionFactory()
     pool = RobotSessionPool(factory, robot_config_yaml=robot_config_yaml)

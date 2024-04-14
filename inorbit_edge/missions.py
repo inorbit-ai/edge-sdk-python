@@ -10,12 +10,13 @@ import json
 import logging
 import threading
 import time
-from inorbit_edge.types import Pose, SpatialTolerance
+
 from inorbit_edge.commands import (
     COMMAND_NAV_GOAL,
     COMMAND_CUSTOM_COMMAND,
     COMMAND_MESSAGE,
 )
+from inorbit_edge.types import Pose, SpatialTolerance
 
 # Commands handled by this module
 COMMAND_PAUSE = "inorbit_pause"
@@ -37,10 +38,10 @@ MISSION_STATUS_ERROR = "Error"
 
 
 class MissionsModule:
-    """
-    MissionsModule acts as the interface between the robot session and the
-    MissionExecutor. Its main responsibility is handling commands from the robot
-    session, parsing them and passing them to the executor.
+    """An interface between the robot session and the MissionExecutor.
+
+    The main responsibility is handling commands from the robot session,
+    parsing them and passing them to the executor.
     """
 
     def __init__(self, robot_session):
@@ -105,17 +106,18 @@ class MissionsModule:
         args = args.split(" ")
         if len(args) != 1:
             self.logger.error(
-                f"Error: {COMMAND_CANCEL_MISSION} expects 1 argument {str(args)}"
+                f"Error: {COMMAND_CANCEL_MISSION} expects 1 argument. "
+                f"Provided {str(args)}"
             )
             return
         self.executor.cancel_mission(args[0])
 
 
 class MissionExecutor:
-    """
-    MissionExecutor handles missions execution and enforces execution rules, like:
-     - Can only run a mission if no mission is running
-     - Can only cancel the current mission
+    """MissionExecutor handles missions execution and enforces execution rules.
+
+    - Can only run a mission if no mission is running
+    - Can only cancel the current mission
     """
 
     def __init__(self, robot_session):
@@ -150,9 +152,9 @@ class MissionExecutor:
         self.is_idle.set()
 
     def wait_until_idle(self, timeout=None):
-        """
-        Waits until the executor is idle.
-        This method is mostly a helper for tests to wait for mission completion.
+        """Waits until the executor is idle.
+
+        This method is mostly a helper for tests to wait on mission completion.
         """
         self.is_idle.wait(timeout)
         return self.is_idle.is_set()
@@ -160,12 +162,13 @@ class MissionExecutor:
     def cancel_mission(self, mission_id):
         with self.mutex:
             if self.mission is None:
-                self.logger.warning("Can't cancel mission when no mission is running")
+                self.logger.warning(
+                    "Can't cancel mission when none are running")
                 return
             elif self.mission.id != mission_id and mission_id != "*":
                 self.logger.warning(
-                    f"Can't cancel mission {mission_id} because the id does not match\
-                        running mission {self.mission.id}"
+                    f"Can't cancel mission {mission_id} since the ID does not"
+                    f"match running mission {self.mission.id}"
                 )
             self.mission.cancel()
             self.mission = None
@@ -265,9 +268,7 @@ class Mission:
             self.report()
 
     def build_report(self):
-        """
-        Builds a mission tracking report based on the mission state and progress
-        """
+        """Builds a mission report based on the mission state/progress."""
         report = {
             "missionId": self.id,
             "inProgress": self.state == MISSION_STATE_EXECUTING,
@@ -280,14 +281,16 @@ class Mission:
         if self.state == MISSION_STATE_EXECUTING:
             report["currentTaskId"] = str(self.current_step_idx)
         report["tasks"] = [
-            {"taskId": str(i), "label": s.label} for i, s in enumerate(self.steps)
+            {"taskId": str(i), "label": s.label} for i, s in
+            enumerate(self.steps)
         ]
 
         if self.end_ts is not None:
             report["endTs"] = self.end_ts
 
         if self.current_step_idx is not None:
-            report["completedPercent"] = self.current_step_idx / len(self.steps)
+            report["completedPercent"] = self.current_step_idx // len(
+                self.steps)
         else:
             report["completedPercent"] = 0
         return report
@@ -321,10 +324,12 @@ class Mission:
         self.resume()
 
     def pause(self):
+        """Pauses mission execution.
+
+        The current step is paused and no new steps are executed until the
+        mission is resumed.
         """
-        Pauses mission execution. The current step is paused and no new steps are
-        executed until the mission is resumed.
-        """
+
         with self.mutex:
             self.enabled.clear()
             if self.current_step is not None:
@@ -353,17 +358,19 @@ class Mission:
         Builds a mission step object from its definition
         """
         if (
-            step_def["type"] == "Action"
-            and step_def["action"]["type"] == "PublishToTopic"
+                step_def["type"] == "Action"
+                and step_def["action"]["type"] == "PublishToTopic"
         ):
             return MissionStepPublishToTopic.build_from_def(
                 step_def, self.defaultStepTimeoutMs
             )
-        if step_def["type"] == "Action" and step_def["action"]["type"] == "RunScript":
+        if (step_def["type"] == "Action" and
+                step_def["action"]["type"] == "RunScript"):
             return MissionStepRunScript.build_from_def(
                 step_def, self.defaultStepTimeoutMs
             )
-        if step_def["type"] == "Action" and step_def["action"]["type"] == "NavigateTo":
+        if (step_def["type"] == "Action" and
+                step_def["action"]["type"] == "NavigateTo"):
             return MissionStepNavigateTo.build_from_def(
                 step_def, self.defaultStepTimeoutMs
             )
@@ -402,9 +409,9 @@ class Step:
         pass
 
     def pause(self):
-        """
-        Stops the execution of this step. Note that only steps that make the robot
-        move implement this method.
+        """Stops the execution of this step.
+
+        Note that only steps that make the robot move implement this method.
         """
         pass
 
@@ -544,14 +551,15 @@ class MissionStepNavigateTo(Step):
         self.mission = mission
         self._go_to_waypoint()
         while True:
-            if mission.robot_session.reached_waypoint(self.waypoint, self.tolerance):
+            if mission.robot_session.reached_waypoint(self.waypoint,
+                                                      self.tolerance):
                 return
             if self.canceled:
                 return
             time.sleep(1)
 
     def pause(self):
-        # It's up to the integrator to handle pause to avoid the robot from moving
+        # The integrator should handle pause to avoid the robot from moving
         pass
 
     def resume(self):

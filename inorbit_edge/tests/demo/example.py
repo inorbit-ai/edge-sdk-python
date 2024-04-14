@@ -2,14 +2,15 @@
 # -*- coding: utf-8 -*-
 
 import logging
-from time import sleep
-from random import randint, uniform, random
-from math import pi
 import os
 import sys
 from math import inf
+from math import pi
+from random import randint, uniform, random
+from time import sleep
 
-from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool, LaserConfig
+from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool, \
+    LaserConfig
 from inorbit_edge.video import OpenCVCamera
 
 logging.basicConfig(
@@ -96,10 +97,10 @@ def log_command(robot_id, command_name, args, options):
         command_name (str): InOrbit command e.g. 'customCommand'
         args (list): Command arguments
         options (dict): object that includes
-            - `result_function` can be called to report command execution result. It
-            has the following signature: `result_function(return_code)`.
-            - `progress_function` can be used to report command output and has the
-            following signature: `progress_function(output, error)`.
+            - `result_function` can be called to report command execution
+                result. It has the signature: `result_function(return_code)`.
+            - `progress_function` can be used to report command output and has
+                the signature: `progress_function(output, error)`.
             - `metadata` is reserved for the future and will contain additional
             information about the received command request.
     """
@@ -116,12 +117,12 @@ def my_command_handler(robot_id, command_name, args, options):
         command_name (str): InOrbit command e.g. 'customCommand'
         args (list): Command arguments
         options (dict): object that includes
-            - `result_function` can be called to report command execution result. It
-            has the following signature: `result_function(return_code)`.
-            - `progress_function` can be used to report command output and has the
-            following signature: `progress_function(output, error)`.
+            - `result_function` can be called to report command execution
+                result. It has the signature: `result_function(return_code)`.
+            - `progress_function` can be used to report command output and has
+                signature: `progress_function(output, error)`.
             - `metadata` is reserved for the future and will contain additional
-            information about the received command request.
+                information about the received command request.
     """
     if command_name == "customCommand":
         print(f"Received '{command_name}' for robot '{robot_id}'!. {args}")
@@ -143,9 +144,9 @@ if __name__ == "__main__":
     # If configured stream video as if it was a robot camera
     video_url = os.environ.get("INORBIT_VIDEO_URL")
 
-    assert inorbit_api_endpoint, "Environment variable INORBIT_URL not specified"
-    assert inorbit_api_url, "Environment variable INORBIT_API_URL not specified"
-    assert inorbit_api_key, "Environment variable INORBIT_API_KEY not specified"
+    assert inorbit_api_endpoint, "Environment variable INORBIT_URL not defined"
+    assert inorbit_api_url, "Environment variable INORBIT_API_URL not defined"
+    assert inorbit_api_key, "Environment variable INORBIT_API_KEY not defined"
 
     # Create robot session factory and session pool
     robot_session_factory = RobotSessionFactory(
@@ -157,7 +158,8 @@ if __name__ == "__main__":
     robot_session_factory.register_command_callback(my_command_handler)
     robot_session_factory.register_commands_path("./user_scripts", r".*\.sh")
 
-    robot_session_pool = RobotSessionPool(robot_session_factory, inorbit_robots_config)
+    robot_session_pool = RobotSessionPool(robot_session_factory,
+                                          inorbit_robots_config)
     # Dictionary mapping robot ID and fake robot object
     fake_robot_pool = dict()
 
@@ -170,7 +172,8 @@ if __name__ == "__main__":
         fake_robot_pool[cur_robot_id] = FakeRobot(
             robot_id=cur_robot_id, robot_name=cur_robot_id
         )
-        img = os.path.join(os.path.dirname(os.path.abspath(__file__)), "map.png")
+        img = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                           "map.png")
         robot_session.publish_map(img, "map", "map", -1.5, -1.5, 0.05)
         if video_url is not None:
             robot_session.register_camera("0", OpenCVCamera(video_url))
@@ -197,7 +200,8 @@ if __name__ == "__main__":
                 fake_robot.move()
 
                 # Get the corresponding robot session and publish robot data
-                robot_session = robot_session_pool.get_session(robot_id=cur_robot_id)
+                robot_session = robot_session_pool.get_session(
+                    robot_id=cur_robot_id)
                 robot_session.publish_pose(
                     x=fake_robot.x,
                     y=fake_robot.y,
@@ -205,8 +209,7 @@ if __name__ == "__main__":
                     frame_id=fake_robot.frame_id,
                 )
                 robot_session.publish_system_stats(
-                    cpu_load_percentage=random()
-                )
+                    cpu_load_percentage=random())
                 robot_session.publish_key_values(
                     {
                         "battery": fake_robot.battery,
@@ -237,7 +240,8 @@ if __name__ == "__main__":
                 ranges, angles = [], []
                 for i in range(NUM_LASERS):
                     # Generate random lidar ranges within arbitrary limits
-                    lidar = [max(LIDAR_MIN, random() * LIDAR_MAX) for _ in range(700)]
+                    lidar = [max(LIDAR_MIN, random() * LIDAR_MAX) for _ in
+                             range(700)]
                     # Make ranges over threshold infinite
                     lidar = [inf if r >= 3 else r for r in lidar]
                     ranges.append(lidar)

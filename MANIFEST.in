@@ -1,9 +1,0 @@
-include CONTRIBUTING.md
-include LICENSE
-include README.md
-
-recursive-include tests *
-recursive-exclude * __pycache__
-recursive-exclude * *.py[co]
-
-graft inorbit_edge/data

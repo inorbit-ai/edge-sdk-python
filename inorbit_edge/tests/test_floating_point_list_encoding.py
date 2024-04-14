@@ -1,5 +1,7 @@
-import pytest
 from math import inf
+
+import pytest
+
 from inorbit_edge.utils import encode_floating_point_list
 
 # Data from Gazebo simulation

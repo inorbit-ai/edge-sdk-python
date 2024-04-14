@@ -1,10 +1,11 @@
-# This module provides video capturing capabilities. It allows to stream images from
-# cameras, RTSP streams and more (everything support by OpenCV) to the InOrbit Platform.
+# This module provides video capturing capabilities. It allows to stream images
+# from cameras, RTSP streams and more (everything support by OpenCV) to the
+# InOrbit Platform.
 #
 # The functionality is split into two kind of classes:
-# * Cameras: Take care of getting frames from a video source, like a webcam, file or
-#   stream.
-# * CameraStreamer: Consumes frames from a camera and send them to the platform.
+# * Cameras: Take care of getting frames from a video source, like a webcam,
+#   file or stream.
+# * CameraStreamer: Consumes frames from a camera and sends to the platform.
 #
 # Future improvements / TODOs:
 #   * Honor module states camera settings, like rate, size and quality.
@@ -98,7 +99,13 @@ class OpenCVCamera(Camera):
                 return None, 0, 0, ts
             width = self.capture.get(cv2.CAP_PROP_FRAME_WIDTH)
             height = self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT)
-            jpg, w, h = convert_frame(frame, width, height, self.scaling, self.quality)
+            jpg, w, h = convert_frame(
+                frame,
+                width,
+                height,
+                self.scaling,
+                self.quality,
+            )
             return jpg, w, h, ts
 
     def _run(self):
@@ -140,8 +147,12 @@ class CameraStreamer:
         self.thread.join()
 
     def _run(self):
-        """This thread takes care of getting video from a camera at the desired rate,
-        converting it to the right format and publishing the video frames"""
+        """A thread to take care of getting video.
+
+
+        This will handle video from a camera at the desired rate, converting it
+        to the right format and publishing the video frames.
+        """
         self.camera.open()
         while True:
             jpg, width, height, ts = self.camera.get_frame_jpg()

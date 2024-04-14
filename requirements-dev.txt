@@ -1,0 +1,10 @@
+bump2version~=1.0
+black~=24.3
+coverage~=7.4
+flake8~=7.0
+pip~=24.0
+pytest~=8.1
+requests-mock~=1.12
+setuptools~=68.2
+tox~=4.14
+twine~=5.0

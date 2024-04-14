@@ -1,57 +1,58 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import io
-from dataclasses import dataclass, field
 import json
-from typing import Tuple
-
-from inorbit_edge import __version__ as inorbit_edge_version
-from inorbit_edge.types import Pose, SpatialTolerance
-import os
 import logging
-import paho.mqtt.client as mqtt
-from PIL import Image
-from urllib.parse import urlsplit
-import socks
+import math
+import os
+import re
 import ssl
+import subprocess
 import threading
-import yaml
+import time
+from dataclasses import dataclass, field
+from typing import Tuple
+from urllib.parse import urlsplit
 
-from inorbit_edge.inorbit_pb2 import (
-    CustomDataMessage,
-    KeyValueCustomElement,
-    LocationAndPoseMessage,
-    OdometryDataMessage,
-    LaserMessage,
-    PathPoint,
-    RobotPath,
-    PathDataMessage,
-    Echo,
-    CustomScriptCommandMessage,
-    CustomScriptStatusMessage,
-    CustomCommandRosMessage,
-    CameraMessage,
-    SystemStatsMessage,
-    MapMessage,
-)
-from inorbit_edge.video import CameraStreamer, Camera
-from inorbit_edge.missions import MissionsModule
+import certifi
+import paho.mqtt.client as mqtt
+import requests
+import socks
+import yaml
+from PIL import Image
+from deprecated import deprecated
+
 from inorbit_edge.commands import (
     COMMAND_INITIAL_POSE,
     COMMAND_NAV_GOAL,
     COMMAND_CUSTOM_COMMAND,
     COMMAND_MESSAGE,
 )
-import time
-import requests
-import math
+from inorbit_edge.inorbit_pb2 import (
+    CameraMessage,
+    CustomCommandRosMessage,
+    CustomDataMessage,
+    CustomScriptCommandMessage,
+    CustomScriptStatusMessage,
+    Echo,
+    KeyValueCustomElement,
+    LaserMessage,
+    LocationAndPoseMessage,
+    MapMessage,
+    OdometryDataMessage,
+    PathDataMessage,
+    PathPoint,
+    RobotPath,
+    SystemStatsMessage,
+)
+from inorbit_edge.missions import MissionsModule
+from inorbit_edge.types import Pose, SpatialTolerance
 from inorbit_edge.utils import encode_floating_point_list
-import certifi
-import subprocess
-import re
-from deprecated import deprecated
+from inorbit_edge.video import Camera, CameraStreamer
 
-INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
+INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = \
+    "https://control.inorbit.ai/cloud_sdk_robot_config"
 
 MQTT_SUBTOPIC_POSE = "ros/loc/data2"
 MQTT_SUBTOPIC_PATH = "ros/loc/path"
@@ -98,7 +99,8 @@ class LaserConfig:
     range: Tuple[float, float] = field(
         metadata={"help": "The min/max range value of the laser."}
     )
-    n_points: int = field(metadata={"help": "The number of points the laser provides."})
+    n_points: int = field(
+        metadata={"help": "The number of points the laser provides."})
 
 
 class RobotSession:
@@ -108,12 +110,11 @@ class RobotSession:
 
         Args:
             robot_id (str): ID of the robot.
-            api_key (str): API key for authenticating against InOrbit Cloud services.
+            api_key (str): API key for authenticating against InOrbit.
             robot_name (str): Robot name.
-            robot_key(str): Robot key for authenticating against InOrbit Cloud services
-            when using InOrbit Connect (https://connect.inorbit.ai/).
-            endpoint (str): InOrbit URL. Defaults: INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL.
-            use_ssl (bool): Configures MQTT client to use SSL. Defaults: True.
+            robot_key(str): Robot key for authenticating against InOrbit.
+            endpoint (str): InOrbit API URL.
+            use_ssl (bool): Configures MQTT client to use SSL.
         """
 
         self.api_key = api_key
@@ -124,9 +125,8 @@ class RobotSession:
         self.robot_id = robot_id
         self.robot_key = kwargs.get("robot_key")
         self.robot_name = kwargs.get("robot_name", robot_name)
-        # The agent version is generated based on the InOrbit Edge SDK version
-        self.agent_version = "{}.edgesdk_py".format(inorbit_edge_version)
-        self.endpoint = kwargs.get("endpoint", INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL)
+        self.endpoint = kwargs.get("endpoint",
+                                   INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL)
         # Track robot's current pose
         self._last_pose = None
         # Unique names of configs
@@ -138,9 +138,9 @@ class RobotSession:
         # transport if the environment variable HTTP_PROXY is set.
         self.use_websockets = kwargs.get("use_websockets", False)
 
-        # Read optional proxy configuration from environment variables
-        # We use ``self.http_proxy`` to indicate if proxy configuration should be used.
-        # TODO: enable explicit proxy configuration on ``RobotSession`` constructor.
+        # TODO: Enable explicit proxy configuration with `RobotSession`
+        #  Read optional proxy configuration from environment variables
+        #  We use `self.http_proxy` to indicate if proxy configuration is used.
         self.http_proxy = os.getenv("HTTP_PROXY")
         if self.http_proxy == "":
             self.logger.warning("Found empty HTTP_PROXY variable. Ignoring.")
@@ -154,7 +154,8 @@ class RobotSession:
 
         # Create mqtt client
         if self.use_websockets:
-            self.client = mqtt.Client(protocol=mqtt.MQTTv311, transport="websockets")
+            self.client = mqtt.Client(protocol=mqtt.MQTTv311,
+                                      transport="websockets")
             self.logger.debug("MQTT client created using websockets transport")
         else:
             self.client = mqtt.Client(protocol=mqtt.MQTTv311, transport="tcp")
@@ -167,13 +168,15 @@ class RobotSession:
             proxy_port = parts.port
 
             if not proxy_port:
-                self.logger.warning("Empty proxy port. Is 'HTTP_PROXY' correct?")
+                self.logger.warning("Empty proxy port.")
 
             self.logger.debug(
-                "Configuring client proxy: {}:{}".format(proxy_hostname, proxy_port)
+                f"Configuring client proxy: {proxy_hostname}:{proxy_port}"
             )
             self.client.proxy_set(
-                proxy_type=socks.HTTP, proxy_addr=proxy_hostname, proxy_port=proxy_port
+                proxy_type=socks.HTTP,
+                proxy_addr=proxy_hostname,
+                roxy_port=proxy_port,
             )
 
         # Register MQTT client callbacks
@@ -193,17 +196,19 @@ class RobotSession:
         self.camera_streaming_mutex = threading.Lock()
 
         self.message_handlers[MQTT_INITIAL_POSE] = self._handle_initial_pose
-        self.message_handlers[MQTT_CUSTOM_COMMAND] = self._handle_custom_command
-        self.message_handlers[MQTT_CUSTOM_COMMAND_MESSAGE] = self._handle_custom_message
+        self.message_handlers[
+            MQTT_CUSTOM_COMMAND] = self._handle_custom_command
+        self.message_handlers[
+            MQTT_CUSTOM_COMMAND_MESSAGE] = self._handle_custom_message
         self.message_handlers[MQTT_NAV_GOAL_GOAL] = self._handle_nav_goal
         self.message_handlers[MQTT_IN_CMD] = self._handle_in_cmd
 
-        # Internal variables for configuring throttling
-        # The throttling is done by method instead of by topic because the same topic
-        # might be used for sending different type of messages e.g. pose and laser.
-        # Each throttling has a ``last_ts`` that is the last time a method was called
-        # and a ``min_time_between_calls`` to configure what is the min time to wait
-        # before method calls.
+        # Internal variables for configuring throttling. The throttling is done
+        # by method instead of by topic because the same topic might be used
+        # for sending different type of messages e.g. pose and laser. Each
+        # throttling has a `last_ts` that is the last time a method was
+        # called and a `min_time_between_calls` to configure what is the min
+        # time to wait before method calls.
         self._publish_throttling = {
             "publish_pose": {
                 "last_ts": 0,
@@ -254,7 +259,7 @@ class RobotSession:
     def _should_publish_message(self, method, key=None):
         """Determine if the method should be executed or not
 
-        It uses robot session property ``self._publish_throttling`` to
+        It uses robot session property `self._publish_throttling` to
         determine if the method has not been called before the configured
         time. If the method can be called, it also updates the method last
         call timestamp.
@@ -268,12 +273,14 @@ class RobotSession:
         """
         try:
             throttling_cfg = self._publish_throttling[method]
-            # If a throttling key is provided, add an additional level
-            # to the throttling configuration for that method and populate
-            # it with last_ts and min_time_between_calls.
-            # NOTE(lpineda.io): throttling by keys is dynamic, so they don't
+            # If a throttling key is provided, add an additional level to the
+            # throttling configuration for that method and populate t with
+            # last_ts and min_time_between_calls.
+
+            # NOTE(lean): throttling by keys is dynamic, so they don't
             # need to be defined on __init__.
-            # TODO(lpineda.io): add support for configuring min_time_between_calls 
+
+            # TODO(lean): add support for configuring min_time_between_calls
             if key:
                 if key not in self._publish_throttling[method]:
                     self._publish_throttling[method][key] = {
@@ -283,7 +290,7 @@ class RobotSession:
                 throttling_cfg = self._publish_throttling[method][key]
         except KeyError:
             self.logger.error(
-                "Trying to publish using a method with no throttling configured."
+                "Trying to publish using a method with no throttling config."
             )
             raise
 
@@ -330,15 +337,12 @@ class RobotSession:
 
         Args:
             client:     the client instance for this callback
-            userdata:   the private user data as set in Client() or userdata_set()
+            userdata:   the private data as set in Client() or userdata_set()
             flags:      response flags sent by the broker
             rc:         the connection result
         """
 
         # Only assume that the robot is connected if return code is 0.
-        # Other values are taken as errors (check here:
-        # http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718035)
-        # so connection process needs to be aborted.
         if rc == 0:
             self.logger.info("Connected to MQTT")
         else:
@@ -359,13 +363,15 @@ class RobotSession:
             topic=self._get_robot_subtopic(subtopic=MQTT_CUSTOM_COMMAND)
         )
         self.client.subscribe(
-            topic=self._get_robot_subtopic(subtopic=MQTT_CUSTOM_COMMAND_MESSAGE)
+            topic=self._get_robot_subtopic(
+                subtopic=MQTT_CUSTOM_COMMAND_MESSAGE)
         )
         self.client.subscribe(
             topic=self._get_robot_subtopic(subtopic=MQTT_NAV_GOAL_GOAL)
         )
-        self.client.subscribe(topic=self._get_robot_subtopic(subtopic=MQTT_IN_CMD))
-        # ask server to resend modules, so our state is consistent with the server side
+        self.client.subscribe(
+            topic=self._get_robot_subtopic(subtopic=MQTT_IN_CMD))
+        # Ask server to resend modules so state is consistent on server side
         self._resend_modules()
 
     def _on_message(self, client, userdata, msg):
@@ -373,7 +379,7 @@ class RobotSession:
 
         Args:
             client:     the client instance for this callback
-            userdata:   the private user data as set in Client() or userdata_set()
+            userdata:   private data as set in Client() or userdata_set()
             msg:        an instance of MQTTMessage. This is a class with
                         members topic, payload, qos, retain.
         """
@@ -385,7 +391,8 @@ class RobotSession:
                 self.message_handlers[subtopic](msg.payload)
         except UnicodeDecodeError as ex:
             self.logger.error(
-                f"Failed to decode message, ignoring. Payload: '{msg.payload}'. {ex}"
+                f"Failed to decode message, ignoring. Payload: "
+                f"'{msg.payload}'. {ex}"
             )
         except Exception:
             # Re-raise any other error
@@ -397,7 +404,7 @@ class RobotSession:
 
         Args:
             client:     the client instance for this callback
-            userdata:   the private user data as set in Client() or userdata_set()
+            userdata:   the private data as set in Client() or userdata_set()
             rc:         disconnection result
         """
 
@@ -506,22 +513,22 @@ class RobotSession:
                 s.stop()
 
     def publish_map(
-        self,
-        file,
-        map_id="map",
-        frame_id="map",
-        x=0,
-        y=0,
-        resolution=0.05,
-        ts=None,
-        is_update=False,
+            self,
+            file,
+            map_id="map",
+            frame_id="map",
+            x=0,
+            y=0,
+            resolution=0.05,
+            ts=None,
+            is_update=False,
     ):
         """
-        Sends the information about a map and optionally its contents. The map message
-        data is passed as a separate variable to indicate that the map data needs to
-        be actually sent. An is_update flag can be provided to inform in the message
-        that this is an update message, aimed to correct a previous one, currently
-        used for frame_id/map_id updates.
+        Sends the information about a map and optionally its contents. The map
+        message data is passed as a separate variable to indicate that the map
+        data needs to be actually sent. An is_update flag can be provided to
+        inform in the message that this is an update message, aimed to correct
+        a previous one, currently used for frame_id/map_id updates.
         """
         try:
             # Open the image file
@@ -573,12 +580,13 @@ class RobotSession:
         self.publish_protobuf(MQTT_SUBTOPIC_CAMERA_V2, msg)
 
     def dispatch_command(self, command_name, args, execution_id=None):
-        """Executes registered command callbacks for a specific incoming command."""
+        """Executes registered callbacks for a specific incoming command."""
         for callback in self.command_callbacks:
 
             def result_function(result_code):
                 if execution_id is not None:
-                    return self.report_command_result(args, execution_id, result_code)
+                    return self.report_command_result(args, execution_id,
+                                                      result_code)
 
             # TODO: Implement progress reporting function
             def progress_function(output, error):
@@ -592,7 +600,7 @@ class RobotSession:
             callback(command_name, args, options)
 
     def report_command_result(self, args, execution_id, result_code):
-        """Send to server the result code of a command executed by a user callback."""
+        """Send the result code of a command executed by a user callback."""
 
         msg = CustomScriptStatusMessage()
         msg.file_name = args[0]
@@ -605,11 +613,13 @@ class RobotSession:
         msg.return_code = result_code
         self.publish_protobuf(MQTT_SCRIPT_OUTPUT_TOPIC, msg)
 
-    def register_commands_path(self, path="./user_scripts", exec_name_regex=r".*"):
-        """Registers executable commands that handle InOrbit custom command actions.
-        Use `exec_name_regex` and `path` to customize which executables can be
-        accessed. Note that if an action script name matches `exec_name_regex`, then
-        the program will be executed prepending the provided `path`.
+    def register_commands_path(self, path="./user_scripts",
+                               exec_name_regex=r".*"):
+        """Registers executable commands that handle InOrbit custom command
+        actions. Use `exec_name_regex` and `path` to customize which
+        executables can be accessed. Note that if an action script name matches
+        `exec_name_regex`, then the program will be executed prepending the
+        provided `path`.
         """
 
         def handler(command_name, args, options):
@@ -635,22 +645,22 @@ class RobotSession:
         self.register_command_callback(handler)
 
     def register_command_callback(self, callback):
-        """Register a function to be called when a command for the robot is received.
+        """Register a callback when a command for the robot is received.
 
         Args:
-            callback (callable): callback method for messages. The callback signature
-                is `callback(command_name, args, options)`:
-                - `command_name` identifies the specific command to be executed.
-                - `args` is an ordered list with each argument as an entry. Each
-                  element of the array can be a string or an object, depending on
-                  the definition of the action.
+            callback (callable): callback method for messages. The callback
+                signature  is `callback(command_name, args, options)`:
+                - `command_name` the specific command to be executed.
+                - `args` is an ordered list with each argument as an entry.
+                   Each element of the array can be a string or an object,
+                   depending on the definition of the action.
                 - `options`: is a dictionary that includes:
-                  - `result_function` can be called to report command execution result.
-                    It has the following signature: `result_function(return_code)`.
-                  - `progress_function` can be used to report command output and has
-                    the following signature: `progress_function(output, error)`.
-                  - `metadata` is reserved for the future and contains additional
-                    information about the received command request.
+                  - `result_function` function to report command result with
+                     the signature: `result_function(return_code)`.
+                  - `progress_function` function to report command output with
+                     the signature: `progress_function(output, error)`.
+                  - `metadata` is reserved for the future and contains
+                     additional information about the received command request.
         """
 
         self.logger.info(
@@ -671,9 +681,10 @@ class RobotSession:
         pass
 
     def register_camera(self, camera_id: str, camera: Camera):
-        """Registers a camera. Video will be automatically streamed from this camera
-        when requested from the platform, for example when a user accesses the
-        navigation view.
+        """Registers a camera.
+
+        Video will be automatically streamed from this camera when requested
+        from the platform, for example when accessioning the navigation view.
         """
 
         def publish(image, width, height, ts):
@@ -702,13 +713,13 @@ class RobotSession:
 
         Args:
             robot_status (Union[bool,str]): Connection status
-                It supports ``bool`` and ``str`` values ("0" or "1")
+                It supports `bool` and `str` values ("0" or "1")
 
         Raises:
-            ValueError: on invalid ``robot_status``
+            ValueError: on invalid `robot_status`
         """
 
-        # Validate ``robot_status`` parameter.
+        # Validate `robot_status` parameter.
         if isinstance(robot_status, bool):
             robot_status = "1" if robot_status else "0"
 
@@ -718,7 +729,8 @@ class RobotSession:
         # Every time we connect or disconnect to the service, send
         # updated status including online/offline bit
         status_message = "{}|{}|{}|{}".format(
-            robot_status, self.robot_api_key, self.agent_version, self.robot_name
+            robot_status, self.robot_api_key, self.agent_version,
+            self.robot_name
         )
         ret = self.publish(
             self._get_robot_subtopic(subtopic=MQTT_SUBTOPIC_STATE),
@@ -726,7 +738,8 @@ class RobotSession:
             qos=1,
             retain=True,
         )
-        self.logger.info("Publishing status {}. ret = {}.".format(robot_status, ret))
+        self.logger.info(
+            "Publishing status {}. ret = {}.".format(robot_status, ret))
 
         # TODO: handle errors while waiting for publish. Consider that
         # this method would typically run on a separate thread.
@@ -734,7 +747,8 @@ class RobotSession:
         published = ret.is_published()
 
         self.logger.info(
-            "Robot status '{}' published: {:b}.".format(robot_status, published)
+            "Robot status '{}' published: {:b}.".format(robot_status,
+                                                        published)
         )
 
     def _is_connected(self):
@@ -746,7 +760,8 @@ class RobotSession:
     def _wait_for_connection_state(self, state_func):
         for _ in range(5):
             self.logger.info(
-                "Waiting for MQTT connection state '{}' ...".format(state_func.__name__)
+                "Waiting for MQTT connection state '{}' ...".format(
+                    state_func.__name__)
             )
             time.sleep(1)
             if state_func():
@@ -768,7 +783,8 @@ class RobotSession:
         self.robot_api_key = robot_config["robotApiKey"]
 
         # Use username and password authentication
-        self.client.username_pw_set(robot_config["username"], robot_config["password"])
+        self.client.username_pw_set(robot_config["username"],
+                                    robot_config["password"])
 
         # Configure "will" message to ensure the robot state
         # is set to offline if connection is interrupted
@@ -783,7 +799,8 @@ class RobotSession:
         # TODO: add support for user-provided CA certificate file.
         if self.use_ssl:
             self.logger.debug("Configuring client to use SSL")
-            self.client.tls_set(certifi.where(), tls_version=ssl.PROTOCOL_TLSv1_2)
+            self.client.tls_set(certifi.where(),
+                                tls_version=ssl.PROTOCOL_TLSv1_2)
 
         # Configure MQTT client hostname and port
         hostname = robot_config["hostname"]
@@ -819,10 +836,10 @@ class RobotSession:
 
         Args:
             topic (str): Topic where the message will be published.
-            message (bytearray, str): The actual message to send.
-            qos (int, optional): The quality of service level to use. Defaults to 0.
-            retain (bool, optional): If set to true, the message will be set as
-                the "last known good"/retained message for the topic. Defaults to False.
+                message (bytearray, str): The actual message to send.
+            qos (int, optional): The quality of service level (default: 0).
+            retain (bool, optional): If True, the message will be set as the
+                "last known" message for the topic. (default: False).
         Returns:
             MQTTMessageInfo: Returns a MQTTMessageInfo class
         """
@@ -831,7 +848,8 @@ class RobotSession:
                 topic=topic, payload=message, qos=qos, retain=retain
             )
         except ValueError:
-            self.logger.error("Payload greater than 268435455 bytes is not allowed")
+            self.logger.error(
+                "Payload greater than 268435455 bytes is not allowed")
             return None
 
         if info.rc != mqtt.MQTT_ERR_SUCCESS:
@@ -846,14 +864,14 @@ class RobotSession:
     def publish_protobuf(self, subtopic, message, qos=0, retain=False):
         """Publish protobuf messages to this robot session subtopic.
 
-        The protobuf ``message`` is serialized and published to the robot ``subtopic``.
+        The protobuf `message` is serialized/published to the robot `subtopic`.
 
         Args:
-            subtopic (str): Robot subtopic, without leading ``/``.
+            subtopic (str): Robot subtopic, without leading `/`.
             message (protobuf.Message): Protobuf message.
-            qos (int, optional): The quality of service level to use. Defaults to 0.
-            retain (bool, optional): If set to true, the message will be set as
-                the "last known good"/retained message for the topic. Defaults to False.
+            qos (int, optional): The quality of service level (default: 0).
+            retain (bool, optional): If True, the message will be set as the
+                "last known" message for the topic. (default: False).
         """
         topic = self._get_robot_subtopic(subtopic=subtopic)
         self.logger.debug("Publishing to topic {}".format(topic))
@@ -872,8 +890,8 @@ class RobotSession:
             x (float): Robot pose x coordinate.
             y (float): Robot pose y coordinate.
             yaw (float): Robot yaw (radians).
-            frame_id (str, optional): Robot map frame identifier. Defaults to "map".
-            ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
+            frame_id (str, optional): Robot map frame ID (defaults  "map".
+            ts (int, optional): Pose timestamp. (default: int(time() * 1000).
         """
         if not self._should_publish_message(method="publish_pose"):
             return None
@@ -891,13 +909,13 @@ class RobotSession:
         if self._last_pose is None:
             return False
         return (
-            math.sqrt(
-                (self._last_pose.x - waypoint.x) ** 2
-                + (self._last_pose.y - waypoint.y) ** 2,
-            )
-            <= tolerance.positionMeters
-            and abs(self._last_pose.theta - waypoint.theta) % (2 * math.pi)
-            <= tolerance.angularRadians
+                math.sqrt(
+                    (self._last_pose.x - waypoint.x) ** 2
+                    + (self._last_pose.y - waypoint.y) ** 2,
+                )
+                <= tolerance.positionMeters
+                and abs(self._last_pose.theta - waypoint.theta) % (2 * math.pi)
+                <= tolerance.angularRadians
         )
 
     def publish_key_values(self, key_values, custom_field="0", is_event=False):
@@ -905,7 +923,7 @@ class RobotSession:
 
         Args:
             key_values (dict): Key value mappings to publish
-            custom_field (str, optional): ID of the CustomData element. Defaults to "0".
+            custom_field (str, optional): ID of the CustomData element.
             is_event (bool): Events are not throttled
         """
 
@@ -926,7 +944,7 @@ class RobotSession:
 
         for key in key_values.keys():
             if not is_event and not self._should_publish_message(
-                method="publish_key_values", key=key
+                    method="publish_key_values", key=key
             ):
                 pass
             msg.key_value_payload.pairs.append(set_pairs(key))
@@ -934,54 +952,57 @@ class RobotSession:
         self.publish_protobuf(MQTT_SUBTOPIC_CUSTOM_DATA, msg)
 
     def publish_system_stats(
-        self,
-        cpu_load_percentage=None,
-        ram_usage_percentage=None,
-        hdd_usage_percentage=None,
-        ts=None,
+            self,
+            cpu_load_percentage=None,
+            ram_usage_percentage=None,
+            hdd_usage_percentage=None,
+            ts=None,
     ):
-        """Publishes system information (CPU load, RAM usage, HDD usage, network stats)
+        """Publishes system information (e.g, CPU load, RAM usage, HDD usage)
 
         Args:
             cpu_load_percentage (float, value between 0.0 and 1.0): CPU usage.
             ram_usage_percentage (float, value between 0.0 and 1.0): RAM usage.
             hdd_usage_percentage (float, value between 0.0 and 1.0): HDD usage.
-            ts (int): Timestamp. Defaults to int(time() * 1000).
+            ts (int): Timestamp. (default: int(time() * 1000).
         """
 
         if not self._should_publish_message(method="publish_system_stats"):
             return None
 
         msg = SystemStatsMessage()
-        msg.cpu_load_percentage = cpu_load_percentage if cpu_load_percentage else 0.0
-        msg.ram_usage_percentage = ram_usage_percentage if ram_usage_percentage else 0.0
-        msg.hdd_usage_percentage = hdd_usage_percentage if hdd_usage_percentage else 0.0
+        msg.cpu_load_percentage =\
+            cpu_load_percentage if cpu_load_percentage else 0.0
+        msg.ram_usage_percentage =\
+            ram_usage_percentage if ram_usage_percentage else 0.0
+        msg.hdd_usage_percentage =\
+            hdd_usage_percentage if hdd_usage_percentage else 0.0
         msg.timestamp = ts if ts else int(time.time() * 1000)
 
         self.publish_protobuf(MQTT_SUBTOPIC_SYSTEM_STATS, msg)
 
     def publish_odometry(
-        self,
-        ts_start=None,
-        ts=None,
-        linear_distance=0,
-        angular_distance=0,
-        linear_speed=0,
-        angular_speed=0,
+            self,
+            ts_start=None,
+            ts=None,
+            linear_distance=0,
+            angular_distance=0,
+            linear_speed=0,
+            angular_speed=0,
     ):
         """Publish odometry data
 
         Args:
-            ts_start (int, optional): Timestamp (milliseconds) when the started to
-                accumulate odometry. Defaults to int(time() * 1000).
-            ts (int, optional): Timestamp (milliseconds) of the last time odometry
-                accumulator was updated. Defaults to int(time() * 1000).
+            ts_start (int, optional): Timestamp (milliseconds) when the started
+                to accumulate odometry. (default: int(time() * 1000).
+            ts (int, optional): Timestamp (milliseconds) of the last time
+                odometry accumulator was updated. (default: int(time() * 1000).
             linear_distance (int, optional): Accumulated displacement (meters).
-                Defaults to 0.
+                (default: 0.
             angular_distance (int, optional): Accumulated rotation (radians).
-                Defaults to 0.
-            linear_speed (int, optional): Linear speed (m/s). Defaults to 0.
-            angular_speed (int, optional): Angular speed (rad/s). Defaults to 0.
+                (default: 0.
+            linear_speed (int, optional): Linear speed (m/s). (default: 0.
+            angular_speed (int, optional): Angular speed (rad/s). (default: 0.
         """
 
         if not self._should_publish_message(method="publish_odometry"):
@@ -1006,10 +1027,11 @@ class RobotSession:
             x (float): Robot pose x coordinate.
             y (float): Robot pose y coordinate.
             yaw (float): Robot yaw (radians).
-            ranges (List[List[float]]): A list of Laser scan range data. This list of
-                ``float`` number may have infinite values represented as ``math.inf``.
-            frame_id (str, optional): Robot map frame identifier. Defaults to "map".
-            ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
+            ranges (List[List[float]]): A list of Laser scan range data. This
+                list of `float` number may have infinite values represented as
+                `math.inf`.
+            frame_id (str, optional): Robot map frame ID. (default: "map").
+            ts (int, optional): Pose timestamp. (default: int(time() * 1000).
         """
         if not self._should_publish_message(method="publish_lasers"):
             return None
@@ -1031,7 +1053,8 @@ class RobotSession:
             # Check for a config
             topic = MQTT_SUBTOPIC_LASER_CONFIG_BASE + name
             if topic not in self._laser_config_names:
-                self.logger.warning(f"No laser config found for {name}... skipping")
+                self.logger.warning(
+                    f"No laser config found for {name}... skipping")
                 continue
 
             pb_lasers_message = LaserMessage()
@@ -1059,18 +1082,20 @@ class RobotSession:
             x (float): Robot pose x coordinate.
             y (float): Robot pose y coordinate.
             yaw (float): Robot yaw (radians).
-            ranges (List[float]): Laser scan range data. This list of ``float``
-                number may have infinite values represented as ``math.inf``.
-            frame_id (str, optional): Robot map frame identifier. Defaults to "map".
-            ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
+            ranges (List[float]): Laser scan range data. This list of `float`
+                number may have infinite values represented as `math.inf`.
+            frame_id (str, optional): Robot map frame ID. (default: "map").
+            ts (int, optional): Pose timestamp. (default: int(time() * 1000).
         """
 
         self.publish_lasers(x, y, yaw, [ranges], frame_id, ts)
 
     def register_lasers(self, configs):
-        """Register a list of lasers to the system. Note that this order should
-        be the same as the order used when using publish_laser(s). This function
-        is intended to be used once during initialization.
+        """Register a list of lasers to the system.
+
+        Note that this order should be the same as the order used when using
+        publish_laser(s). This function  is intended to be used once during
+        initialization.
 
         Args:
             configs (List[LaserConfig]): A list of laser configs to register.
@@ -1113,9 +1138,9 @@ class RobotSession:
         Args:
             path_points (List[Tuple[int. int]]): List of x, y points
                 the robot would go through.
-            path_id (str, optional):
-            frame_id (str, optional): Robot map frame identifier. Defaults to "map".
-            ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
+            path_id (str, optional): The ID of the path.
+            frame_id (str, optional): Robot map frame ID. (default: "map").
+            ts (int, optional): Pose timestamp. (default: int(time() * 1000).
         """
 
         if not self._should_publish_message(method="publish_path"):
@@ -1123,27 +1148,26 @@ class RobotSession:
 
         if len(path_points) > ROBOT_PATH_POINTS_LIMIT:
             self.logger.warning(
-                "Path has {} points. Only the first {} points will be used.".format(
-                    len(path_points), ROBOT_PATH_POINTS_LIMIT
-                )
+                f"Path has {len(path_points)} points. "
+                f"Only the first {ROBOT_PATH_POINTS_LIMIT} points are used."
             )
 
-        # Generate ``PathPoint`` protobuf messages
+        # Generate `PathPoint` protobuf messages
         # from the list of path point tuples
         pb_path_points = [
             PathPoint(x=path_point[0], y=path_point[1])
             for path_point in path_points[:ROBOT_PATH_POINTS_LIMIT]
         ]
 
-        # Generate a ``RobotPath`` protobuf message and
-        # add the list of ``PathPoint`` created above
+        # Generate a `RobotPath` protobuf message and
+        # add the list of `PathPoint` created above
         pb_robot_path = RobotPath()
         pb_robot_path.ts = ts if ts else int(time.time() * 1000)
         pb_robot_path.path_id = path_id
         pb_robot_path.frame_id = frame_id
         pb_robot_path.points.extend(pb_path_points)
 
-        # Publish ``PathDataMessage``
+        # Publish `PathDataMessage`
         msg = PathDataMessage()
         msg.ts = ts if ts else int(time.time() * 1000)
         msg.paths.append(pb_robot_path)
@@ -1164,12 +1188,14 @@ class RobotSessionFactory:
 
     def build(self, robot_id, robot_name="", **robot_config):
         """Builds a RobotSession object using the provided id and name.
-        It also passes the robot_session_kw_args set when creating the factory to the
-        RobotSession constructor.
+
+        It also passes the robot_session_kw_args set when creating the factory
+        to the RobotSession constructor.
         """
 
         session = RobotSession(
-            robot_id, robot_name, **{**robot_config, **self.robot_session_kw_args}
+            robot_id, robot_name,
+            **{**robot_config, **self.robot_session_kw_args}
         )
 
         def build_callback(callback):
@@ -1194,11 +1220,13 @@ class RobotSessionFactory:
 
         self.command_callbacks.append(callback)
 
-    def register_commands_path(self, path="./user_scripts", exec_name_regex=r".*"):
-        """Registers executable commands that handle InOrbit custom command actions.
+    def register_commands_path(self, path="./user_scripts",
+                               exec_name_regex=r".*"):
+        """Registers commands that handle InOrbit custom command actions.
+
         Use `exec_name_regex` and `path` to customize which executables can be
-        accessed. Note that if an action script name matches `exec_name_regex`, then
-        the program will be executed prepending the provided `path`.
+        accessed. Note that if an action script name matches `exec_name_regex`,
+        then the program will be executed prepending the provided `path`.
         """
         self.commands_paths_rules.append((path, exec_name_regex))
 
@@ -1210,7 +1238,7 @@ class RobotSessionPool:
     def __init__(self, robot_session_factory, robot_config_yaml=None):
         """Creates the pool
         Args:
-          - robot_session_factory: factory used to build individual RobotSessions
+          - robot_session_factory: factory used to build RobotSessions
         """
 
         self.logger = logging.getLogger(__class__.__name__)
@@ -1248,7 +1276,8 @@ class RobotSessionPool:
                 # provided to this method.
                 if not robot_config.get("robot_name"):
                     robot_config["robot_name"] = robot_name
-                self.robot_sessions[robot_id] = self.robot_session_factory.build(
+                self.robot_sessions[
+                    robot_id] = self.robot_session_factory.build(
                     robot_id, **robot_config
                 )
                 self.robot_sessions[robot_id].connect()

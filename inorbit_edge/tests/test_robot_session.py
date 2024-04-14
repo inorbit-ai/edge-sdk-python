@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from inorbit_edge.robot import RobotSession
-from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL
 from inorbit_edge import get_module_version
+from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL
+from inorbit_edge.robot import RobotSession
 
 
 def test_robot_session_init(monkeypatch):
@@ -103,16 +103,22 @@ def test_method_throttling():
     assert robot_session._should_publish_message(method="publish_pose")
 
     # Also test key based throttling
-    assert robot_session._should_publish_message(method="publish_key_values", key="foo")
+    assert robot_session._should_publish_message(method="publish_key_values",
+                                                 key="foo")
     assert not robot_session._should_publish_message(
         method="publish_key_values", key="foo"
     )
-    robot_session._publish_throttling["publish_key_values"]["foo"]["last_ts"] = 0
-    assert robot_session._should_publish_message(method="publish_key_values", key="foo")
+    robot_session._publish_throttling["publish_key_values"]["foo"][
+        "last_ts"] = 0
+    assert robot_session._should_publish_message(method="publish_key_values",
+                                                 key="foo")
 
-    assert robot_session._should_publish_message(method="publish_key_values", key="bar")
+    assert robot_session._should_publish_message(method="publish_key_values",
+                                                 key="bar")
     assert not robot_session._should_publish_message(
         method="publish_key_values", key="bar"
     )
-    robot_session._publish_throttling["publish_key_values"]["bar"]["last_ts"] = 0
-    assert robot_session._should_publish_message(method="publish_key_values", key="bar")
+    robot_session._publish_throttling["publish_key_values"]["bar"][
+        "last_ts"] = 0
+    assert robot_session._should_publish_message(method="publish_key_values",
+                                                 key="bar")

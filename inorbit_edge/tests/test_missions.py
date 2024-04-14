@@ -12,7 +12,7 @@ from inorbit_edge.robot import (
 
 
 def test_mission_end_to_end(
-    mock_mqtt_client, mock_inorbit_api, mocker, mock_sleep, mock_time
+        mock_mqtt_client, mock_inorbit_api, mocker, mock_sleep, mock_time
 ):
     """Tests mission execution and tracking"""
     robot_session = RobotSession(
@@ -21,7 +21,7 @@ def test_mission_end_to_end(
 
     # Mock command handler.
     my_command_handler = mocker.MagicMock()
-    # Set command handler mock method's name as it's accessed by the RobotSession class
+    # Set command handler mock method's name as accessed by RobotSession
     my_command_handler.configure_mock(**{"__name__": "my_command_handler"})
     robot_session.publish_key_values = mocker.MagicMock()
     robot_session.register_command_callback(my_command_handler)
@@ -105,7 +105,8 @@ def test_mission_end_to_end(
     call_args, _ = dispatched_commands[2]
     [command_name, command_args, _] = call_args
     assert command_name == COMMAND_NAV_GOAL
-    assert command_args == [{"x": 10, "y": 15.5, "theta": 0.5, "frameId": "map"}]
+    assert command_args == [
+        {"x": 10, "y": 15.5, "theta": 0.5, "frameId": "map"}]
     # check that the script step dispatches the script for execution
     call_args, _ = dispatched_commands[3]
     [command_name, command_args, _] = call_args
