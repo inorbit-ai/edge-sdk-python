@@ -273,7 +273,7 @@ class RobotSession:
             # it with last_ts and min_time_between_calls.
             # NOTE(lpineda.io): throttling by keys is dynamic, so they don't
             # need to be defined on __init__.
-            # TODO(lpineda.io): add support for configuring min_time_between_calls 
+            # TODO(lpineda.io): add support for configuring min_time_between_calls
             if key:
                 if key not in self._publish_throttling[method]:
                     self._publish_throttling[method][key] = {

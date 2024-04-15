@@ -204,9 +204,7 @@ if __name__ == "__main__":
                     yaw=fake_robot.yaw,
                     frame_id=fake_robot.frame_id,
                 )
-                robot_session.publish_system_stats(
-                    cpu_load_percentage=random()
-                )
+                robot_session.publish_system_stats(cpu_load_percentage=random())
                 robot_session.publish_key_values(
                     {
                         "battery": fake_robot.battery,

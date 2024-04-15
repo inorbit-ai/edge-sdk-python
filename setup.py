@@ -3,98 +3,90 @@
 
 """The setup script."""
 
+import os
+
 from setuptools import find_packages, setup
+
+# Do not edit manually, always use bumpversion (see CONTRIBUTING.rst)
+VERSION = "1.13.1"
+
+GITHUB_ORG = "https://github.com/inorbit-ai"
+GITHUB_REPO = f"{GITHUB_ORG}/edge-sdk-python"
+YOUTRACK_URL = "https://inorbit.youtrack.cloud"
+YOUTRACK_KEY = "ESP"
+YOUTRACK_OPEN = "State:%20-Resolved%20"
 
 with open("README.md") as readme_file:
     readme = readme_file.read()
 
-setup_requirements = [
-    "pytest-runner>=5.2",
-]
-
-video_requirements = [
-    "opencv-python==4.7.0.68"
-]
-
-test_requirements = [
-    *video_requirements,
-    "black>=19.10b0",
-    "codecov>=2.1.4",
-    "flake8>=3.8.3",
-    "flake8-debugger>=3.2.1",
-    "pytest>=5.4.3",
-    "pytest-cov>=2.9.0",
-    "pytest-mock>=3.10.0",
-    "pytest-raises>=0.11",
-    "pyyaml>=6.0",
-    "lark>=1.0.0",
-    "requests_mock>=1.9.3",
-]
-
-dev_requirements = [
-    *setup_requirements,
-    *test_requirements,
-    "bump2version>=1.0.1",
-    "coverage>=5.1",
-    "ipython>=7.15.0",
-    "m2r2>=0.2.7",
-    "pytest-runner>=5.2",
-    "Sphinx>=3.4.3",
-    "sphinx_rtd_theme>=0.5.1",
-    "tox>=3.15.2",
-    "twine>=3.1.1",
-    "wheel>=0.34.2",
-]
-
-requirements = [
-    "requests==2.31.0",
-    "paho_mqtt==1.6.1",
-    "Pillow==10.2.0",
-    "PySocks==1.7.1",
-    "protobuf==3.19.3",
-    "certifi>=2024.2.2",
-    "deprecated==1.2.13"
-]
-
-extra_requirements = {
-    "setup": setup_requirements,
-    "test": test_requirements,
-    "dev": dev_requirements,
-    "video": video_requirements,
-    "all": [
-        *requirements,
-        *dev_requirements,
-    ]
-}
+# Load from the requirements-*.txt files where '*' is anything extra
+requirements = {key: [] for key in ["install", "video"]}
+base_path = os.path.dirname(os.path.abspath(__file__))
+for key in requirements:
+    fname = os.path.join(
+        base_path, "requirements.txt" if key == "install" else f"requirements-{key}.txt"
+    )
+    with open(fname, "r") as file:
+        requirements[key] = file.read().splitlines()
 
 setup(
-    author="InOrbit",
+    author="InOrbit, Inc.",
     author_email="support@inorbit.ai",
     classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
+        # TODO(russell): Needs a changed of license
+        "License :: Other/Proprietary License",
         "Natural Language :: English",
+        "Operating System :: MacOS :: MacOS X",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: POSIX :: Linux",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11"
+        "Programming Language :: Python :: 3.11",
+        "Topic :: Software Development :: Libraries :: Python Modules",
     ],
-    description="InOrbit Python Edge SDK",
-    install_requires=requirements,
-    long_description=readme,
+    description="InOrbit Edge SDK for Python",
+    # Do not edit manually, always use bumpversion (see CONTRIBUTING.rst)
+    download_url=f"{GITHUB_REPO}/archive/refs/tags/v1.13.0.zip",
+    extras_require={
+        "video": requirements["video"],
+    },
+    install_requires=requirements["install"],
+    keywords=["inorbit", "robops", "robotics"],
+    # TODO(russell) Needs a changed of license
+    license="EULA",
+    license_files=["LICENSE"],
     long_description_content_type="text/markdown",
-    include_package_data=True,
-    keywords="inorbit_edge",
-    name="inorbit_edge",
+    maintainer="Leandro Pineda",
+    maintainer_email="leandro@inorbit.ai",
+    name="inorbit-edge",
+    # TODO(russell): move to src/test directories
+    #  packages=find_packages(where="src"),
+    #  package_dir={"": "src"},
     packages=find_packages(exclude=["tests", "*.tests", "*.tests.*"]),
-    python_requires=">=3.7",
-    setup_requires=setup_requirements,
-    test_suite="inorbit_edge/tests",
-    tests_require=test_requirements,
-    extras_require=extra_requirements,
-    url="https://github.com/inorbit-ai/edge-sdk-python",
-    # Do not edit this string manually, always use bumpversion
-    # Details in CONTRIBUTING.rst
+    platforms=["Linux", "Mac OS-X", "Windows"],
+    python_requires=">=3.8, <3.12",
+    url=GITHUB_REPO,
+    # Do not edit manually, always use bumpversion (see CONTRIBUTING.rst)
     version="1.13.0",
-    zip_safe=False,
+    project_urls={
+        "CI/CD": "https://inorbit.teamcity.com/project/"
+        "Engineering_Development_DeveloperPortal_EdgeSdkPython",
+        "Tracker": f"{YOUTRACK_URL}/issues/{YOUTRACK_KEY}/?q={YOUTRACK_OPEN}",
+        "Contributing": f"{GITHUB_REPO}/blob/v{VERSION}/CONTRIBUTING.md",
+        "Code of Conduct": f"{GITHUB_REPO}/blob/v{VERSION}/CODE_OF_CONDUCT.md",
+        "Changelog": f"{GITHUB_REPO}/blob/v{VERSION}/CHANGELOG.md",
+        "Issue Tracker": f"{GITHUB_REPO}/issues",
+        "License": f"{GITHUB_REPO}/blob/n{VERSION}/LICENSE",
+        "About": "https://www.inorbit.ai/company",
+        "Contact": "https://www.inorbit.ai/contact",
+        "Blog": "https://www.inorbit.ai/blog",
+        "Twitter": "https://twitter.com/InOrbitAI",
+        "LinkedIn": "https://www.linkedin.com/company/inorbitai",
+        "GitHub": GITHUB_ORG,
+        "Website": "https://www.inorbit.ai/",
+        "Source": GITHUB_REPO,
+    },
 )

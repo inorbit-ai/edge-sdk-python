@@ -119,12 +119,12 @@
               ]
             },
             {
-              "id": "MySQL",
-              "name": "MySQL"
-            },
-            {
               "id": "Properties files",
               "name": "Properties files"
+            },
+            {
+              "id": "MySQL",
+              "name": "MySQL"
             },
             {
               "id": "JavaScript and TypeScript/Potentially undesirable code constructs",
@@ -806,6 +806,39 @@
                 ]
               },
               {
+                "id": "IfStatementWithTooManyBranchesJS",
+                "shortDescription": {
+                  "text": "'if' statement with too many branches"
+                },
+                "fullDescription": {
+                  "text": "Reports an 'if' statement with too many branches. Such statements may be confusing, and often indicate inadequate levels of design abstraction. Use the field below to specify the maximum number of branches expected.",
+                  "markdown": "Reports an `if` statement with too many branches. Such statements may be confusing, and often indicate inadequate levels of design abstraction.\n\n\nUse the field below to specify the maximum number of branches expected."
+                },
+                "defaultConfiguration": {
+                  "enabled": false,
+                  "level": "warning",
+                  "parameters": {
+                    "suppressToolId": "IfStatementWithTooManyBranchesJS",
+                    "ideaSeverity": "WARNING",
+                    "qodanaSeverity": "High"
+                  }
+                },
+                "relationships": [
+                  {
+                    "target": {
+                      "id": "JavaScript and TypeScript/Control flow issues",
+                      "index": 1,
+                      "toolComponent": {
+                        "name": "QDPY"
+                      }
+                    },
+                    "kinds": [
+                      "superset"
+                    ]
+                  }
+                ]
+              },
+              {
                 "id": "NonBlockStatementBodyJS",
                 "shortDescription": {
                   "text": "Statement body without braces"
@@ -861,39 +894,6 @@
                     "target": {
                       "id": "JavaScript and TypeScript/General",
                       "index": 12,
-                      "toolComponent": {
-                        "name": "QDPY"
-                      }
-                    },
-                    "kinds": [
-                      "superset"
-                    ]
-                  }
-                ]
-              },
-              {
-                "id": "IfStatementWithTooManyBranchesJS",
-                "shortDescription": {
-                  "text": "'if' statement with too many branches"
-                },
-                "fullDescription": {
-                  "text": "Reports an 'if' statement with too many branches. Such statements may be confusing, and often indicate inadequate levels of design abstraction. Use the field below to specify the maximum number of branches expected.",
-                  "markdown": "Reports an `if` statement with too many branches. Such statements may be confusing, and often indicate inadequate levels of design abstraction.\n\n\nUse the field below to specify the maximum number of branches expected."
-                },
-                "defaultConfiguration": {
-                  "enabled": false,
-                  "level": "warning",
-                  "parameters": {
-                    "suppressToolId": "IfStatementWithTooManyBranchesJS",
-                    "ideaSeverity": "WARNING",
-                    "qodanaSeverity": "High"
-                  }
-                },
-                "relationships": [
-                  {
-                    "target": {
-                      "id": "JavaScript and TypeScript/Control flow issues",
-                      "index": 1,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -1730,39 +1730,6 @@
                 ]
               },
               {
-                "id": "UnnecessaryLabelOnBreakStatementJS",
-                "shortDescription": {
-                  "text": "Unnecessary label on 'break' statement"
-                },
-                "fullDescription": {
-                  "text": "Reports a labeled 'break' statement whose labels may be removed without changing the flow of control.",
-                  "markdown": "Reports a labeled `break` statement whose labels may be removed without changing the flow of control."
-                },
-                "defaultConfiguration": {
-                  "enabled": false,
-                  "level": "warning",
-                  "parameters": {
-                    "suppressToolId": "UnnecessaryLabelOnBreakStatementJS",
-                    "ideaSeverity": "WARNING",
-                    "qodanaSeverity": "High"
-                  }
-                },
-                "relationships": [
-                  {
-                    "target": {
-                      "id": "JavaScript and TypeScript/Control flow issues",
-                      "index": 1,
-                      "toolComponent": {
-                        "name": "QDPY"
-                      }
-                    },
-                    "kinds": [
-                      "superset"
-                    ]
-                  }
-                ]
-              },
-              {
                 "id": "ES6ShorthandObjectProperty",
                 "shortDescription": {
                   "text": "Property can be replaced with shorthand"
@@ -1785,6 +1752,39 @@
                     "target": {
                       "id": "JavaScript and TypeScript/General",
                       "index": 12,
+                      "toolComponent": {
+                        "name": "QDPY"
+                      }
+                    },
+                    "kinds": [
+                      "superset"
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "UnnecessaryLabelOnBreakStatementJS",
+                "shortDescription": {
+                  "text": "Unnecessary label on 'break' statement"
+                },
+                "fullDescription": {
+                  "text": "Reports a labeled 'break' statement whose labels may be removed without changing the flow of control.",
+                  "markdown": "Reports a labeled `break` statement whose labels may be removed without changing the flow of control."
+                },
+                "defaultConfiguration": {
+                  "enabled": false,
+                  "level": "warning",
+                  "parameters": {
+                    "suppressToolId": "UnnecessaryLabelOnBreakStatementJS",
+                    "ideaSeverity": "WARNING",
+                    "qodanaSeverity": "High"
+                  }
+                },
+                "relationships": [
+                  {
+                    "target": {
+                      "id": "JavaScript and TypeScript/Control flow issues",
+                      "index": 1,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -2225,39 +2225,6 @@
                 ]
               },
               {
-                "id": "JSReferencingMutableVariableFromClosure",
-                "shortDescription": {
-                  "text": "Referencing mutable variable from closure"
-                },
-                "fullDescription": {
-                  "text": "Reports access to outer mutable variables from functions. Example: 'for (var i = 1; i <= 3; i++) {\n    setTimeout(function() {\n        console.log(i); // bad\n    }, 0);\n  }'",
-                  "markdown": "Reports access to outer mutable variables from functions.\n\nExample:\n\n\n      for (var i = 1; i <= 3; i++) {\n        setTimeout(function() {\n            console.log(i); // bad\n        }, 0);\n      }\n"
-                },
-                "defaultConfiguration": {
-                  "enabled": false,
-                  "level": "warning",
-                  "parameters": {
-                    "suppressToolId": "JSReferencingMutableVariableFromClosure",
-                    "ideaSeverity": "WARNING",
-                    "qodanaSeverity": "High"
-                  }
-                },
-                "relationships": [
-                  {
-                    "target": {
-                      "id": "JavaScript and TypeScript/General",
-                      "index": 12,
-                      "toolComponent": {
-                        "name": "QDPY"
-                      }
-                    },
-                    "kinds": [
-                      "superset"
-                    ]
-                  }
-                ]
-              },
-              {
                 "id": "PointlessBooleanExpressionJS",
                 "shortDescription": {
                   "text": "Pointless statement or boolean expression"
@@ -2280,6 +2247,39 @@
                     "target": {
                       "id": "JavaScript and TypeScript/Control flow issues",
                       "index": 1,
+                      "toolComponent": {
+                        "name": "QDPY"
+                      }
+                    },
+                    "kinds": [
+                      "superset"
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "JSReferencingMutableVariableFromClosure",
+                "shortDescription": {
+                  "text": "Referencing mutable variable from closure"
+                },
+                "fullDescription": {
+                  "text": "Reports access to outer mutable variables from functions. Example: 'for (var i = 1; i <= 3; i++) {\n    setTimeout(function() {\n        console.log(i); // bad\n    }, 0);\n  }'",
+                  "markdown": "Reports access to outer mutable variables from functions.\n\nExample:\n\n\n      for (var i = 1; i <= 3; i++) {\n        setTimeout(function() {\n            console.log(i); // bad\n        }, 0);\n      }\n"
+                },
+                "defaultConfiguration": {
+                  "enabled": false,
+                  "level": "warning",
+                  "parameters": {
+                    "suppressToolId": "JSReferencingMutableVariableFromClosure",
+                    "ideaSeverity": "WARNING",
+                    "qodanaSeverity": "High"
+                  }
+                },
+                "relationships": [
+                  {
+                    "target": {
+                      "id": "JavaScript and TypeScript/General",
+                      "index": 12,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -2654,39 +2654,6 @@
                 ]
               },
               {
-                "id": "NpmUsedModulesInstalled",
-                "shortDescription": {
-                  "text": "Missing module dependency"
-                },
-                "fullDescription": {
-                  "text": "Reports a module from a 'require()' call or an 'import' statement that is not installed or is not listed in package.json dependencies. Suggests installing the module and/or including it into package.json. For 'require()' calls, works only in the files from the scope of Node.js Core JavaScript library.",
-                  "markdown": "Reports a module from a `require()` call or an `import` statement that is not installed or is not listed in package.json dependencies.\n\nSuggests installing the module and/or including it into package.json.\n\nFor `require()` calls, works only in the files from the scope of *Node.js Core* JavaScript library."
-                },
-                "defaultConfiguration": {
-                  "enabled": false,
-                  "level": "note",
-                  "parameters": {
-                    "suppressToolId": "NpmUsedModulesInstalled",
-                    "ideaSeverity": "WEAK WARNING",
-                    "qodanaSeverity": "Moderate"
-                  }
-                },
-                "relationships": [
-                  {
-                    "target": {
-                      "id": "JavaScript and TypeScript/Imports and dependencies",
-                      "index": 47,
-                      "toolComponent": {
-                        "name": "QDPY"
-                      }
-                    },
-                    "kinds": [
-                      "superset"
-                    ]
-                  }
-                ]
-              },
-              {
                 "id": "UnusedCatchParameterJS",
                 "shortDescription": {
                   "text": "Unused 'catch' parameter"
@@ -2709,6 +2676,39 @@
                     "target": {
                       "id": "JavaScript and TypeScript/Try statement issues",
                       "index": 33,
+                      "toolComponent": {
+                        "name": "QDPY"
+                      }
+                    },
+                    "kinds": [
+                      "superset"
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "NpmUsedModulesInstalled",
+                "shortDescription": {
+                  "text": "Missing module dependency"
+                },
+                "fullDescription": {
+                  "text": "Reports a module from a 'require()' call or an 'import' statement that is not installed or is not listed in package.json dependencies. Suggests installing the module and/or including it into package.json. For 'require()' calls, works only in the files from the scope of Node.js Core JavaScript library.",
+                  "markdown": "Reports a module from a `require()` call or an `import` statement that is not installed or is not listed in package.json dependencies.\n\nSuggests installing the module and/or including it into package.json.\n\nFor `require()` calls, works only in the files from the scope of *Node.js Core* JavaScript library."
+                },
+                "defaultConfiguration": {
+                  "enabled": false,
+                  "level": "note",
+                  "parameters": {
+                    "suppressToolId": "NpmUsedModulesInstalled",
+                    "ideaSeverity": "WEAK WARNING",
+                    "qodanaSeverity": "Moderate"
+                  }
+                },
+                "relationships": [
+                  {
+                    "target": {
+                      "id": "JavaScript and TypeScript/Imports and dependencies",
+                      "index": 47,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -3281,39 +3281,6 @@
                 ]
               },
               {
-                "id": "NestedConditionalExpressionJS",
-                "shortDescription": {
-                  "text": "Nested conditional expression"
-                },
-                "fullDescription": {
-                  "text": "Reports a ternary conditional expression within another ternary condition. Such nested conditionals may be extremely confusing, and best replaced by more explicit conditional logic.",
-                  "markdown": "Reports a ternary conditional expression within another ternary condition. Such nested conditionals may be extremely confusing, and best replaced by more explicit conditional logic."
-                },
-                "defaultConfiguration": {
-                  "enabled": false,
-                  "level": "warning",
-                  "parameters": {
-                    "suppressToolId": "NestedConditionalExpressionJS",
-                    "ideaSeverity": "WARNING",
-                    "qodanaSeverity": "High"
-                  }
-                },
-                "relationships": [
-                  {
-                    "target": {
-                      "id": "JavaScript and TypeScript/Potentially confusing code constructs",
-                      "index": 29,
-                      "toolComponent": {
-                        "name": "QDPY"
-                      }
-                    },
-                    "kinds": [
-                      "superset"
-                    ]
-                  }
-                ]
-              },
-              {
                 "id": "JSTypeOfValues",
                 "shortDescription": {
                   "text": "'typeof' comparison with non-standard value"
@@ -3336,6 +3303,39 @@
                     "target": {
                       "id": "JavaScript and TypeScript/Probable bugs",
                       "index": 17,
+                      "toolComponent": {
+                        "name": "QDPY"
+                      }
+                    },
+                    "kinds": [
+                      "superset"
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "NestedConditionalExpressionJS",
+                "shortDescription": {
+                  "text": "Nested conditional expression"
+                },
+                "fullDescription": {
+                  "text": "Reports a ternary conditional expression within another ternary condition. Such nested conditionals may be extremely confusing, and best replaced by more explicit conditional logic.",
+                  "markdown": "Reports a ternary conditional expression within another ternary condition. Such nested conditionals may be extremely confusing, and best replaced by more explicit conditional logic."
+                },
+                "defaultConfiguration": {
+                  "enabled": false,
+                  "level": "warning",
+                  "parameters": {
+                    "suppressToolId": "NestedConditionalExpressionJS",
+                    "ideaSeverity": "WARNING",
+                    "qodanaSeverity": "High"
+                  }
+                },
+                "relationships": [
+                  {
+                    "target": {
+                      "id": "JavaScript and TypeScript/Potentially confusing code constructs",
+                      "index": 29,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -4304,39 +4304,6 @@
                 ]
               },
               {
-                "id": "EmptyTryBlockJS",
-                "shortDescription": {
-                  "text": "Empty 'try' block"
-                },
-                "fullDescription": {
-                  "text": "Reports an empty 'try' block, which usually indicates an error.",
-                  "markdown": "Reports an empty `try` block, which usually indicates an error."
-                },
-                "defaultConfiguration": {
-                  "enabled": false,
-                  "level": "warning",
-                  "parameters": {
-                    "suppressToolId": "EmptyTryBlockJS",
-                    "ideaSeverity": "WARNING",
-                    "qodanaSeverity": "High"
-                  }
-                },
-                "relationships": [
-                  {
-                    "target": {
-                      "id": "JavaScript and TypeScript/Try statement issues",
-                      "index": 33,
-                      "toolComponent": {
-                        "name": "QDPY"
-                      }
-                    },
-                    "kinds": [
-                      "superset"
-                    ]
-                  }
-                ]
-              },
-              {
                 "id": "ES6ClassMemberInitializationOrder",
                 "shortDescription": {
                   "text": "Use of possibly unassigned property in a static initializer"
@@ -4359,6 +4326,39 @@
                     "target": {
                       "id": "JavaScript and TypeScript/General",
                       "index": 12,
+                      "toolComponent": {
+                        "name": "QDPY"
+                      }
+                    },
+                    "kinds": [
+                      "superset"
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "EmptyTryBlockJS",
+                "shortDescription": {
+                  "text": "Empty 'try' block"
+                },
+                "fullDescription": {
+                  "text": "Reports an empty 'try' block, which usually indicates an error.",
+                  "markdown": "Reports an empty `try` block, which usually indicates an error."
+                },
+                "defaultConfiguration": {
+                  "enabled": false,
+                  "level": "warning",
+                  "parameters": {
+                    "suppressToolId": "EmptyTryBlockJS",
+                    "ideaSeverity": "WARNING",
+                    "qodanaSeverity": "High"
+                  }
+                },
+                "relationships": [
+                  {
+                    "target": {
+                      "id": "JavaScript and TypeScript/Try statement issues",
+                      "index": 33,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -4964,39 +4964,6 @@
                 ]
               },
               {
-                "id": "JSUnfilteredForInLoop",
-                "shortDescription": {
-                  "text": "Unfiltered for..in loop"
-                },
-                "fullDescription": {
-                  "text": "Reports unfiltered 'for-in' loops. The use of this construct results in processing not only own properties of an object but properties from its prototype as well. It may be unexpected in some specific cases, for example, in utility methods that copy or modify all properties or when 'Object''s prototype may be incorrectly modified. For example, the following code will print 42 and myMethod: 'Object.prototype.myMethod = function myMethod() {};\nlet a = { foo: 42 };\nfor (let i in a) {\n  console.log(a[i]);\n}' Suggests replacing the whole loop with a 'Object.keys()' method or adding a 'hasOwnProperty()' check. After applying the quick-fix the code looks as follows: 'for (let i in a) {\n  if (a.hasOwnProperty(i)) {\n    console.log(a[i]);\n  }\n}'",
-                  "markdown": "Reports unfiltered `for-in` loops.   \n\nThe use of this construct results in processing not only own properties of an object but properties from its prototype as well. It may be unexpected in some specific cases, for example, in utility methods that copy or modify all properties or when `Object`'s prototype may be incorrectly modified. For example, the following code will print **42** and **myMethod** :   \n\n\n    Object.prototype.myMethod = function myMethod() {};\n    let a = { foo: 42 };\n    for (let i in a) {\n      console.log(a[i]);\n    }\n\nSuggests replacing the whole loop with a `Object.keys()` method or adding a `hasOwnProperty()` check. After applying the quick-fix the code looks as follows:\n\n\n    for (let i in a) {\n      if (a.hasOwnProperty(i)) {\n        console.log(a[i]);\n      }\n    }\n"
-                },
-                "defaultConfiguration": {
-                  "enabled": false,
-                  "level": "warning",
-                  "parameters": {
-                    "suppressToolId": "JSUnfilteredForInLoop",
-                    "ideaSeverity": "WARNING",
-                    "qodanaSeverity": "High"
-                  }
-                },
-                "relationships": [
-                  {
-                    "target": {
-                      "id": "JavaScript and TypeScript/General",
-                      "index": 12,
-                      "toolComponent": {
-                        "name": "QDPY"
-                      }
-                    },
-                    "kinds": [
-                      "superset"
-                    ]
-                  }
-                ]
-              },
-              {
                 "id": "JSIncompatibleTypesComparison",
                 "shortDescription": {
                   "text": "Comparison of expressions having incompatible types"
@@ -5019,6 +4986,39 @@
                     "target": {
                       "id": "JavaScript and TypeScript/Probable bugs",
                       "index": 17,
+                      "toolComponent": {
+                        "name": "QDPY"
+                      }
+                    },
+                    "kinds": [
+                      "superset"
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "JSUnfilteredForInLoop",
+                "shortDescription": {
+                  "text": "Unfiltered for..in loop"
+                },
+                "fullDescription": {
+                  "text": "Reports unfiltered 'for-in' loops. The use of this construct results in processing not only own properties of an object but properties from its prototype as well. It may be unexpected in some specific cases, for example, in utility methods that copy or modify all properties or when 'Object''s prototype may be incorrectly modified. For example, the following code will print 42 and myMethod: 'Object.prototype.myMethod = function myMethod() {};\nlet a = { foo: 42 };\nfor (let i in a) {\n  console.log(a[i]);\n}' Suggests replacing the whole loop with a 'Object.keys()' method or adding a 'hasOwnProperty()' check. After applying the quick-fix the code looks as follows: 'for (let i in a) {\n  if (a.hasOwnProperty(i)) {\n    console.log(a[i]);\n  }\n}'",
+                  "markdown": "Reports unfiltered `for-in` loops.   \n\nThe use of this construct results in processing not only own properties of an object but properties from its prototype as well. It may be unexpected in some specific cases, for example, in utility methods that copy or modify all properties or when `Object`'s prototype may be incorrectly modified. For example, the following code will print **42** and **myMethod** :   \n\n\n    Object.prototype.myMethod = function myMethod() {};\n    let a = { foo: 42 };\n    for (let i in a) {\n      console.log(a[i]);\n    }\n\nSuggests replacing the whole loop with a `Object.keys()` method or adding a `hasOwnProperty()` check. After applying the quick-fix the code looks as follows:\n\n\n    for (let i in a) {\n      if (a.hasOwnProperty(i)) {\n        console.log(a[i]);\n      }\n    }\n"
+                },
+                "defaultConfiguration": {
+                  "enabled": false,
+                  "level": "warning",
+                  "parameters": {
+                    "suppressToolId": "JSUnfilteredForInLoop",
+                    "ideaSeverity": "WARNING",
+                    "qodanaSeverity": "High"
+                  }
+                },
+                "relationships": [
+                  {
+                    "target": {
+                      "id": "JavaScript and TypeScript/General",
+                      "index": 12,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -6383,39 +6383,6 @@
                 ]
               },
               {
-                "id": "ConstantOnLHSOfComparisonJS",
-                "shortDescription": {
-                  "text": "Constant on left side of comparison"
-                },
-                "fullDescription": {
-                  "text": "Reports a comparison operation with a constant value in the left-hand side. According to coding conventions, constants should be in the right-hand side of comparisons.",
-                  "markdown": "Reports a comparison operation with a constant value in the left-hand side. According to coding conventions, constants should be in the right-hand side of comparisons."
-                },
-                "defaultConfiguration": {
-                  "enabled": false,
-                  "level": "warning",
-                  "parameters": {
-                    "suppressToolId": "ConstantOnLefSideOfComparisonJS",
-                    "ideaSeverity": "WARNING",
-                    "qodanaSeverity": "High"
-                  }
-                },
-                "relationships": [
-                  {
-                    "target": {
-                      "id": "JavaScript and TypeScript/Code style issues",
-                      "index": 11,
-                      "toolComponent": {
-                        "name": "QDPY"
-                      }
-                    },
-                    "kinds": [
-                      "superset"
-                    ]
-                  }
-                ]
-              },
-              {
                 "id": "JSCheckFunctionSignatures",
                 "shortDescription": {
                   "text": "Signature mismatch"
@@ -6438,6 +6405,39 @@
                     "target": {
                       "id": "JavaScript and TypeScript/General",
                       "index": 12,
+                      "toolComponent": {
+                        "name": "QDPY"
+                      }
+                    },
+                    "kinds": [
+                      "superset"
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "ConstantOnLHSOfComparisonJS",
+                "shortDescription": {
+                  "text": "Constant on left side of comparison"
+                },
+                "fullDescription": {
+                  "text": "Reports a comparison operation with a constant value in the left-hand side. According to coding conventions, constants should be in the right-hand side of comparisons.",
+                  "markdown": "Reports a comparison operation with a constant value in the left-hand side. According to coding conventions, constants should be in the right-hand side of comparisons."
+                },
+                "defaultConfiguration": {
+                  "enabled": false,
+                  "level": "warning",
+                  "parameters": {
+                    "suppressToolId": "ConstantOnLefSideOfComparisonJS",
+                    "ideaSeverity": "WARNING",
+                    "qodanaSeverity": "High"
+                  }
+                },
+                "relationships": [
+                  {
+                    "target": {
+                      "id": "JavaScript and TypeScript/Code style issues",
+                      "index": 11,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -7241,6 +7241,39 @@
                 ]
               },
               {
+                "id": "JSMissingSwitchBranches",
+                "shortDescription": {
+                  "text": "'switch' statement has missing branches"
+                },
+                "fullDescription": {
+                  "text": "Reports a 'switch' statement on a variable of the type 'enum' or 'union' when the statement doesn't cover some value options from the type.",
+                  "markdown": "Reports a `switch` statement on a variable of the type `enum` or `union` when the statement doesn't cover some value options from the type."
+                },
+                "defaultConfiguration": {
+                  "enabled": false,
+                  "level": "note",
+                  "parameters": {
+                    "suppressToolId": "JSMissingSwitchBranches",
+                    "ideaSeverity": "INFORMATION",
+                    "qodanaSeverity": "Info"
+                  }
+                },
+                "relationships": [
+                  {
+                    "target": {
+                      "id": "JavaScript and TypeScript/Switch statement issues",
+                      "index": 51,
+                      "toolComponent": {
+                        "name": "QDPY"
+                      }
+                    },
+                    "kinds": [
+                      "superset"
+                    ]
+                  }
+                ]
+              },
+              {
                 "id": "ES6UnusedImports",
                 "shortDescription": {
                   "text": "Unused import"
@@ -7296,39 +7329,6 @@
                     "target": {
                       "id": "JavaScript and TypeScript/DOM issues",
                       "index": 52,
-                      "toolComponent": {
-                        "name": "QDPY"
-                      }
-                    },
-                    "kinds": [
-                      "superset"
-                    ]
-                  }
-                ]
-              },
-              {
-                "id": "JSMissingSwitchBranches",
-                "shortDescription": {
-                  "text": "'switch' statement has missing branches"
-                },
-                "fullDescription": {
-                  "text": "Reports a 'switch' statement on a variable of the type 'enum' or 'union' when the statement doesn't cover some value options from the type.",
-                  "markdown": "Reports a `switch` statement on a variable of the type `enum` or `union` when the statement doesn't cover some value options from the type."
-                },
-                "defaultConfiguration": {
-                  "enabled": false,
-                  "level": "note",
-                  "parameters": {
-                    "suppressToolId": "JSMissingSwitchBranches",
-                    "ideaSeverity": "INFORMATION",
-                    "qodanaSeverity": "Info"
-                  }
-                },
-                "relationships": [
-                  {
-                    "target": {
-                      "id": "JavaScript and TypeScript/Switch statement issues",
-                      "index": 51,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -7637,39 +7637,6 @@
                 ]
               },
               {
-                "id": "JSUnusedLocalSymbols",
-                "shortDescription": {
-                  "text": "Unused local symbol"
-                },
-                "fullDescription": {
-                  "text": "Reports an unused locally accessible parameter, local variable, function, class, or private member declaration.",
-                  "markdown": "Reports an unused locally accessible parameter, local variable, function, class, or private member declaration."
-                },
-                "defaultConfiguration": {
-                  "enabled": false,
-                  "level": "warning",
-                  "parameters": {
-                    "suppressToolId": "JSUnusedLocalSymbols",
-                    "ideaSeverity": "WARNING",
-                    "qodanaSeverity": "High"
-                  }
-                },
-                "relationships": [
-                  {
-                    "target": {
-                      "id": "JavaScript and TypeScript/Unused symbols",
-                      "index": 19,
-                      "toolComponent": {
-                        "name": "QDPY"
-                      }
-                    },
-                    "kinds": [
-                      "superset"
-                    ]
-                  }
-                ]
-              },
-              {
                 "id": "ReturnFromFinallyBlockJS",
                 "shortDescription": {
                   "text": "'return' inside 'finally' block"
@@ -7692,6 +7659,39 @@
                     "target": {
                       "id": "JavaScript and TypeScript/Try statement issues",
                       "index": 33,
+                      "toolComponent": {
+                        "name": "QDPY"
+                      }
+                    },
+                    "kinds": [
+                      "superset"
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "JSUnusedLocalSymbols",
+                "shortDescription": {
+                  "text": "Unused local symbol"
+                },
+                "fullDescription": {
+                  "text": "Reports an unused locally accessible parameter, local variable, function, class, or private member declaration.",
+                  "markdown": "Reports an unused locally accessible parameter, local variable, function, class, or private member declaration."
+                },
+                "defaultConfiguration": {
+                  "enabled": false,
+                  "level": "warning",
+                  "parameters": {
+                    "suppressToolId": "JSUnusedLocalSymbols",
+                    "ideaSeverity": "WARNING",
+                    "qodanaSeverity": "High"
+                  }
+                },
+                "relationships": [
+                  {
+                    "target": {
+                      "id": "JavaScript and TypeScript/Unused symbols",
+                      "index": 19,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -10025,21 +10025,21 @@
                 ]
               },
               {
-                "id": "CommandLineInspection",
+                "id": "PyComparisonWithNoneInspection",
                 "shortDescription": {
-                  "text": "Incorrect CLI syntax"
+                  "text": "Using equality operators to compare with None"
                 },
                 "fullDescription": {
-                  "text": "Reports the problems if the arguments of the command you type in the console are not in the proper order. The inspection also verifies that option names and arguments are correct. Do not disable the inspection if you are going to use command-line interfaces like manage.py in Django.",
-                  "markdown": "Reports the problems if the arguments of the command you type in the console are not in the proper order. The inspection also verifies\nthat option names and arguments are correct.\n\nDo not disable the inspection if you are going to use command-line interfaces like [manage.py in Django](https://www.jetbrains.com/help/pycharm/running-manage-py.html)."
+                  "text": "Reports comparisons with 'None'. That type of comparisons should always be done with 'is' or 'is not', never the equality operators. Example: 'a = 2\n\n\nif a == None:\n    print(\"Success\")' Once the quick-fix is applied, the code changes to: 'a = 2\n\n\nif a is None:\n    print(\"Success\")'",
+                  "markdown": "Reports comparisons with `None`. That type of comparisons\nshould always be done with `is` or `is not`, never\nthe equality operators.\n\n**Example:**\n\n\n    a = 2\n\n\n    if a == None:\n        print(\"Success\")\n\nOnce the quick-fix is applied, the code changes to:\n\n\n    a = 2\n\n\n    if a is None:\n        print(\"Success\")\n"
                 },
                 "defaultConfiguration": {
                   "enabled": true,
-                  "level": "warning",
+                  "level": "note",
                   "parameters": {
-                    "suppressToolId": "CommandLineInspection",
-                    "ideaSeverity": "WARNING",
-                    "qodanaSeverity": "High"
+                    "suppressToolId": "PyComparisonWithNone",
+                    "ideaSeverity": "WEAK WARNING",
+                    "qodanaSeverity": "Moderate"
                   }
                 },
                 "relationships": [
@@ -10058,21 +10058,21 @@
                 ]
               },
               {
-                "id": "PyComparisonWithNoneInspection",
+                "id": "CommandLineInspection",
                 "shortDescription": {
-                  "text": "Using equality operators to compare with None"
+                  "text": "Incorrect CLI syntax"
                 },
                 "fullDescription": {
-                  "text": "Reports comparisons with 'None'. That type of comparisons should always be done with 'is' or 'is not', never the equality operators. Example: 'a = 2\n\n\nif a == None:\n    print(\"Success\")' Once the quick-fix is applied, the code changes to: 'a = 2\n\n\nif a is None:\n    print(\"Success\")'",
-                  "markdown": "Reports comparisons with `None`. That type of comparisons\nshould always be done with `is` or `is not`, never\nthe equality operators.\n\n**Example:**\n\n\n    a = 2\n\n\n    if a == None:\n        print(\"Success\")\n\nOnce the quick-fix is applied, the code changes to:\n\n\n    a = 2\n\n\n    if a is None:\n        print(\"Success\")\n"
+                  "text": "Reports the problems if the arguments of the command you type in the console are not in the proper order. The inspection also verifies that option names and arguments are correct. Do not disable the inspection if you are going to use command-line interfaces like manage.py in Django.",
+                  "markdown": "Reports the problems if the arguments of the command you type in the console are not in the proper order. The inspection also verifies\nthat option names and arguments are correct.\n\nDo not disable the inspection if you are going to use command-line interfaces like [manage.py in Django](https://www.jetbrains.com/help/pycharm/running-manage-py.html)."
                 },
                 "defaultConfiguration": {
                   "enabled": true,
-                  "level": "note",
+                  "level": "warning",
                   "parameters": {
-                    "suppressToolId": "PyComparisonWithNone",
-                    "ideaSeverity": "WEAK WARNING",
-                    "qodanaSeverity": "Moderate"
+                    "suppressToolId": "CommandLineInspection",
+                    "ideaSeverity": "WARNING",
+                    "qodanaSeverity": "High"
                   }
                 },
                 "relationships": [
@@ -10520,21 +10520,21 @@
                 ]
               },
               {
-                "id": "PyTrailingSemicolonInspection",
+                "id": "PyRedundantParenthesesInspection",
                 "shortDescription": {
-                  "text": "Prohibited trailing semicolon in a statement"
+                  "text": "Redundant parentheses"
                 },
                 "fullDescription": {
-                  "text": "Reports trailing semicolons in statements. Example: 'def my_func(a):\n    c = a ** 2;\n    return c' IDE provides a quick-fix that removes a trailing semicolon. When you apply it, the code changes to: 'def my_func(a):\n    c = a ** 2\n    return c'",
-                  "markdown": "Reports trailing semicolons in statements.\n\n**Example:**\n\n\n    def my_func(a):\n        c = a ** 2;\n        return c\n\nIDE provides a quick-fix that removes a trailing semicolon. When you\napply it, the code changes to:\n\n\n    def my_func(a):\n        c = a ** 2\n        return c\n"
+                  "text": "Reports about redundant parentheses in expressions. The IDE provides the quick-fix action to remove the redundant parentheses.",
+                  "markdown": "Reports about redundant parentheses in expressions.\n\nThe IDE provides the quick-fix action to remove the redundant parentheses."
                 },
                 "defaultConfiguration": {
                   "enabled": true,
-                  "level": "warning",
+                  "level": "note",
                   "parameters": {
-                    "suppressToolId": "PyTrailingSemicolon",
-                    "ideaSeverity": "WARNING",
-                    "qodanaSeverity": "High"
+                    "suppressToolId": "PyRedundantParentheses",
+                    "ideaSeverity": "WEAK WARNING",
+                    "qodanaSeverity": "Moderate"
                   }
                 },
                 "relationships": [
@@ -10553,21 +10553,21 @@
                 ]
               },
               {
-                "id": "PyRedundantParenthesesInspection",
+                "id": "PyTrailingSemicolonInspection",
                 "shortDescription": {
-                  "text": "Redundant parentheses"
+                  "text": "Prohibited trailing semicolon in a statement"
                 },
                 "fullDescription": {
-                  "text": "Reports about redundant parentheses in expressions. The IDE provides the quick-fix action to remove the redundant parentheses.",
-                  "markdown": "Reports about redundant parentheses in expressions.\n\nThe IDE provides the quick-fix action to remove the redundant parentheses."
+                  "text": "Reports trailing semicolons in statements. Example: 'def my_func(a):\n    c = a ** 2;\n    return c' IDE provides a quick-fix that removes a trailing semicolon. When you apply it, the code changes to: 'def my_func(a):\n    c = a ** 2\n    return c'",
+                  "markdown": "Reports trailing semicolons in statements.\n\n**Example:**\n\n\n    def my_func(a):\n        c = a ** 2;\n        return c\n\nIDE provides a quick-fix that removes a trailing semicolon. When you\napply it, the code changes to:\n\n\n    def my_func(a):\n        c = a ** 2\n        return c\n"
                 },
                 "defaultConfiguration": {
                   "enabled": true,
-                  "level": "note",
+                  "level": "warning",
                   "parameters": {
-                    "suppressToolId": "PyRedundantParentheses",
-                    "ideaSeverity": "WEAK WARNING",
-                    "qodanaSeverity": "Moderate"
+                    "suppressToolId": "PyTrailingSemicolon",
+                    "ideaSeverity": "WARNING",
+                    "qodanaSeverity": "High"
                   }
                 },
                 "relationships": [
@@ -11180,19 +11180,19 @@
                 ]
               },
               {
-                "id": "PyClassicStyleClassInspection",
+                "id": "PyprojectInspection",
                 "shortDescription": {
-                  "text": "Classic style class usage"
+                  "text": "Depencencies in pyproject.toml"
                 },
                 "fullDescription": {
-                  "text": "Reports classic style classes usage. This inspection applies only to Python 2. Example: 'class A:\n    pass' With quick-fixes provided by the IDE, this code fragment changes to: 'class A(object):\n    def __init__(self):\n        pass'",
-                  "markdown": "Reports [classic style classes](https://docs.python.org/2/reference/datamodel.html#new-style-and-classic-classes) usage. This inspection applies only to Python 2.\n\n**Example:**\n\n\n    class A:\n        pass\n\nWith quick-fixes provided by the IDE, this code fragment changes to:\n\n\n    class A(object):\n        def __init__(self):\n            pass\n"
+                  "text": "Reports unsatisfied dependencies, declared [project.dependencies] table in pyproject.toml. Shows a quick-fix to install missing packages.",
+                  "markdown": "Reports unsatisfied dependencies, declared \\[project.dependencies\\] table in pyproject.toml.\n\n\nShows a quick-fix to install missing packages."
                 },
                 "defaultConfiguration": {
-                  "enabled": false,
+                  "enabled": true,
                   "level": "warning",
                   "parameters": {
-                    "suppressToolId": "PyClassicStyleClass",
+                    "suppressToolId": "PyprojectInspection",
                     "ideaSeverity": "WARNING",
                     "qodanaSeverity": "High"
                   }
@@ -11213,19 +11213,19 @@
                 ]
               },
               {
-                "id": "PyprojectInspection",
+                "id": "PyClassicStyleClassInspection",
                 "shortDescription": {
-                  "text": "Depencencies in pyproject.toml"
+                  "text": "Classic style class usage"
                 },
                 "fullDescription": {
-                  "text": "Reports unsatisfied dependencies, declared [project.dependencies] table in pyproject.toml. Shows a quick-fix to install missing packages.",
-                  "markdown": "Reports unsatisfied dependencies, declared \\[project.dependencies\\] table in pyproject.toml.\n\n\nShows a quick-fix to install missing packages."
+                  "text": "Reports classic style classes usage. This inspection applies only to Python 2. Example: 'class A:\n    pass' With quick-fixes provided by the IDE, this code fragment changes to: 'class A(object):\n    def __init__(self):\n        pass'",
+                  "markdown": "Reports [classic style classes](https://docs.python.org/2/reference/datamodel.html#new-style-and-classic-classes) usage. This inspection applies only to Python 2.\n\n**Example:**\n\n\n    class A:\n        pass\n\nWith quick-fixes provided by the IDE, this code fragment changes to:\n\n\n    class A(object):\n        def __init__(self):\n            pass\n"
                 },
                 "defaultConfiguration": {
-                  "enabled": true,
+                  "enabled": false,
                   "level": "warning",
                   "parameters": {
-                    "suppressToolId": "PyprojectInspection",
+                    "suppressToolId": "PyClassicStyleClass",
                     "ideaSeverity": "WARNING",
                     "qodanaSeverity": "High"
                   }
@@ -14651,19 +14651,19 @@
                 ]
               },
               {
-                "id": "RegExpRepeatedSpace",
+                "id": "RegExpDuplicateAlternationBranch",
                 "shortDescription": {
-                  "text": "Consecutive spaces"
+                  "text": "Duplicate branch in alternation"
                 },
                 "fullDescription": {
-                  "text": "Reports multiple consecutive spaces in a RegExp. Because spaces are not visible by default, it can be hard to see how many spaces are required. The RegExp can be made more clear by replacing the consecutive spaces with a single space and a counted quantifier. Example: '(     )' After the quick-fix is applied: '( {5})' New in 2017.1",
-                  "markdown": "Reports multiple consecutive spaces in a RegExp. Because spaces are not visible by default, it can be hard to see how many spaces are required. The RegExp can be made more clear by replacing the consecutive spaces with a single space and a counted quantifier.\n\n**Example:**\n\n\n      (     )\n\nAfter the quick-fix is applied:\n\n\n      ( {5})\n\n\nNew in 2017.1"
+                  "text": "Reports duplicate branches in a RegExp alternation. Duplicate branches slow down matching and obscure the intent of the expression. Example: '(alpha|bravo|charlie|alpha)' After the quick-fix is applied: '(alpha|bravo|charlie)' New in 2017.1",
+                  "markdown": "Reports duplicate branches in a RegExp alternation. Duplicate branches slow down matching and obscure the intent of the expression.\n\n**Example:**\n\n\n      (alpha|bravo|charlie|alpha)\n\nAfter the quick-fix is applied:\n\n\n      (alpha|bravo|charlie)\n\nNew in 2017.1"
                 },
                 "defaultConfiguration": {
                   "enabled": true,
                   "level": "warning",
                   "parameters": {
-                    "suppressToolId": "RegExpRepeatedSpace",
+                    "suppressToolId": "RegExpDuplicateAlternationBranch",
                     "ideaSeverity": "WARNING",
                     "qodanaSeverity": "High"
                   }
@@ -14684,19 +14684,19 @@
                 ]
               },
               {
-                "id": "RegExpDuplicateAlternationBranch",
+                "id": "RegExpRepeatedSpace",
                 "shortDescription": {
-                  "text": "Duplicate branch in alternation"
+                  "text": "Consecutive spaces"
                 },
                 "fullDescription": {
-                  "text": "Reports duplicate branches in a RegExp alternation. Duplicate branches slow down matching and obscure the intent of the expression. Example: '(alpha|bravo|charlie|alpha)' After the quick-fix is applied: '(alpha|bravo|charlie)' New in 2017.1",
-                  "markdown": "Reports duplicate branches in a RegExp alternation. Duplicate branches slow down matching and obscure the intent of the expression.\n\n**Example:**\n\n\n      (alpha|bravo|charlie|alpha)\n\nAfter the quick-fix is applied:\n\n\n      (alpha|bravo|charlie)\n\nNew in 2017.1"
+                  "text": "Reports multiple consecutive spaces in a RegExp. Because spaces are not visible by default, it can be hard to see how many spaces are required. The RegExp can be made more clear by replacing the consecutive spaces with a single space and a counted quantifier. Example: '(     )' After the quick-fix is applied: '( {5})' New in 2017.1",
+                  "markdown": "Reports multiple consecutive spaces in a RegExp. Because spaces are not visible by default, it can be hard to see how many spaces are required. The RegExp can be made more clear by replacing the consecutive spaces with a single space and a counted quantifier.\n\n**Example:**\n\n\n      (     )\n\nAfter the quick-fix is applied:\n\n\n      ( {5})\n\n\nNew in 2017.1"
                 },
                 "defaultConfiguration": {
                   "enabled": true,
                   "level": "warning",
                   "parameters": {
-                    "suppressToolId": "RegExpDuplicateAlternationBranch",
+                    "suppressToolId": "RegExpRepeatedSpace",
                     "ideaSeverity": "WARNING",
                     "qodanaSeverity": "High"
                   }
@@ -14882,7 +14882,7 @@
                   {
                     "target": {
                       "id": "MySQL",
-                      "index": 13,
+                      "index": 14,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -14948,7 +14948,7 @@
                   {
                     "target": {
                       "id": "MySQL",
-                      "index": 13,
+                      "index": 14,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -15488,6 +15488,39 @@
                 ]
               },
               {
+                "id": "MysqlParsingInspection",
+                "shortDescription": {
+                  "text": "Unsupported syntax in pre-8.0 versions"
+                },
+                "fullDescription": {
+                  "text": "Reports invalid usages of UNION in queries. The inspection works in MySQL versions that are earlier than 8.0. Example (MySQL): 'SELECT * FROM (SELECT 1 UNION (SELECT 1 UNION SELECT 2)) a;'",
+                  "markdown": "Reports invalid usages of UNION in queries.\n\nThe inspection works in MySQL versions that are earlier than 8.0.\n\nExample (MySQL):\n\n\n    SELECT * FROM (SELECT 1 UNION (SELECT 1 UNION SELECT 2)) a;\n"
+                },
+                "defaultConfiguration": {
+                  "enabled": false,
+                  "level": "warning",
+                  "parameters": {
+                    "suppressToolId": "MysqlParsing",
+                    "ideaSeverity": "WARNING",
+                    "qodanaSeverity": "High"
+                  }
+                },
+                "relationships": [
+                  {
+                    "target": {
+                      "id": "MySQL",
+                      "index": 14,
+                      "toolComponent": {
+                        "name": "QDPY"
+                      }
+                    },
+                    "kinds": [
+                      "superset"
+                    ]
+                  }
+                ]
+              },
+              {
                 "id": "SqlCallNotationInspection",
                 "shortDescription": {
                   "text": "Using of named and positional arguments"
@@ -15510,39 +15543,6 @@
                     "target": {
                       "id": "SQL",
                       "index": 32,
-                      "toolComponent": {
-                        "name": "QDPY"
-                      }
-                    },
-                    "kinds": [
-                      "superset"
-                    ]
-                  }
-                ]
-              },
-              {
-                "id": "MysqlParsingInspection",
-                "shortDescription": {
-                  "text": "Unsupported syntax in pre-8.0 versions"
-                },
-                "fullDescription": {
-                  "text": "Reports invalid usages of UNION in queries. The inspection works in MySQL versions that are earlier than 8.0. Example (MySQL): 'SELECT * FROM (SELECT 1 UNION (SELECT 1 UNION SELECT 2)) a;'",
-                  "markdown": "Reports invalid usages of UNION in queries.\n\nThe inspection works in MySQL versions that are earlier than 8.0.\n\nExample (MySQL):\n\n\n    SELECT * FROM (SELECT 1 UNION (SELECT 1 UNION SELECT 2)) a;\n"
-                },
-                "defaultConfiguration": {
-                  "enabled": false,
-                  "level": "warning",
-                  "parameters": {
-                    "suppressToolId": "MysqlParsing",
-                    "ideaSeverity": "WARNING",
-                    "qodanaSeverity": "High"
-                  }
-                },
-                "relationships": [
-                  {
-                    "target": {
-                      "id": "MySQL",
-                      "index": 13,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -15785,19 +15785,19 @@
                 ]
               },
               {
-                "id": "SqlUnusedVariableInspection",
+                "id": "SqlNoDataSourceInspection",
                 "shortDescription": {
-                  "text": "Unused variable"
+                  "text": "No data sources configured"
                 },
                 "fullDescription": {
-                  "text": "Reports unused arguments, variables, or parameters. Example (PostgreSQL): 'CREATE FUNCTION foo(PARAMUSED INT, PARAMUNUSED INT) RETURNS INT AS\n$$\nBEGIN\n    RETURN PARAMUSED;\nEND\n$$ LANGUAGE plpgsql;' The 'PARAMUNUSED' parameter is not used in the function and might be deleted.",
-                  "markdown": "Reports unused arguments, variables, or parameters.\n\nExample (PostgreSQL):\n\n    CREATE FUNCTION foo(PARAMUSED INT, PARAMUNUSED INT) RETURNS INT AS\n    $$\n    BEGIN\n        RETURN PARAMUSED;\n    END\n    $$ LANGUAGE plpgsql;\n\nThe `PARAMUNUSED` parameter is not used in the function and might be deleted."
+                  "text": "Reports the absence of data sources in the Database tool window (View | Tool Windows | Database).",
+                  "markdown": "Reports the absence of data sources in the **Database** tool window (**View \\| Tool Windows \\| Database**)."
                 },
                 "defaultConfiguration": {
                   "enabled": false,
                   "level": "warning",
                   "parameters": {
-                    "suppressToolId": "SqlUnused",
+                    "suppressToolId": "SqlNoDataSourceInspection",
                     "ideaSeverity": "WARNING",
                     "qodanaSeverity": "High"
                   }
@@ -15818,19 +15818,19 @@
                 ]
               },
               {
-                "id": "SqlNoDataSourceInspection",
+                "id": "SqlUnusedVariableInspection",
                 "shortDescription": {
-                  "text": "No data sources configured"
+                  "text": "Unused variable"
                 },
                 "fullDescription": {
-                  "text": "Reports the absence of data sources in the Database tool window (View | Tool Windows | Database).",
-                  "markdown": "Reports the absence of data sources in the **Database** tool window (**View \\| Tool Windows \\| Database**)."
+                  "text": "Reports unused arguments, variables, or parameters. Example (PostgreSQL): 'CREATE FUNCTION foo(PARAMUSED INT, PARAMUNUSED INT) RETURNS INT AS\n$$\nBEGIN\n    RETURN PARAMUSED;\nEND\n$$ LANGUAGE plpgsql;' The 'PARAMUNUSED' parameter is not used in the function and might be deleted.",
+                  "markdown": "Reports unused arguments, variables, or parameters.\n\nExample (PostgreSQL):\n\n    CREATE FUNCTION foo(PARAMUSED INT, PARAMUNUSED INT) RETURNS INT AS\n    $$\n    BEGIN\n        RETURN PARAMUSED;\n    END\n    $$ LANGUAGE plpgsql;\n\nThe `PARAMUNUSED` parameter is not used in the function and might be deleted."
                 },
                 "defaultConfiguration": {
                   "enabled": false,
                   "level": "warning",
                   "parameters": {
-                    "suppressToolId": "SqlNoDataSourceInspection",
+                    "suppressToolId": "SqlUnused",
                     "ideaSeverity": "WARNING",
                     "qodanaSeverity": "High"
                   }
@@ -17072,7 +17072,7 @@
                   {
                     "target": {
                       "id": "Properties files",
-                      "index": 14,
+                      "index": 13,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -17105,7 +17105,7 @@
                   {
                     "target": {
                       "id": "Properties files",
-                      "index": 14,
+                      "index": 13,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -17138,7 +17138,7 @@
                   {
                     "target": {
                       "id": "Properties files",
-                      "index": 14,
+                      "index": 13,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -17171,7 +17171,7 @@
                   {
                     "target": {
                       "id": "Properties files",
-                      "index": 14,
+                      "index": 13,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -17204,7 +17204,7 @@
                   {
                     "target": {
                       "id": "Properties files",
-                      "index": 14,
+                      "index": 13,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -17237,7 +17237,7 @@
                   {
                     "target": {
                       "id": "Properties files",
-                      "index": 14,
+                      "index": 13,
                       "toolComponent": {
                         "name": "QDPY"
                       }
@@ -19783,7 +19783,7 @@
       },
       "invocations": [
         {
-          "startTimeUtc": "2024-04-02T21:07:04.178173155Z",
+          "startTimeUtc": "2024-04-15T01:45:49.029258558Z",
           "exitCode": 0,
           "executionSuccessful": true
         }
@@ -19791,7 +19791,7 @@
       "language": "en-US",
       "versionControlProvenance": [
         {
-          "revisionId": "692f236bda97a636950535020195ea3b98977369",
+          "revisionId": "6439478eaf1150d855425754dbdcd4ce5faaea5b",
           "properties": {
             "repoUrl": "",
             "lastAuthorName": "Russell Toris",
@@ -19801,62 +19801,6 @@
         }
       ],
       "results": [
-        {
-          "ruleId": "CheckDependencyLicenses",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Transitive dependency: 'packaging' ('24.0') licenses cannot be recognized",
-            "markdown": "Transitive dependency: 'packaging' ('24.0') licenses cannot be recognized"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "requirements.txt",
-                  "uriBaseId": "SRCROOT"
-                },
-                "region": {
-                  "startLine": 1,
-                  "startColumn": 2,
-                  "charOffset": 1,
-                  "charLength": 121,
-                  "snippet": {
-                    "text": " video requirements\nopencv-python==4.7.0.68\n\n# test requirements\nblack>=19.10b0\ncoverage>=5.1\nflake8>=3.8.3\npytest>=5.4.3"
-                  },
-                  "sourceLanguage": "Requirements"
-                },
-                "contextRegion": {
-                  "startLine": 1,
-                  "startColumn": 1,
-                  "charOffset": 0,
-                  "charLength": 162,
-                  "snippet": {
-                    "text": "# video requirements\nopencv-python==4.7.0.68\n\n# test requirements\nblack>=19.10b0\ncoverage>=5.1\nflake8>=3.8.3\npytest>=5.4.3\npytest-mock>=3.10.0\npytest-raises>=0.11"
-                  },
-                  "sourceLanguage": "Requirements"
-                }
-              },
-              "logicalLocations": [
-                {
-                  "fullyQualifiedName": "project",
-                  "kind": "module"
-                }
-              ]
-            }
-          ],
-          "partialFingerprints": {
-            "equalIndicator/v1": "8d4913d98f53fc9ddff804023d24f3b38b856d61e6a0b6aed34f3af5130490f6"
-          },
-          "baselineState": "new",
-          "properties": {
-            "ideaSeverity": "WARNING",
-            "qodanaSeverity": "High",
-            "tags": [
-              "Requirements"
-            ]
-          }
-        },
         {
           "ruleId": "PyArgumentListInspection",
           "kind": "fail",
@@ -19875,7 +19819,7 @@
                 "region": {
                   "startLine": 385,
                   "startColumn": 48,
-                  "charOffset": 14356,
+                  "charOffset": 14355,
                   "charLength": 13,
                   "snippet": {
                     "text": "(msg.payload)"
@@ -19885,7 +19829,7 @@
                 "contextRegion": {
                   "startLine": 383,
                   "startColumn": 1,
-                  "charOffset": 14201,
+                  "charOffset": 14200,
                   "charLength": 240,
                   "snippet": {
                     "text": "            subtopic = \"/\".join(msg.topic.split(\"/\")[2:])\n            if subtopic in self.message_handlers:\n                self.message_handlers[subtopic](msg.payload)\n        except UnicodeDecodeError as ex:\n            self.logger.error("
@@ -19902,7 +19846,7 @@
             }
           ],
           "partialFingerprints": {
-            "equalIndicator/v1": "d403f2a4deb025601e61b2b739130da5eb27990e3c742fe569ece0a6d03d7a13"
+            "equalIndicator/v1": "6e715a8f1e9253deccabe45eb7f7095b1fe0bf45266cf415e15504d7bbc46ca4"
           },
           "baselineState": "unchanged",
           "properties": {
@@ -20086,6 +20030,118 @@
           "kind": "fail",
           "level": "warning",
           "message": {
+            "text": "Method 'publish_map' coverage is below the threshold 50%",
+            "markdown": "Method `publish_map` coverage is below the threshold 50%"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/robot.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 508,
+                  "startColumn": 9,
+                  "charOffset": 18791,
+                  "charLength": 11,
+                  "snippet": {
+                    "text": "publish_map"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 508,
+                  "startColumn": 1,
+                  "charOffset": 18783,
+                  "charLength": 20,
+                  "snippet": {
+                    "text": "    def publish_map("
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "03db161f9a60af9a92ec3a6f1054caf3eccaa5db8786c79e48afbf6b84098b8f"
+          },
+          "baselineState": "unchanged",
+          "properties": {
+            "ideaSeverity": "WARNING",
+            "qodanaSeverity": "High",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyCoverageInspection",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Method 'publish_odometry' coverage is below the threshold 50%",
+            "markdown": "Method `publish_odometry` coverage is below the threshold 50%"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/robot.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 963,
+                  "startColumn": 9,
+                  "charOffset": 35927,
+                  "charLength": 16,
+                  "snippet": {
+                    "text": "publish_odometry"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 963,
+                  "startColumn": 1,
+                  "charOffset": 35919,
+                  "charLength": 25,
+                  "snippet": {
+                    "text": "    def publish_odometry("
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "049ef077f60e365fe2e9099be0332f7b6a797c9f0131c3dec71a4f110a050a32"
+          },
+          "baselineState": "unchanged",
+          "properties": {
+            "ideaSeverity": "WARNING",
+            "qodanaSeverity": "High",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyCoverageInspection",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
             "text": "Class 'MissionStepWaitEvent' coverage is below the threshold 50%",
             "markdown": "Class `MissionStepWaitEvent` coverage is below the threshold 50%"
           },
@@ -20127,6 +20183,62 @@
           ],
           "partialFingerprints": {
             "equalIndicator/v1": "05acffcab22349f2623dd318168c7bffa164623afca97da6359ac4f6a845c2a2"
+          },
+          "baselineState": "unchanged",
+          "properties": {
+            "ideaSeverity": "WARNING",
+            "qodanaSeverity": "High",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyCoverageInspection",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Method 'publish_camera_frame' coverage is below the threshold 50%",
+            "markdown": "Method `publish_camera_frame` coverage is below the threshold 50%"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/robot.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 565,
+                  "startColumn": 9,
+                  "charOffset": 20683,
+                  "charLength": 20,
+                  "snippet": {
+                    "text": "publish_camera_frame"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 565,
+                  "startColumn": 1,
+                  "charOffset": 20675,
+                  "charLength": 72,
+                  "snippet": {
+                    "text": "    def publish_camera_frame(self, camera_id, image, width, height, ts):"
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "0f1e8c2042a3c67e456745799f1ed811cc4780e265cd2cec282a37b9320b0dce"
           },
           "baselineState": "unchanged",
           "properties": {
@@ -20198,8 +20310,8 @@
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "Method 'publish_map' coverage is below the threshold 50%",
-            "markdown": "Method `publish_map` coverage is below the threshold 50%"
+            "text": "Method '_on_disconnect' coverage is below the threshold 50%",
+            "markdown": "Method `_on_disconnect` coverage is below the threshold 50%"
           },
           "locations": [
             {
@@ -20209,22 +20321,22 @@
                   "uriBaseId": "SRCROOT"
                 },
                 "region": {
-                  "startLine": 508,
+                  "startLine": 395,
                   "startColumn": 9,
-                  "charOffset": 18792,
-                  "charLength": 11,
+                  "charOffset": 14709,
+                  "charLength": 14,
                   "snippet": {
-                    "text": "publish_map"
+                    "text": "_on_disconnect"
                   },
                   "sourceLanguage": "Python"
                 },
                 "contextRegion": {
-                  "startLine": 508,
+                  "startLine": 395,
                   "startColumn": 1,
-                  "charOffset": 18784,
-                  "charLength": 20,
+                  "charOffset": 14701,
+                  "charLength": 51,
                   "snippet": {
-                    "text": "    def publish_map("
+                    "text": "    def _on_disconnect(self, client, userdata, rc):"
                   },
                   "sourceLanguage": "Python"
                 }
@@ -20238,7 +20350,63 @@
             }
           ],
           "partialFingerprints": {
-            "equalIndicator/v1": "2f03c00eb9af6bd04e53dc7be85122d02e0dc6ecbad0c0df815080cd24ac904e"
+            "equalIndicator/v1": "1ea945d711e8ff75c2893ae9b69f9c89f400df139000b97a79122662a032cbfc"
+          },
+          "baselineState": "unchanged",
+          "properties": {
+            "ideaSeverity": "WARNING",
+            "qodanaSeverity": "High",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyCoverageInspection",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Method 'publish_key_values' coverage is below the threshold 50%",
+            "markdown": "Method `publish_key_values` coverage is below the threshold 50%"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/robot.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 903,
+                  "startColumn": 9,
+                  "charOffset": 33723,
+                  "charLength": 18,
+                  "snippet": {
+                    "text": "publish_key_values"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 903,
+                  "startColumn": 1,
+                  "charOffset": 33715,
+                  "charLength": 79,
+                  "snippet": {
+                    "text": "    def publish_key_values(self, key_values, custom_field=\"0\", is_event=False):"
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "26b4c26a0c9ee4505e22b4b05bf3e1e76c6262f73e1f133b328dcb98806eb100"
           },
           "baselineState": "unchanged",
           "properties": {
@@ -20310,6 +20478,118 @@
           "kind": "fail",
           "level": "warning",
           "message": {
+            "text": "Method 'convert_value' coverage is below the threshold 50%",
+            "markdown": "Method `convert_value` coverage is below the threshold 50%"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/robot.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 912,
+                  "startColumn": 13,
+                  "charOffset": 34074,
+                  "charLength": 13,
+                  "snippet": {
+                    "text": "convert_value"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 912,
+                  "startColumn": 1,
+                  "charOffset": 34062,
+                  "charLength": 33,
+                  "snippet": {
+                    "text": "        def convert_value(value):"
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "504cb7e16fd90e26e380755d426c3baa0bc7bd41e2a32df92d93b64dd03e0a89"
+          },
+          "baselineState": "unchanged",
+          "properties": {
+            "ideaSeverity": "WARNING",
+            "qodanaSeverity": "High",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyCoverageInspection",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Method 'set_pairs' coverage is below the threshold 50%",
+            "markdown": "Method `set_pairs` coverage is below the threshold 50%"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/robot.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 918,
+                  "startColumn": 13,
+                  "charOffset": 34244,
+                  "charLength": 9,
+                  "snippet": {
+                    "text": "set_pairs"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 918,
+                  "startColumn": 1,
+                  "charOffset": 34232,
+                  "charLength": 25,
+                  "snippet": {
+                    "text": "        def set_pairs(k):"
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "5662b4c13fc209ce4a1cea00ea9e0f24833ba7f28e4e74ffbecd9d06b305eec3"
+          },
+          "baselineState": "unchanged",
+          "properties": {
+            "ideaSeverity": "WARNING",
+            "qodanaSeverity": "High",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyCoverageInspection",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
             "text": "Method 'cancel' coverage is below the threshold 50%",
             "markdown": "Method `cancel` coverage is below the threshold 50%"
           },
@@ -20351,6 +20631,62 @@
           ],
           "partialFingerprints": {
             "equalIndicator/v1": "5f11e8b51afb9c540dce3de3d8dcdba27db2322035243dd5050764bf908f2b40"
+          },
+          "baselineState": "unchanged",
+          "properties": {
+            "ideaSeverity": "WARNING",
+            "qodanaSeverity": "High",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyCoverageInspection",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Method '_handle_unload_module' coverage is below the threshold 50%",
+            "markdown": "Method `_handle_unload_module` coverage is below the threshold 50%"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/robot.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 489,
+                  "startColumn": 9,
+                  "charOffset": 18077,
+                  "charLength": 21,
+                  "snippet": {
+                    "text": "_handle_unload_module"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 489,
+                  "startColumn": 1,
+                  "charOffset": 18069,
+                  "charLength": 49,
+                  "snippet": {
+                    "text": "    def _handle_unload_module(self, module_name):"
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "605670dcafba0ac88003265bb1228fa2e1e1d34939522529ecea24aa0b8093bf"
           },
           "baselineState": "unchanged",
           "properties": {
@@ -20534,62 +20870,6 @@
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "Method 'publish_system_stats' coverage is below the threshold 50%",
-            "markdown": "Method `publish_system_stats` coverage is below the threshold 50%"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "inorbit_edge/robot.py",
-                  "uriBaseId": "SRCROOT"
-                },
-                "region": {
-                  "startLine": 936,
-                  "startColumn": 9,
-                  "charOffset": 34809,
-                  "charLength": 20,
-                  "snippet": {
-                    "text": "publish_system_stats"
-                  },
-                  "sourceLanguage": "Python"
-                },
-                "contextRegion": {
-                  "startLine": 936,
-                  "startColumn": 1,
-                  "charOffset": 34801,
-                  "charLength": 29,
-                  "snippet": {
-                    "text": "    def publish_system_stats("
-                  },
-                  "sourceLanguage": "Python"
-                }
-              },
-              "logicalLocations": [
-                {
-                  "fullyQualifiedName": "project",
-                  "kind": "module"
-                }
-              ]
-            }
-          ],
-          "partialFingerprints": {
-            "equalIndicator/v1": "7c1a5518563d0276024cc64dfbdd16465f3cf817e23cd2244aeb03211f699fe3"
-          },
-          "baselineState": "unchanged",
-          "properties": {
-            "ideaSeverity": "WARNING",
-            "qodanaSeverity": "High",
-            "tags": [
-              "Python"
-            ]
-          }
-        },
-        {
-          "ruleId": "PyCoverageInspection",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
             "text": "Method 'handle_event' coverage is below the threshold 50%",
             "markdown": "Method `handle_event` coverage is below the threshold 50%"
           },
@@ -20631,62 +20911,6 @@
           ],
           "partialFingerprints": {
             "equalIndicator/v1": "80e96507842cabc925aab818ff4ad02d5b0d722a2a8dfb4cfba473f324808568"
-          },
-          "baselineState": "unchanged",
-          "properties": {
-            "ideaSeverity": "WARNING",
-            "qodanaSeverity": "High",
-            "tags": [
-              "Python"
-            ]
-          }
-        },
-        {
-          "ruleId": "PyCoverageInspection",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Method '_on_disconnect' coverage is below the threshold 50%",
-            "markdown": "Method `_on_disconnect` coverage is below the threshold 50%"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "inorbit_edge/robot.py",
-                  "uriBaseId": "SRCROOT"
-                },
-                "region": {
-                  "startLine": 395,
-                  "startColumn": 9,
-                  "charOffset": 14710,
-                  "charLength": 14,
-                  "snippet": {
-                    "text": "_on_disconnect"
-                  },
-                  "sourceLanguage": "Python"
-                },
-                "contextRegion": {
-                  "startLine": 395,
-                  "startColumn": 1,
-                  "charOffset": 14702,
-                  "charLength": 51,
-                  "snippet": {
-                    "text": "    def _on_disconnect(self, client, userdata, rc):"
-                  },
-                  "sourceLanguage": "Python"
-                }
-              },
-              "logicalLocations": [
-                {
-                  "fullyQualifiedName": "project",
-                  "kind": "module"
-                }
-              ]
-            }
-          ],
-          "partialFingerprints": {
-            "equalIndicator/v1": "8a946c202dd4a59220e81bf944d14410d3872901027090e49b3ab7cdfc1048df"
           },
           "baselineState": "unchanged",
           "properties": {
@@ -20758,8 +20982,8 @@
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "Method '_handle_unload_module' coverage is below the threshold 50%",
-            "markdown": "Method `_handle_unload_module` coverage is below the threshold 50%"
+            "text": "Method 'publish_system_stats' coverage is below the threshold 50%",
+            "markdown": "Method `publish_system_stats` coverage is below the threshold 50%"
           },
           "locations": [
             {
@@ -20769,22 +20993,22 @@
                   "uriBaseId": "SRCROOT"
                 },
                 "region": {
-                  "startLine": 489,
+                  "startLine": 936,
                   "startColumn": 9,
-                  "charOffset": 18078,
-                  "charLength": 21,
+                  "charOffset": 34808,
+                  "charLength": 20,
                   "snippet": {
-                    "text": "_handle_unload_module"
+                    "text": "publish_system_stats"
                   },
                   "sourceLanguage": "Python"
                 },
                 "contextRegion": {
-                  "startLine": 489,
+                  "startLine": 936,
                   "startColumn": 1,
-                  "charOffset": 18070,
-                  "charLength": 49,
+                  "charOffset": 34800,
+                  "charLength": 29,
                   "snippet": {
-                    "text": "    def _handle_unload_module(self, module_name):"
+                    "text": "    def publish_system_stats("
                   },
                   "sourceLanguage": "Python"
                 }
@@ -20798,7 +21022,7 @@
             }
           ],
           "partialFingerprints": {
-            "equalIndicator/v1": "99dcf4a616de7bb40800e0b94fea8e73ddbc8bf6f21d4352acb9965b4a8e9716"
+            "equalIndicator/v1": "9989ee33408405e1a22ca2711dd0d50bf3b6923baf30434a636b6f283c219a2f"
           },
           "baselineState": "unchanged",
           "properties": {
@@ -20855,62 +21079,6 @@
           ],
           "partialFingerprints": {
             "equalIndicator/v1": "9e36952c0876748412ab1e1725ef7d3e3cc499ff17c2f832ad3b853e4eeb4e0e"
-          },
-          "baselineState": "unchanged",
-          "properties": {
-            "ideaSeverity": "WARNING",
-            "qodanaSeverity": "High",
-            "tags": [
-              "Python"
-            ]
-          }
-        },
-        {
-          "ruleId": "PyCoverageInspection",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Method 'publish_path' coverage is below the threshold 50%",
-            "markdown": "Method `publish_path` coverage is below the threshold 50%"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "inorbit_edge/robot.py",
-                  "uriBaseId": "SRCROOT"
-                },
-                "region": {
-                  "startLine": 1105,
-                  "startColumn": 9,
-                  "charOffset": 41791,
-                  "charLength": 12,
-                  "snippet": {
-                    "text": "publish_path"
-                  },
-                  "sourceLanguage": "Python"
-                },
-                "contextRegion": {
-                  "startLine": 1105,
-                  "startColumn": 1,
-                  "charOffset": 41783,
-                  "charLength": 78,
-                  "snippet": {
-                    "text": "    def publish_path(self, path_points, path_id=\"0\", frame_id=\"map\", ts=None):"
-                  },
-                  "sourceLanguage": "Python"
-                }
-              },
-              "logicalLocations": [
-                {
-                  "fullyQualifiedName": "project",
-                  "kind": "module"
-                }
-              ]
-            }
-          ],
-          "partialFingerprints": {
-            "equalIndicator/v1": "a5b7e436ede221862b8a6008de3a368537c8f5632c03b280d8eb23c7c22b2fe9"
           },
           "baselineState": "unchanged",
           "properties": {
@@ -21038,8 +21206,8 @@
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "Method 'publish_odometry' coverage is below the threshold 50%",
-            "markdown": "Method `publish_odometry` coverage is below the threshold 50%"
+            "text": "Method 'register_lasers' coverage is below the threshold 50%",
+            "markdown": "Method `register_lasers` coverage is below the threshold 50%"
           },
           "locations": [
             {
@@ -21049,22 +21217,22 @@
                   "uriBaseId": "SRCROOT"
                 },
                 "region": {
-                  "startLine": 963,
+                  "startLine": 1070,
                   "startColumn": 9,
-                  "charOffset": 35928,
-                  "charLength": 16,
+                  "charOffset": 40277,
+                  "charLength": 15,
                   "snippet": {
-                    "text": "publish_odometry"
+                    "text": "register_lasers"
                   },
                   "sourceLanguage": "Python"
                 },
                 "contextRegion": {
-                  "startLine": 963,
+                  "startLine": 1070,
                   "startColumn": 1,
-                  "charOffset": 35920,
-                  "charLength": 25,
+                  "charOffset": 40269,
+                  "charLength": 39,
                   "snippet": {
-                    "text": "    def publish_odometry("
+                    "text": "    def register_lasers(self, configs):"
                   },
                   "sourceLanguage": "Python"
                 }
@@ -21078,119 +21246,7 @@
             }
           ],
           "partialFingerprints": {
-            "equalIndicator/v1": "a789b13e6f6bff39bfe0eb92da1ea867ede1bb019756bb10f4b96c1e56fd162c"
-          },
-          "baselineState": "unchanged",
-          "properties": {
-            "ideaSeverity": "WARNING",
-            "qodanaSeverity": "High",
-            "tags": [
-              "Python"
-            ]
-          }
-        },
-        {
-          "ruleId": "PyCoverageInspection",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Method 'set_pairs' coverage is below the threshold 50%",
-            "markdown": "Method `set_pairs` coverage is below the threshold 50%"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "inorbit_edge/robot.py",
-                  "uriBaseId": "SRCROOT"
-                },
-                "region": {
-                  "startLine": 918,
-                  "startColumn": 13,
-                  "charOffset": 34245,
-                  "charLength": 9,
-                  "snippet": {
-                    "text": "set_pairs"
-                  },
-                  "sourceLanguage": "Python"
-                },
-                "contextRegion": {
-                  "startLine": 918,
-                  "startColumn": 1,
-                  "charOffset": 34233,
-                  "charLength": 25,
-                  "snippet": {
-                    "text": "        def set_pairs(k):"
-                  },
-                  "sourceLanguage": "Python"
-                }
-              },
-              "logicalLocations": [
-                {
-                  "fullyQualifiedName": "project",
-                  "kind": "module"
-                }
-              ]
-            }
-          ],
-          "partialFingerprints": {
-            "equalIndicator/v1": "b49c0d85dce962504f8f4a7f1f528ca5e61925d24914d7ce2013529c62d71458"
-          },
-          "baselineState": "unchanged",
-          "properties": {
-            "ideaSeverity": "WARNING",
-            "qodanaSeverity": "High",
-            "tags": [
-              "Python"
-            ]
-          }
-        },
-        {
-          "ruleId": "PyCoverageInspection",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Method 'publish_key_values' coverage is below the threshold 50%",
-            "markdown": "Method `publish_key_values` coverage is below the threshold 50%"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "inorbit_edge/robot.py",
-                  "uriBaseId": "SRCROOT"
-                },
-                "region": {
-                  "startLine": 903,
-                  "startColumn": 9,
-                  "charOffset": 33724,
-                  "charLength": 18,
-                  "snippet": {
-                    "text": "publish_key_values"
-                  },
-                  "sourceLanguage": "Python"
-                },
-                "contextRegion": {
-                  "startLine": 903,
-                  "startColumn": 1,
-                  "charOffset": 33716,
-                  "charLength": 79,
-                  "snippet": {
-                    "text": "    def publish_key_values(self, key_values, custom_field=\"0\", is_event=False):"
-                  },
-                  "sourceLanguage": "Python"
-                }
-              },
-              "logicalLocations": [
-                {
-                  "fullyQualifiedName": "project",
-                  "kind": "module"
-                }
-              ]
-            }
-          ],
-          "partialFingerprints": {
-            "equalIndicator/v1": "cf5701cdf78830db6ead0fc42728e828dfed4cefa3854a050d89257d7c9e7be9"
+            "equalIndicator/v1": "c6839ee00f4ca5d7ba39c2a3808e5958c1036547cd5bd429353f1b2b0caeddd7"
           },
           "baselineState": "unchanged",
           "properties": {
@@ -21318,8 +21374,8 @@
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "Method 'convert_value' coverage is below the threshold 50%",
-            "markdown": "Method `convert_value` coverage is below the threshold 50%"
+            "text": "Method 'publish_lasers' coverage is below the threshold 50%",
+            "markdown": "Method `publish_lasers` coverage is below the threshold 50%"
           },
           "locations": [
             {
@@ -21329,22 +21385,22 @@
                   "uriBaseId": "SRCROOT"
                 },
                 "region": {
-                  "startLine": 912,
-                  "startColumn": 13,
-                  "charOffset": 34075,
-                  "charLength": 13,
+                  "startLine": 1000,
+                  "startColumn": 9,
+                  "charOffset": 37397,
+                  "charLength": 14,
                   "snippet": {
-                    "text": "convert_value"
+                    "text": "publish_lasers"
                   },
                   "sourceLanguage": "Python"
                 },
                 "contextRegion": {
-                  "startLine": 912,
+                  "startLine": 1000,
                   "startColumn": 1,
-                  "charOffset": 34063,
-                  "charLength": 33,
+                  "charOffset": 37389,
+                  "charLength": 73,
                   "snippet": {
-                    "text": "        def convert_value(value):"
+                    "text": "    def publish_lasers(self, x, y, yaw, ranges, frame_id=\"map\", ts=None):"
                   },
                   "sourceLanguage": "Python"
                 }
@@ -21358,7 +21414,7 @@
             }
           ],
           "partialFingerprints": {
-            "equalIndicator/v1": "e15426ab99c252c472466e91af3aa95fceaa9594e38d7b554659c963628db9cc"
+            "equalIndicator/v1": "e5e5a9945f3374576ce08aec30ed8cae9f460c9dee84f8155bb04b30a53eec8b"
           },
           "baselineState": "unchanged",
           "properties": {
@@ -21430,8 +21486,8 @@
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "Method 'publish_lasers' coverage is below the threshold 50%",
-            "markdown": "Method `publish_lasers` coverage is below the threshold 50%"
+            "text": "Method 'publish_path' coverage is below the threshold 50%",
+            "markdown": "Method `publish_path` coverage is below the threshold 50%"
           },
           "locations": [
             {
@@ -21441,22 +21497,22 @@
                   "uriBaseId": "SRCROOT"
                 },
                 "region": {
-                  "startLine": 1000,
+                  "startLine": 1105,
                   "startColumn": 9,
-                  "charOffset": 37398,
-                  "charLength": 14,
+                  "charOffset": 41790,
+                  "charLength": 12,
                   "snippet": {
-                    "text": "publish_lasers"
+                    "text": "publish_path"
                   },
                   "sourceLanguage": "Python"
                 },
                 "contextRegion": {
-                  "startLine": 1000,
+                  "startLine": 1105,
                   "startColumn": 1,
-                  "charOffset": 37390,
-                  "charLength": 73,
+                  "charOffset": 41782,
+                  "charLength": 78,
                   "snippet": {
-                    "text": "    def publish_lasers(self, x, y, yaw, ranges, frame_id=\"map\", ts=None):"
+                    "text": "    def publish_path(self, path_points, path_id=\"0\", frame_id=\"map\", ts=None):"
                   },
                   "sourceLanguage": "Python"
                 }
@@ -21470,119 +21526,7 @@
             }
           ],
           "partialFingerprints": {
-            "equalIndicator/v1": "ed02035a6ecd3354eaef71e5e2c718ab9a46ac4d9a6cf40262db1e97de3308f2"
-          },
-          "baselineState": "unchanged",
-          "properties": {
-            "ideaSeverity": "WARNING",
-            "qodanaSeverity": "High",
-            "tags": [
-              "Python"
-            ]
-          }
-        },
-        {
-          "ruleId": "PyCoverageInspection",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Method 'register_lasers' coverage is below the threshold 50%",
-            "markdown": "Method `register_lasers` coverage is below the threshold 50%"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "inorbit_edge/robot.py",
-                  "uriBaseId": "SRCROOT"
-                },
-                "region": {
-                  "startLine": 1070,
-                  "startColumn": 9,
-                  "charOffset": 40278,
-                  "charLength": 15,
-                  "snippet": {
-                    "text": "register_lasers"
-                  },
-                  "sourceLanguage": "Python"
-                },
-                "contextRegion": {
-                  "startLine": 1070,
-                  "startColumn": 1,
-                  "charOffset": 40270,
-                  "charLength": 39,
-                  "snippet": {
-                    "text": "    def register_lasers(self, configs):"
-                  },
-                  "sourceLanguage": "Python"
-                }
-              },
-              "logicalLocations": [
-                {
-                  "fullyQualifiedName": "project",
-                  "kind": "module"
-                }
-              ]
-            }
-          ],
-          "partialFingerprints": {
-            "equalIndicator/v1": "f0ea6512abac71df5b656d017ed4268d94d765458d2a2a990a76e8e19d3a1cba"
-          },
-          "baselineState": "unchanged",
-          "properties": {
-            "ideaSeverity": "WARNING",
-            "qodanaSeverity": "High",
-            "tags": [
-              "Python"
-            ]
-          }
-        },
-        {
-          "ruleId": "PyCoverageInspection",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Method 'publish_camera_frame' coverage is below the threshold 50%",
-            "markdown": "Method `publish_camera_frame` coverage is below the threshold 50%"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "inorbit_edge/robot.py",
-                  "uriBaseId": "SRCROOT"
-                },
-                "region": {
-                  "startLine": 565,
-                  "startColumn": 9,
-                  "charOffset": 20684,
-                  "charLength": 20,
-                  "snippet": {
-                    "text": "publish_camera_frame"
-                  },
-                  "sourceLanguage": "Python"
-                },
-                "contextRegion": {
-                  "startLine": 565,
-                  "startColumn": 1,
-                  "charOffset": 20676,
-                  "charLength": 72,
-                  "snippet": {
-                    "text": "    def publish_camera_frame(self, camera_id, image, width, height, ts):"
-                  },
-                  "sourceLanguage": "Python"
-                }
-              },
-              "logicalLocations": [
-                {
-                  "fullyQualifiedName": "project",
-                  "kind": "module"
-                }
-              ]
-            }
-          ],
-          "partialFingerprints": {
-            "equalIndicator/v1": "f42878d46c9f878b88909241d3ef93e3fd20556935b865c482d3c0142c38ec31"
+            "equalIndicator/v1": "f0384116a7bf97e4b5852c04b07fc6f6d490edb00e068e9558d65dfdebafd220"
           },
           "baselineState": "unchanged",
           "properties": {
@@ -22326,6 +22270,118 @@
           "kind": "fail",
           "level": "note",
           "message": {
+            "text": "Package containing module 'cv2' is not listed in the project requirements",
+            "markdown": "Package containing module 'cv2' is not listed in the project requirements"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/video.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 20,
+                  "startColumn": 12,
+                  "charOffset": 720,
+                  "charLength": 3,
+                  "snippet": {
+                    "text": "cv2"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 18,
+                  "startColumn": 1,
+                  "charOffset": 703,
+                  "charLength": 79,
+                  "snippet": {
+                    "text": "\ntry:\n    import cv2\nexcept Exception:\n    logging.getLogger(__name__).warning("
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "07e2403d6085fa1b326476c34eb582babc3746e291cdb96119625ec355b60829"
+          },
+          "baselineState": "new",
+          "properties": {
+            "ideaSeverity": "WEAK WARNING",
+            "qodanaSeverity": "Moderate",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyPackageRequirementsInspection",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "Package containing module 'pytest' is not listed in the project requirements",
+            "markdown": "Package containing module 'pytest' is not listed in the project requirements"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/tests/test_fetch_robot_config.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 18,
+                  "startColumn": 8,
+                  "charOffset": 523,
+                  "charLength": 6,
+                  "snippet": {
+                    "text": "pytest"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 16,
+                  "startColumn": 1,
+                  "charOffset": 429,
+                  "charLength": 160,
+                  "snippet": {
+                    "text": "from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL\nimport requests_mock\nimport pytest\n\n# Dummy cloud_sdk_robot_config sample response for testing"
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "2791f28aa635def177e95f80edc7d6563d730040846d2293463ddc8a81d89a0e"
+          },
+          "baselineState": "new",
+          "properties": {
+            "ideaSeverity": "WEAK WARNING",
+            "qodanaSeverity": "Moderate",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyPackageRequirementsInspection",
+          "kind": "fail",
+          "level": "note",
+          "message": {
             "text": "Package containing module 'socks' is not listed in the project requirements",
             "markdown": "Package containing module 'socks' is not listed in the project requirements"
           },
@@ -22369,6 +22425,230 @@
             "equalIndicator/v1": "3a0224f30511bad3ebb64f022f56c5cd64feb7e569029e0cbb42ce9e2eeea760"
           },
           "baselineState": "unchanged",
+          "properties": {
+            "ideaSeverity": "WEAK WARNING",
+            "qodanaSeverity": "Moderate",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyPackageRequirementsInspection",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "Package containing module 'pytest' is not listed in the project requirements",
+            "markdown": "Package containing module 'pytest' is not listed in the project requirements"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/tests/test_floating_point_list_encoding.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 8,
+                  "charOffset": 7,
+                  "charLength": 6,
+                  "snippet": {
+                    "text": "pytest"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "charOffset": 0,
+                  "charLength": 92,
+                  "snippet": {
+                    "text": "import pytest\nfrom math import inf\nfrom inorbit_edge.utils import encode_floating_point_list"
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "8932efdf678772b876f09f7f1cff5d4aacee34aa1c92a5da83eefaa3dc933272"
+          },
+          "baselineState": "new",
+          "properties": {
+            "ideaSeverity": "WEAK WARNING",
+            "qodanaSeverity": "Moderate",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyPackageRequirementsInspection",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "Package containing module 'yaml' is not listed in the project requirements",
+            "markdown": "Package containing module 'yaml' is not listed in the project requirements"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/robot.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 18,
+                  "startColumn": 8,
+                  "charOffset": 411,
+                  "charLength": 4,
+                  "snippet": {
+                    "text": "yaml"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 16,
+                  "startColumn": 1,
+                  "charOffset": 376,
+                  "charLength": 79,
+                  "snippet": {
+                    "text": "import ssl\nimport threading\nimport yaml\n\nfrom inorbit_edge.inorbit_pb2 import ("
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "a30269300f99ac2f191844178f3ad9dceaf1fb0c75da8617a64e24d4cf1f70a4"
+          },
+          "baselineState": "new",
+          "properties": {
+            "ideaSeverity": "WEAK WARNING",
+            "qodanaSeverity": "Moderate",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyPackageRequirementsInspection",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "Package containing module 'pytest' is not listed in the project requirements",
+            "markdown": "Package containing module 'pytest' is not listed in the project requirements"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/tests/test_robot_session_callbacks.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 5,
+                  "startColumn": 8,
+                  "charOffset": 96,
+                  "charLength": 6,
+                  "snippet": {
+                    "text": "pytest"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 3,
+                  "startColumn": 1,
+                  "charOffset": 46,
+                  "charLength": 141,
+                  "snippet": {
+                    "text": "\nfrom unittest.mock import MagicMock, call\nimport pytest\nfrom inorbit_edge.robot import RobotSession\nfrom paho.mqtt.client import MQTTMessage"
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "bb416f099f43b8726135779f9a68a0f62576e173ae08725af5391d03c2babebf"
+          },
+          "baselineState": "new",
+          "properties": {
+            "ideaSeverity": "WEAK WARNING",
+            "qodanaSeverity": "Moderate",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyPackageRequirementsInspection",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "Package containing module 'pytest' is not listed in the project requirements",
+            "markdown": "Package containing module 'pytest' is not listed in the project requirements"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/tests/conftest.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 19,
+                  "startColumn": 8,
+                  "charOffset": 812,
+                  "charLength": 6,
+                  "snippet": {
+                    "text": "pytest"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 17,
+                  "startColumn": 1,
+                  "charOffset": 800,
+                  "charLength": 95,
+                  "snippet": {
+                    "text": "\"\"\"\n\nimport pytest\nimport paho.mqtt.client as mqtt\nfrom paho.mqtt.client import MQTTMessageInfo"
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "e1decff0510689b9a248a2cb07c83847db5f1f87e1d6cf7a1f6dd5ceba6e94fd"
+          },
+          "baselineState": "new",
           "properties": {
             "ideaSeverity": "WEAK WARNING",
             "qodanaSeverity": "Moderate",
@@ -23345,9 +23625,9 @@
                   "uriBaseId": "SRCROOT"
                 },
                 "region": {
-                  "startLine": 328,
+                  "startLine": 371,
                   "startColumn": 27,
-                  "charOffset": 11999,
+                  "charOffset": 13763,
                   "charLength": 6,
                   "snippet": {
                     "text": "client"
@@ -23355,12 +23635,12 @@
                   "sourceLanguage": "Python"
                 },
                 "contextRegion": {
-                  "startLine": 326,
+                  "startLine": 369,
                   "startColumn": 1,
-                  "charOffset": 11941,
-                  "charLength": 129,
+                  "charOffset": 13705,
+                  "charLength": 123,
                   "snippet": {
-                    "text": "        return response.json()\n\n    def _on_connect(self, client, userdata, flags, rc):\n        \"\"\"MQTT client connect callback.\n"
+                    "text": "        self._resend_modules()\n\n    def _on_message(self, client, userdata, msg):\n        \"\"\"MQTT client message callback.\n"
                   },
                   "sourceLanguage": "Python"
                 }
@@ -23374,7 +23654,7 @@
             }
           ],
           "partialFingerprints": {
-            "equalIndicator/v1": "0805714f022bea7364ef8236a70a702ac7f8b9fb8c66148448d267c99bdb2021"
+            "equalIndicator/v1": "028232a55fd23fc9d9cce01196925053aced502a93a3882eb5bbc82af6bd8102"
           },
           "baselineState": "unchanged",
           "properties": {
@@ -23390,8 +23670,8 @@
           "kind": "fail",
           "level": "note",
           "message": {
-            "text": "Parameter 'run_level' value is not used",
-            "markdown": "Parameter 'run_level' value is not used"
+            "text": "Parameter 'error' value is not used",
+            "markdown": "Parameter 'error' value is not used"
           },
           "locations": [
             {
@@ -23401,22 +23681,22 @@
                   "uriBaseId": "SRCROOT"
                 },
                 "region": {
-                  "startLine": 484,
-                  "startColumn": 48,
-                  "charOffset": 17919,
-                  "charLength": 9,
+                  "startLine": 584,
+                  "startColumn": 43,
+                  "charOffset": 21496,
+                  "charLength": 5,
                   "snippet": {
-                    "text": "run_level"
+                    "text": "error"
                   },
                   "sourceLanguage": "Python"
                 },
                 "contextRegion": {
-                  "startLine": 482,
+                  "startLine": 582,
                   "startColumn": 1,
-                  "charOffset": 17823,
-                  "charLength": 201,
+                  "charOffset": 21395,
+                  "charLength": 134,
                   "snippet": {
-                    "text": "            self._handle_unload_module(args[1])\n\n    def _handle_load_module(self, module_name, run_level):\n        \"\"\"Handles a load_module command\"\"\"\n        if module_name == INORBIT_MODULE_CAMERAS:"
+                    "text": "\n            # TODO: Implement progress reporting function\n            def progress_function(output, error):\n                return 1\n"
                   },
                   "sourceLanguage": "Python"
                 }
@@ -23430,63 +23710,7 @@
             }
           ],
           "partialFingerprints": {
-            "equalIndicator/v1": "12c11b53e00fbfbe6c6674bb710a9b060fed031964fb7ddd75f02bcbbc6ec3d3"
-          },
-          "baselineState": "unchanged",
-          "properties": {
-            "ideaSeverity": "WEAK WARNING",
-            "qodanaSeverity": "Moderate",
-            "tags": [
-              "Python"
-            ]
-          }
-        },
-        {
-          "ruleId": "PyUnusedLocalInspection",
-          "kind": "fail",
-          "level": "note",
-          "message": {
-            "text": "Parameter 'client' value is not used",
-            "markdown": "Parameter 'client' value is not used"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "inorbit_edge/robot.py",
-                  "uriBaseId": "SRCROOT"
-                },
-                "region": {
-                  "startLine": 395,
-                  "startColumn": 30,
-                  "charOffset": 14731,
-                  "charLength": 6,
-                  "snippet": {
-                    "text": "client"
-                  },
-                  "sourceLanguage": "Python"
-                },
-                "contextRegion": {
-                  "startLine": 393,
-                  "startColumn": 1,
-                  "charOffset": 14683,
-                  "charLength": 115,
-                  "snippet": {
-                    "text": "            raise\n\n    def _on_disconnect(self, client, userdata, rc):\n        \"\"\"MQTT client disconnect callback.\n"
-                  },
-                  "sourceLanguage": "Python"
-                }
-              },
-              "logicalLocations": [
-                {
-                  "fullyQualifiedName": "project",
-                  "kind": "module"
-                }
-              ]
-            }
-          ],
-          "partialFingerprints": {
-            "equalIndicator/v1": "19bf4cacc9407a19a8f24a3950f5782215153138f7917164b1c8b7be2c0a2c76"
+            "equalIndicator/v1": "0aeffb3b750a5aa829a2bf053a28ecebd5e6767eb7474e2a70e2863a4d51e1be"
           },
           "baselineState": "unchanged",
           "properties": {
@@ -23558,8 +23782,8 @@
           "kind": "fail",
           "level": "note",
           "message": {
-            "text": "Parameter 'error' value is not used",
-            "markdown": "Parameter 'error' value is not used"
+            "text": "Parameter 'run_level' value is not used",
+            "markdown": "Parameter 'run_level' value is not used"
           },
           "locations": [
             {
@@ -23569,22 +23793,22 @@
                   "uriBaseId": "SRCROOT"
                 },
                 "region": {
-                  "startLine": 584,
-                  "startColumn": 43,
-                  "charOffset": 21497,
-                  "charLength": 5,
+                  "startLine": 484,
+                  "startColumn": 48,
+                  "charOffset": 17918,
+                  "charLength": 9,
                   "snippet": {
-                    "text": "error"
+                    "text": "run_level"
                   },
                   "sourceLanguage": "Python"
                 },
                 "contextRegion": {
-                  "startLine": 582,
+                  "startLine": 482,
                   "startColumn": 1,
-                  "charOffset": 21396,
-                  "charLength": 134,
+                  "charOffset": 17822,
+                  "charLength": 201,
                   "snippet": {
-                    "text": "\n            # TODO: Implement progress reporting function\n            def progress_function(output, error):\n                return 1\n"
+                    "text": "            self._handle_unload_module(args[1])\n\n    def _handle_load_module(self, module_name, run_level):\n        \"\"\"Handles a load_module command\"\"\"\n        if module_name == INORBIT_MODULE_CAMERAS:"
                   },
                   "sourceLanguage": "Python"
                 }
@@ -23598,231 +23822,7 @@
             }
           ],
           "partialFingerprints": {
-            "equalIndicator/v1": "2cdc6102addd9756e60d6ff7b4d86f246d50212e5bf10ebde788c1b6318f0bbe"
-          },
-          "baselineState": "unchanged",
-          "properties": {
-            "ideaSeverity": "WEAK WARNING",
-            "qodanaSeverity": "Moderate",
-            "tags": [
-              "Python"
-            ]
-          }
-        },
-        {
-          "ruleId": "PyUnusedLocalInspection",
-          "kind": "fail",
-          "level": "note",
-          "message": {
-            "text": "Parameter 'client' value is not used",
-            "markdown": "Parameter 'client' value is not used"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "inorbit_edge/robot.py",
-                  "uriBaseId": "SRCROOT"
-                },
-                "region": {
-                  "startLine": 371,
-                  "startColumn": 27,
-                  "charOffset": 13764,
-                  "charLength": 6,
-                  "snippet": {
-                    "text": "client"
-                  },
-                  "sourceLanguage": "Python"
-                },
-                "contextRegion": {
-                  "startLine": 369,
-                  "startColumn": 1,
-                  "charOffset": 13706,
-                  "charLength": 123,
-                  "snippet": {
-                    "text": "        self._resend_modules()\n\n    def _on_message(self, client, userdata, msg):\n        \"\"\"MQTT client message callback.\n"
-                  },
-                  "sourceLanguage": "Python"
-                }
-              },
-              "logicalLocations": [
-                {
-                  "fullyQualifiedName": "project",
-                  "kind": "module"
-                }
-              ]
-            }
-          ],
-          "partialFingerprints": {
-            "equalIndicator/v1": "3c70d77f50447c7f549c856e061fcf4ab05dc60a15f50edfb1686bb0b5e58cbc"
-          },
-          "baselineState": "unchanged",
-          "properties": {
-            "ideaSeverity": "WEAK WARNING",
-            "qodanaSeverity": "Moderate",
-            "tags": [
-              "Python"
-            ]
-          }
-        },
-        {
-          "ruleId": "PyUnusedLocalInspection",
-          "kind": "fail",
-          "level": "note",
-          "message": {
-            "text": "Parameter 'flags' value is not used",
-            "markdown": "Parameter 'flags' value is not used"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "inorbit_edge/robot.py",
-                  "uriBaseId": "SRCROOT"
-                },
-                "region": {
-                  "startLine": 328,
-                  "startColumn": 45,
-                  "charOffset": 12017,
-                  "charLength": 5,
-                  "snippet": {
-                    "text": "flags"
-                  },
-                  "sourceLanguage": "Python"
-                },
-                "contextRegion": {
-                  "startLine": 326,
-                  "startColumn": 1,
-                  "charOffset": 11941,
-                  "charLength": 129,
-                  "snippet": {
-                    "text": "        return response.json()\n\n    def _on_connect(self, client, userdata, flags, rc):\n        \"\"\"MQTT client connect callback.\n"
-                  },
-                  "sourceLanguage": "Python"
-                }
-              },
-              "logicalLocations": [
-                {
-                  "fullyQualifiedName": "project",
-                  "kind": "module"
-                }
-              ]
-            }
-          ],
-          "partialFingerprints": {
-            "equalIndicator/v1": "69f37f8a7caf676fdc6a06b08a02929d70b627670ab062901b872b88991903e8"
-          },
-          "baselineState": "unchanged",
-          "properties": {
-            "ideaSeverity": "WEAK WARNING",
-            "qodanaSeverity": "Moderate",
-            "tags": [
-              "Python"
-            ]
-          }
-        },
-        {
-          "ruleId": "PyUnusedLocalInspection",
-          "kind": "fail",
-          "level": "note",
-          "message": {
-            "text": "Parameter 'userdata' value is not used",
-            "markdown": "Parameter 'userdata' value is not used"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "inorbit_edge/robot.py",
-                  "uriBaseId": "SRCROOT"
-                },
-                "region": {
-                  "startLine": 371,
-                  "startColumn": 35,
-                  "charOffset": 13772,
-                  "charLength": 8,
-                  "snippet": {
-                    "text": "userdata"
-                  },
-                  "sourceLanguage": "Python"
-                },
-                "contextRegion": {
-                  "startLine": 369,
-                  "startColumn": 1,
-                  "charOffset": 13706,
-                  "charLength": 123,
-                  "snippet": {
-                    "text": "        self._resend_modules()\n\n    def _on_message(self, client, userdata, msg):\n        \"\"\"MQTT client message callback.\n"
-                  },
-                  "sourceLanguage": "Python"
-                }
-              },
-              "logicalLocations": [
-                {
-                  "fullyQualifiedName": "project",
-                  "kind": "module"
-                }
-              ]
-            }
-          ],
-          "partialFingerprints": {
-            "equalIndicator/v1": "6ed41c98cbae31c391be4e9f1f09fe7e38f5fb3be6b7a651a56939be986de8ae"
-          },
-          "baselineState": "unchanged",
-          "properties": {
-            "ideaSeverity": "WEAK WARNING",
-            "qodanaSeverity": "Moderate",
-            "tags": [
-              "Python"
-            ]
-          }
-        },
-        {
-          "ruleId": "PyUnusedLocalInspection",
-          "kind": "fail",
-          "level": "note",
-          "message": {
-            "text": "Parameter 'userdata' value is not used",
-            "markdown": "Parameter 'userdata' value is not used"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "inorbit_edge/robot.py",
-                  "uriBaseId": "SRCROOT"
-                },
-                "region": {
-                  "startLine": 328,
-                  "startColumn": 35,
-                  "charOffset": 12007,
-                  "charLength": 8,
-                  "snippet": {
-                    "text": "userdata"
-                  },
-                  "sourceLanguage": "Python"
-                },
-                "contextRegion": {
-                  "startLine": 326,
-                  "startColumn": 1,
-                  "charOffset": 11941,
-                  "charLength": 129,
-                  "snippet": {
-                    "text": "        return response.json()\n\n    def _on_connect(self, client, userdata, flags, rc):\n        \"\"\"MQTT client connect callback.\n"
-                  },
-                  "sourceLanguage": "Python"
-                }
-              },
-              "logicalLocations": [
-                {
-                  "fullyQualifiedName": "project",
-                  "kind": "module"
-                }
-              ]
-            }
-          ],
-          "partialFingerprints": {
-            "equalIndicator/v1": "9fd3c0d42fec057f905a6464cf44e45c1c7d224a1ed262f4c527972f52cc99a1"
+            "equalIndicator/v1": "320481d113d4ec6a0d4ad391088eb7c7e45ebaae2779c1ee944c33112959cd61"
           },
           "baselineState": "unchanged",
           "properties": {
@@ -23851,7 +23851,7 @@
                 "region": {
                   "startLine": 584,
                   "startColumn": 35,
-                  "charOffset": 21489,
+                  "charOffset": 21488,
                   "charLength": 6,
                   "snippet": {
                     "text": "output"
@@ -23861,7 +23861,7 @@
                 "contextRegion": {
                   "startLine": 582,
                   "startColumn": 1,
-                  "charOffset": 21396,
+                  "charOffset": 21395,
                   "charLength": 134,
                   "snippet": {
                     "text": "\n            # TODO: Implement progress reporting function\n            def progress_function(output, error):\n                return 1\n"
@@ -23878,7 +23878,119 @@
             }
           ],
           "partialFingerprints": {
-            "equalIndicator/v1": "c4f2bae1da9450b6d891815959e7e644782454ffa469d0e9f51f192dce383abd"
+            "equalIndicator/v1": "38e373752d772c6e845b579f0954cc084fb80c7f5ac92662c7a61a1405dafbf1"
+          },
+          "baselineState": "unchanged",
+          "properties": {
+            "ideaSeverity": "WEAK WARNING",
+            "qodanaSeverity": "Moderate",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyUnusedLocalInspection",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "Parameter 'userdata' value is not used",
+            "markdown": "Parameter 'userdata' value is not used"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/robot.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 328,
+                  "startColumn": 35,
+                  "charOffset": 12006,
+                  "charLength": 8,
+                  "snippet": {
+                    "text": "userdata"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 326,
+                  "startColumn": 1,
+                  "charOffset": 11940,
+                  "charLength": 129,
+                  "snippet": {
+                    "text": "        return response.json()\n\n    def _on_connect(self, client, userdata, flags, rc):\n        \"\"\"MQTT client connect callback.\n"
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "727aa2ca3f88d70953cf71869b93be6be20aa711a2610c6ede8982f3b7e0992e"
+          },
+          "baselineState": "unchanged",
+          "properties": {
+            "ideaSeverity": "WEAK WARNING",
+            "qodanaSeverity": "Moderate",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyUnusedLocalInspection",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "Parameter 'userdata' value is not used",
+            "markdown": "Parameter 'userdata' value is not used"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/robot.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 371,
+                  "startColumn": 35,
+                  "charOffset": 13771,
+                  "charLength": 8,
+                  "snippet": {
+                    "text": "userdata"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 369,
+                  "startColumn": 1,
+                  "charOffset": 13705,
+                  "charLength": 123,
+                  "snippet": {
+                    "text": "        self._resend_modules()\n\n    def _on_message(self, client, userdata, msg):\n        \"\"\"MQTT client message callback.\n"
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "94a610e9d3a781551bbaefa1ac0384e15dc08c27dced88e735145978fb4845b6"
           },
           "baselineState": "unchanged",
           "properties": {
@@ -23907,7 +24019,7 @@
                 "region": {
                   "startLine": 395,
                   "startColumn": 38,
-                  "charOffset": 14739,
+                  "charOffset": 14738,
                   "charLength": 8,
                   "snippet": {
                     "text": "userdata"
@@ -23917,7 +24029,7 @@
                 "contextRegion": {
                   "startLine": 393,
                   "startColumn": 1,
-                  "charOffset": 14683,
+                  "charOffset": 14682,
                   "charLength": 115,
                   "snippet": {
                     "text": "            raise\n\n    def _on_disconnect(self, client, userdata, rc):\n        \"\"\"MQTT client disconnect callback.\n"
@@ -23934,7 +24046,7 @@
             }
           ],
           "partialFingerprints": {
-            "equalIndicator/v1": "e03ada5aaff20b9f46e0504d2b793cc5771c1e95b88e8538c9ddfacdcff09d6e"
+            "equalIndicator/v1": "a9fef5bb4b63e9c1213ffc4264d21dffcd0a68452b495ecf1c76be396411fd8f"
           },
           "baselineState": "unchanged",
           "properties": {
@@ -23946,149 +24058,37 @@
           }
         },
         {
-          "ruleId": "VulnerableLibrariesLocal",
+          "ruleId": "PyUnusedLocalInspection",
           "kind": "fail",
-          "level": "warning",
+          "level": "note",
           "message": {
-            "text": "Dependency pypi:protobuf:3.19.3 is vulnerable, safe version 5.26.1 CVE-2022-1941 7.5 Improper Restriction of Operations within the Bounds of a Memory Buffer vulnerability with High severity found Results powered by Checkmarx(c)",
-            "markdown": "Dependency pypi:protobuf:3.19.3 is vulnerable, safe version 5.26.1\n\n* [CVE-2022-1941](https://devhub.checkmarx.com/cve-details/CVE-2022-1941?utm_source=jetbrains&utm_medium=referral) 7.5 Improper Restriction of Operations within the Bounds of a Memory Buffer vulnerability with High severity found\n\nResults powered by [Checkmarx](https://checkmarx.com)(c)"
+            "text": "Parameter 'flags' value is not used",
+            "markdown": "Parameter 'flags' value is not used"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "requirements.txt",
+                  "uri": "inorbit_edge/robot.py",
                   "uriBaseId": "SRCROOT"
                 },
                 "region": {
-                  "startLine": 20,
-                  "startColumn": 1,
-                  "charOffset": 288,
-                  "charLength": 16,
+                  "startLine": 328,
+                  "startColumn": 45,
+                  "charOffset": 12016,
+                  "charLength": 5,
                   "snippet": {
-                    "text": "protobuf==3.19.3"
-                  },
-                  "sourceLanguage": "Requirements"
-                },
-                "contextRegion": {
-                  "startLine": 18,
-                  "startColumn": 1,
-                  "charOffset": 258,
-                  "charLength": 83,
-                  "snippet": {
-                    "text": "Pillow==10.2.0\nPySocks==1.7.1\nprotobuf==3.19.3\ncertifi>=2024.2.2\ndeprecated==1.2.13"
-                  },
-                  "sourceLanguage": "Requirements"
-                }
-              },
-              "logicalLocations": [
-                {
-                  "fullyQualifiedName": "project",
-                  "kind": "module"
-                }
-              ]
-            }
-          ],
-          "partialFingerprints": {
-            "equalIndicator/v1": "4f8f8d69ee6fc57d879d6f71944e20032b1e9ff9c7f1a8337776e7c270b066a2"
-          },
-          "baselineState": "unchanged",
-          "properties": {
-            "ideaSeverity": "WARNING",
-            "qodanaSeverity": "High",
-            "tags": [
-              "Requirements"
-            ]
-          }
-        },
-        {
-          "ruleId": "VulnerableLibrariesLocal",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Dependency pypi:opencv-python:4.7.0.68 is vulnerable CVE-2023-4863 8.8 Out-of-bounds Write vulnerability with High severity found CVE-2019-9423 7.8 Out-of-bounds Write vulnerability with High severity found Results powered by Checkmarx(c)",
-            "markdown": "Dependency pypi:opencv-python:4.7.0.68 is vulnerable\n\n* [CVE-2023-4863](https://devhub.checkmarx.com/cve-details/CVE-2023-4863?utm_source=jetbrains&utm_medium=referral) 8.8 Out-of-bounds Write vulnerability with High severity found\n* [CVE-2019-9423](https://devhub.checkmarx.com/cve-details/CVE-2019-9423?utm_source=jetbrains&utm_medium=referral) 7.8 Out-of-bounds Write vulnerability with High severity found\n\nResults powered by [Checkmarx](https://checkmarx.com)(c)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "requirements.txt",
-                  "uriBaseId": "SRCROOT"
-                },
-                "region": {
-                  "startLine": 2,
-                  "startColumn": 1,
-                  "charOffset": 21,
-                  "charLength": 23,
-                  "snippet": {
-                    "text": "opencv-python==4.7.0.68"
-                  },
-                  "sourceLanguage": "Requirements"
-                },
-                "contextRegion": {
-                  "startLine": 1,
-                  "startColumn": 1,
-                  "charOffset": 0,
-                  "charLength": 65,
-                  "snippet": {
-                    "text": "# video requirements\nopencv-python==4.7.0.68\n\n# test requirements"
-                  },
-                  "sourceLanguage": "Requirements"
-                }
-              },
-              "logicalLocations": [
-                {
-                  "fullyQualifiedName": "project",
-                  "kind": "module"
-                }
-              ]
-            }
-          ],
-          "partialFingerprints": {
-            "equalIndicator/v1": "62f9fcf0f4c5711c69631a574e4aac4cefa186036fa088f69a1b691d1889e21c"
-          },
-          "baselineState": "unchanged",
-          "properties": {
-            "ideaSeverity": "WARNING",
-            "qodanaSeverity": "High",
-            "tags": [
-              "Requirements"
-            ]
-          }
-        },
-        {
-          "ruleId": "VulnerableLibrariesLocal",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Dependency pypi:protobuf:3.19.3 is vulnerable, safe version 5.26.1 CVE-2022-1941 7.5 Improper Restriction of Operations within the Bounds of a Memory Buffer vulnerability with High severity found Results powered by Checkmarx(c)",
-            "markdown": "Dependency pypi:protobuf:3.19.3 is vulnerable, safe version 5.26.1\n\n* [CVE-2022-1941](https://devhub.checkmarx.com/cve-details/CVE-2022-1941?utm_source=jetbrains&utm_medium=referral) 7.5 Improper Restriction of Operations within the Bounds of a Memory Buffer vulnerability with High severity found\n\nResults powered by [Checkmarx](https://checkmarx.com)(c)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "setup.py",
-                  "uriBaseId": "SRCROOT"
-                },
-                "region": {
-                  "startLine": 54,
-                  "startColumn": 6,
-                  "charOffset": 1023,
-                  "charLength": 16,
-                  "snippet": {
-                    "text": "protobuf==3.19.3"
+                    "text": "flags"
                   },
                   "sourceLanguage": "Python"
                 },
                 "contextRegion": {
-                  "startLine": 52,
+                  "startLine": 326,
                   "startColumn": 1,
-                  "charOffset": 974,
-                  "charLength": 117,
+                  "charOffset": 11940,
+                  "charLength": 129,
                   "snippet": {
-                    "text": "    \"Pillow==10.2.0\",\n    \"PySocks==1.7.1\",\n    \"protobuf==3.19.3\",\n    \"certifi>=2024.2.2\",\n    \"deprecated==1.2.13\""
+                    "text": "        return response.json()\n\n    def _on_connect(self, client, userdata, flags, rc):\n        \"\"\"MQTT client connect callback.\n"
                   },
                   "sourceLanguage": "Python"
                 }
@@ -24102,12 +24102,124 @@
             }
           ],
           "partialFingerprints": {
-            "equalIndicator/v1": "cca630960de974cbe502e58f0e51f27ed0188db78600c0d2a11a45691eeb3d85"
+            "equalIndicator/v1": "b5e265861d594dab7b77635cabad2aae16c641a0cb44f5aea49833a98d0edb6c"
           },
           "baselineState": "unchanged",
           "properties": {
-            "ideaSeverity": "WARNING",
-            "qodanaSeverity": "High",
+            "ideaSeverity": "WEAK WARNING",
+            "qodanaSeverity": "Moderate",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyUnusedLocalInspection",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "Parameter 'client' value is not used",
+            "markdown": "Parameter 'client' value is not used"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/robot.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 395,
+                  "startColumn": 30,
+                  "charOffset": 14730,
+                  "charLength": 6,
+                  "snippet": {
+                    "text": "client"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 393,
+                  "startColumn": 1,
+                  "charOffset": 14682,
+                  "charLength": 115,
+                  "snippet": {
+                    "text": "            raise\n\n    def _on_disconnect(self, client, userdata, rc):\n        \"\"\"MQTT client disconnect callback.\n"
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "c0327700aa85d15f16756ab5fc06a19a523aff5b8174c38d1131af1d30f53a07"
+          },
+          "baselineState": "unchanged",
+          "properties": {
+            "ideaSeverity": "WEAK WARNING",
+            "qodanaSeverity": "Moderate",
+            "tags": [
+              "Python"
+            ]
+          }
+        },
+        {
+          "ruleId": "PyUnusedLocalInspection",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "Parameter 'client' value is not used",
+            "markdown": "Parameter 'client' value is not used"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "inorbit_edge/robot.py",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 328,
+                  "startColumn": 27,
+                  "charOffset": 11998,
+                  "charLength": 6,
+                  "snippet": {
+                    "text": "client"
+                  },
+                  "sourceLanguage": "Python"
+                },
+                "contextRegion": {
+                  "startLine": 326,
+                  "startColumn": 1,
+                  "charOffset": 11940,
+                  "charLength": 129,
+                  "snippet": {
+                    "text": "        return response.json()\n\n    def _on_connect(self, client, userdata, flags, rc):\n        \"\"\"MQTT client connect callback.\n"
+                  },
+                  "sourceLanguage": "Python"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v1": "c414a8f6c19d5a75e57f3555efac38458fa3696b386067d0e0665e640206666f"
+          },
+          "baselineState": "unchanged",
+          "properties": {
+            "ideaSeverity": "WEAK WARNING",
+            "qodanaSeverity": "Moderate",
             "tags": [
               "Python"
             ]
@@ -24115,10 +24227,10 @@
         }
       ],
       "automationDetails": {
-        "id": "project/qodana/2024-04-02",
-        "guid": "621b0a3c-da5f-432d-87b5-f3eff68ad445",
+        "id": "project/qodana/2024-04-15",
+        "guid": "56659643-e3d6-4e51-8408-d7ae1fb051e5",
         "properties": {
-          "jobUrl": "https://inorbit.teamcity.com/viewLog.html?buildId=1611&buildTypeId=DeveloperPortal_EdgeSdkPython_QodanaLinuxQualityRunner"
+          "jobUrl": "https://inorbit.teamcity.com/buildConfiguration/Engineering_Development_DeveloperPortal_EdgeSdkPython_QodanaLinuxQualityCheck/2045"
         }
       },
       "newlineSequences": [
@@ -24137,8 +24249,8 @@
             "kind": "fail",
             "level": "warning",
             "message": {
-              "text": "Cannot find reference 'resize' in '__init__.py'",
-              "markdown": "Cannot find reference 'resize' in '__init__.py'"
+              "text": "Module 'cv2' not found",
+              "markdown": "Module 'cv2' not found"
             },
             "locations": [
               {
@@ -24148,22 +24260,22 @@
                     "uriBaseId": "SRCROOT"
                   },
                   "region": {
-                    "startLine": 50,
-                    "startColumn": 19,
-                    "charOffset": 1451,
-                    "charLength": 6,
+                    "startLine": 20,
+                    "startColumn": 12,
+                    "charOffset": 720,
+                    "charLength": 3,
                     "snippet": {
-                      "text": "resize"
+                      "text": "cv2"
                     },
                     "sourceLanguage": "Python"
                   },
                   "contextRegion": {
-                    "startLine": 48,
+                    "startLine": 18,
                     "startColumn": 1,
-                    "charOffset": 1374,
-                    "charLength": 225,
+                    "charOffset": 703,
+                    "charLength": 79,
                     "snippet": {
-                      "text": "    w = int(width * scaling)\n    h = int(height * scaling)\n    resized = cv2.resize(frame, (w, h), interpolation=cv2.INTER_AREA)\n    img_encode = cv2.imencode(\n        \".jpg\", resized, [int(cv2.IMWRITE_JPEG_QUALITY), quality]"
+                      "text": "\ntry:\n    import cv2\nexcept Exception:\n    logging.getLogger(__name__).warning("
                     },
                     "sourceLanguage": "Python"
                   }
@@ -24177,11 +24289,63 @@
               }
             ],
             "partialFingerprints": {
-              "equalIndicator/v1": "091e775ae180e0b70c566f73accdab71460253cc61cb9f34fb67770fc90fe7f4"
+              "equalIndicator/v1": "1db07a6e58ef525384377fa641b86d224c2b1c27c80097f0d25750718808ab9d"
             },
             "properties": {
               "ideaSeverity": "WARNING",
               "qodanaSeverity": "High"
+            }
+          },
+          {
+            "ruleId": "PyUnresolvedReferencesInspection",
+            "kind": "fail",
+            "level": "error",
+            "message": {
+              "text": "No module named 'pytest'",
+              "markdown": "No module named 'pytest'"
+            },
+            "locations": [
+              {
+                "physicalLocation": {
+                  "artifactLocation": {
+                    "uri": "inorbit_edge/tests/test_fetch_robot_config.py",
+                    "uriBaseId": "SRCROOT"
+                  },
+                  "region": {
+                    "startLine": 18,
+                    "startColumn": 8,
+                    "charOffset": 523,
+                    "charLength": 6,
+                    "snippet": {
+                      "text": "pytest"
+                    },
+                    "sourceLanguage": "Python"
+                  },
+                  "contextRegion": {
+                    "startLine": 16,
+                    "startColumn": 1,
+                    "charOffset": 429,
+                    "charLength": 160,
+                    "snippet": {
+                      "text": "from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL\nimport requests_mock\nimport pytest\n\n# Dummy cloud_sdk_robot_config sample response for testing"
+                    },
+                    "sourceLanguage": "Python"
+                  }
+                },
+                "logicalLocations": [
+                  {
+                    "fullyQualifiedName": "project",
+                    "kind": "module"
+                  }
+                ]
+              }
+            ],
+            "partialFingerprints": {
+              "equalIndicator/v1": "3202739012ed980624d89def363bb3df6fe4ceff20e750cf806704462092b906"
+            },
+            "properties": {
+              "ideaSeverity": "ERROR",
+              "qodanaSeverity": "Critical"
             }
           },
           {
@@ -24239,35 +24403,35 @@
           {
             "ruleId": "PyUnresolvedReferencesInspection",
             "kind": "fail",
-            "level": "warning",
+            "level": "error",
             "message": {
-              "text": "Cannot find reference 'INTER_AREA' in '__init__.py'",
-              "markdown": "Cannot find reference 'INTER_AREA' in '__init__.py'"
+              "text": "No module named 'requests_mock'",
+              "markdown": "No module named 'requests_mock'"
             },
             "locations": [
               {
                 "physicalLocation": {
                   "artifactLocation": {
-                    "uri": "inorbit_edge/video.py",
+                    "uri": "inorbit_edge/tests/test_fetch_robot_config.py",
                     "uriBaseId": "SRCROOT"
                   },
                   "region": {
-                    "startLine": 50,
-                    "startColumn": 59,
-                    "charOffset": 1491,
-                    "charLength": 10,
+                    "startLine": 17,
+                    "startColumn": 8,
+                    "charOffset": 502,
+                    "charLength": 13,
                     "snippet": {
-                      "text": "INTER_AREA"
+                      "text": "requests_mock"
                     },
                     "sourceLanguage": "Python"
                   },
                   "contextRegion": {
-                    "startLine": 48,
+                    "startLine": 15,
                     "startColumn": 1,
-                    "charOffset": 1374,
-                    "charLength": 225,
+                    "charOffset": 385,
+                    "charLength": 145,
                     "snippet": {
-                      "text": "    w = int(width * scaling)\n    h = int(height * scaling)\n    resized = cv2.resize(frame, (w, h), interpolation=cv2.INTER_AREA)\n    img_encode = cv2.imencode(\n        \".jpg\", resized, [int(cv2.IMWRITE_JPEG_QUALITY), quality]"
+                      "text": "from inorbit_edge.robot import RobotSession\nfrom inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL\nimport requests_mock\nimport pytest\n"
                     },
                     "sourceLanguage": "Python"
                   }
@@ -24281,11 +24445,11 @@
               }
             ],
             "partialFingerprints": {
-              "equalIndicator/v1": "48d1a509615d29a657915d06f6f3092943e15b5cacac31c4f6e48bdf9f62f1a9"
+              "equalIndicator/v1": "425e583c06d5b38d9f707ca75000365ed91e8e9a1b49521bd69202295246f5f5"
             },
             "properties": {
-              "ideaSeverity": "WARNING",
-              "qodanaSeverity": "High"
+              "ideaSeverity": "ERROR",
+              "qodanaSeverity": "Critical"
             }
           },
           {
@@ -24334,58 +24498,6 @@
             ],
             "partialFingerprints": {
               "equalIndicator/v1": "50423d967ffe53f29b1ef099a3c3323bbc1f904675cd1cde5744ac38e20235cc"
-            },
-            "properties": {
-              "ideaSeverity": "WARNING",
-              "qodanaSeverity": "High"
-            }
-          },
-          {
-            "ruleId": "PyUnresolvedReferencesInspection",
-            "kind": "fail",
-            "level": "warning",
-            "message": {
-              "text": "Cannot find reference 'IMWRITE_JPEG_QUALITY' in '__init__.py'",
-              "markdown": "Cannot find reference 'IMWRITE_JPEG_QUALITY' in '__init__.py'"
-            },
-            "locations": [
-              {
-                "physicalLocation": {
-                  "artifactLocation": {
-                    "uri": "inorbit_edge/video.py",
-                    "uriBaseId": "SRCROOT"
-                  },
-                  "region": {
-                    "startLine": 52,
-                    "startColumn": 35,
-                    "charOffset": 1568,
-                    "charLength": 20,
-                    "snippet": {
-                      "text": "IMWRITE_JPEG_QUALITY"
-                    },
-                    "sourceLanguage": "Python"
-                  },
-                  "contextRegion": {
-                    "startLine": 50,
-                    "startColumn": 1,
-                    "charOffset": 1433,
-                    "charLength": 213,
-                    "snippet": {
-                      "text": "    resized = cv2.resize(frame, (w, h), interpolation=cv2.INTER_AREA)\n    img_encode = cv2.imencode(\n        \".jpg\", resized, [int(cv2.IMWRITE_JPEG_QUALITY), quality]\n    )[1].tobytes()\n    return img_encode, w, h"
-                    },
-                    "sourceLanguage": "Python"
-                  }
-                },
-                "logicalLocations": [
-                  {
-                    "fullyQualifiedName": "project",
-                    "kind": "module"
-                  }
-                ]
-              }
-            ],
-            "partialFingerprints": {
-              "equalIndicator/v1": "551a2ea8960ce9025d7cc3103b995814df33ae4927051eda4e476d4770c42c8e"
             },
             "properties": {
               "ideaSeverity": "WARNING",
@@ -24499,6 +24611,162 @@
           {
             "ruleId": "PyUnresolvedReferencesInspection",
             "kind": "fail",
+            "level": "error",
+            "message": {
+              "text": "No module named 'pytest'",
+              "markdown": "No module named 'pytest'"
+            },
+            "locations": [
+              {
+                "physicalLocation": {
+                  "artifactLocation": {
+                    "uri": "inorbit_edge/tests/test_floating_point_list_encoding.py",
+                    "uriBaseId": "SRCROOT"
+                  },
+                  "region": {
+                    "startLine": 1,
+                    "startColumn": 8,
+                    "charOffset": 7,
+                    "charLength": 6,
+                    "snippet": {
+                      "text": "pytest"
+                    },
+                    "sourceLanguage": "Python"
+                  },
+                  "contextRegion": {
+                    "startLine": 1,
+                    "startColumn": 1,
+                    "charOffset": 0,
+                    "charLength": 92,
+                    "snippet": {
+                      "text": "import pytest\nfrom math import inf\nfrom inorbit_edge.utils import encode_floating_point_list"
+                    },
+                    "sourceLanguage": "Python"
+                  }
+                },
+                "logicalLocations": [
+                  {
+                    "fullyQualifiedName": "project",
+                    "kind": "module"
+                  }
+                ]
+              }
+            ],
+            "partialFingerprints": {
+              "equalIndicator/v1": "80a90e0e0a8b3ff154f22f182e33f84a3370e7f229a257d5860fb2afb3be7d48"
+            },
+            "properties": {
+              "ideaSeverity": "ERROR",
+              "qodanaSeverity": "Critical"
+            }
+          },
+          {
+            "ruleId": "PyUnresolvedReferencesInspection",
+            "kind": "fail",
+            "level": "error",
+            "message": {
+              "text": "No module named 'pytest'",
+              "markdown": "No module named 'pytest'"
+            },
+            "locations": [
+              {
+                "physicalLocation": {
+                  "artifactLocation": {
+                    "uri": "inorbit_edge/tests/conftest.py",
+                    "uriBaseId": "SRCROOT"
+                  },
+                  "region": {
+                    "startLine": 19,
+                    "startColumn": 8,
+                    "charOffset": 812,
+                    "charLength": 6,
+                    "snippet": {
+                      "text": "pytest"
+                    },
+                    "sourceLanguage": "Python"
+                  },
+                  "contextRegion": {
+                    "startLine": 17,
+                    "startColumn": 1,
+                    "charOffset": 800,
+                    "charLength": 95,
+                    "snippet": {
+                      "text": "\"\"\"\n\nimport pytest\nimport paho.mqtt.client as mqtt\nfrom paho.mqtt.client import MQTTMessageInfo"
+                    },
+                    "sourceLanguage": "Python"
+                  }
+                },
+                "logicalLocations": [
+                  {
+                    "fullyQualifiedName": "project",
+                    "kind": "module"
+                  }
+                ]
+              }
+            ],
+            "partialFingerprints": {
+              "equalIndicator/v1": "97d61b7d8939ce8ed3e1d479da0baec5d0c21148eab1633183f1ca1303417e8b"
+            },
+            "properties": {
+              "ideaSeverity": "ERROR",
+              "qodanaSeverity": "Critical"
+            }
+          },
+          {
+            "ruleId": "PyUnresolvedReferencesInspection",
+            "kind": "fail",
+            "level": "error",
+            "message": {
+              "text": "No module named 'pytest'",
+              "markdown": "No module named 'pytest'"
+            },
+            "locations": [
+              {
+                "physicalLocation": {
+                  "artifactLocation": {
+                    "uri": "inorbit_edge/tests/test_robot_session_callbacks.py",
+                    "uriBaseId": "SRCROOT"
+                  },
+                  "region": {
+                    "startLine": 5,
+                    "startColumn": 8,
+                    "charOffset": 96,
+                    "charLength": 6,
+                    "snippet": {
+                      "text": "pytest"
+                    },
+                    "sourceLanguage": "Python"
+                  },
+                  "contextRegion": {
+                    "startLine": 3,
+                    "startColumn": 1,
+                    "charOffset": 46,
+                    "charLength": 141,
+                    "snippet": {
+                      "text": "\nfrom unittest.mock import MagicMock, call\nimport pytest\nfrom inorbit_edge.robot import RobotSession\nfrom paho.mqtt.client import MQTTMessage"
+                    },
+                    "sourceLanguage": "Python"
+                  }
+                },
+                "logicalLocations": [
+                  {
+                    "fullyQualifiedName": "project",
+                    "kind": "module"
+                  }
+                ]
+              }
+            ],
+            "partialFingerprints": {
+              "equalIndicator/v1": "a43e8c24e845eadeb02b78eba489997733e91e3dcffbd8d73ec871c67ed54c64"
+            },
+            "properties": {
+              "ideaSeverity": "ERROR",
+              "qodanaSeverity": "Critical"
+            }
+          },
+          {
+            "ruleId": "PyUnresolvedReferencesInspection",
+            "kind": "fail",
             "level": "warning",
             "message": {
               "text": "Class 'MissionStepPublishToTopic' does not define '__getitem__', so the '[]' operator cannot be used on its instances",
@@ -24551,35 +24819,35 @@
           {
             "ruleId": "PyUnresolvedReferencesInspection",
             "kind": "fail",
-            "level": "warning",
+            "level": "error",
             "message": {
-              "text": "Cannot find reference 'imencode' in '__init__.py'",
-              "markdown": "Cannot find reference 'imencode' in '__init__.py'"
+              "text": "No module named 'requests_mock'",
+              "markdown": "No module named 'requests_mock'"
             },
             "locations": [
               {
                 "physicalLocation": {
                   "artifactLocation": {
-                    "uri": "inorbit_edge/video.py",
+                    "uri": "inorbit_edge/tests/conftest.py",
                     "uriBaseId": "SRCROOT"
                   },
                   "region": {
-                    "startLine": 51,
-                    "startColumn": 22,
-                    "charOffset": 1524,
-                    "charLength": 8,
+                    "startLine": 22,
+                    "startColumn": 8,
+                    "charOffset": 903,
+                    "charLength": 13,
                     "snippet": {
-                      "text": "imencode"
+                      "text": "requests_mock"
                     },
                     "sourceLanguage": "Python"
                   },
                   "contextRegion": {
-                    "startLine": 49,
+                    "startLine": 20,
                     "startColumn": 1,
-                    "charOffset": 1403,
-                    "charLength": 215,
+                    "charOffset": 819,
+                    "charLength": 164,
                     "snippet": {
-                      "text": "    h = int(height * scaling)\n    resized = cv2.resize(frame, (w, h), interpolation=cv2.INTER_AREA)\n    img_encode = cv2.imencode(\n        \".jpg\", resized, [int(cv2.IMWRITE_JPEG_QUALITY), quality]\n    )[1].tobytes()"
+                      "text": "import paho.mqtt.client as mqtt\nfrom paho.mqtt.client import MQTTMessageInfo\nimport requests_mock\n\nfrom inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL"
                     },
                     "sourceLanguage": "Python"
                   }
@@ -24593,19 +24861,19 @@
               }
             ],
             "partialFingerprints": {
-              "equalIndicator/v1": "d3aeccd09245e4cda0296c0b8e26200406179121b1d9218074e4ce6a87601125"
+              "equalIndicator/v1": "e2088eedf37e417512eab992e32cf2d16dbe2d7bc822f526bc896afa9a4d8a10"
             },
             "properties": {
-              "ideaSeverity": "WARNING",
-              "qodanaSeverity": "High"
+              "ideaSeverity": "ERROR",
+              "qodanaSeverity": "Critical"
             }
           }
         ],
         "configProfile": "recommended",
         "deviceId": "200820300000000-be96-1d8d-9419-aaaba90f7778",
         "qodanaNewResultSummary": {
-          "high": 1,
-          "total": 1
+          "moderate": 6,
+          "total": 6
         }
       }
     }
