@@ -8,7 +8,7 @@ import os
 from setuptools import find_packages, setup
 
 # Do not edit manually, always use bumpversion (see CONTRIBUTING.rst)
-VERSION = "1.13.1"
+VERSION = "1.13.0"
 
 GITHUB_ORG = "https://github.com/inorbit-ai"
 GITHUB_REPO = f"{GITHUB_ORG}/edge-sdk-python"
