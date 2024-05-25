@@ -58,7 +58,8 @@ class OpenCVCamera(Camera):
     """Camera implementation backed up by OpenCV"""
 
     def __init__(self, video_url, rate=10, scaling=0.3, quality=35):
-        self.video_url = video_url
+        # Cast to string to support URL objects
+        self.video_url = str(video_url)
         self.capture = None
         self.capture_mutex = threading.Lock()
         self.capture_thread = None

@@ -132,7 +132,7 @@ def my_command_handler(robot_id, command_name, args, options):
 if __name__ == "__main__":
     inorbit_api_endpoint = os.environ.get("INORBIT_URL")
     inorbit_api_url = os.environ.get("INORBIT_API_URL")
-    inorbit_api_use_ssl = os.environ.get("INORBIT_API_USE_SSL")
+    inorbit_api_use_ssl = os.environ.get("INORBIT_USE_SSL")
     inorbit_api_key = os.environ.get("INORBIT_API_KEY")
 
     # For InOrbit Connect (https://connect.inorbit.ai/) certified robots,

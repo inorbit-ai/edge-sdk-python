@@ -2,6 +2,7 @@ requests>=2.31,<3.0
 paho-mqtt>=1.6.1,<2.0
 pillow>=10.3,<11.0
 pyaml>=23.12,<24.0
+pydantic>=2.6,<3.0
 pysocks>=1.7,<2.0
 protobuf>=3.20,<4.0
 certifi>=2024.2
