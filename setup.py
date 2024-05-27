@@ -35,8 +35,7 @@ setup(
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
-        # TODO(russell): Needs a changed of license
-        "License :: Other/Proprietary License",
+        "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
@@ -55,8 +54,7 @@ setup(
     },
     install_requires=requirements["install"],
     keywords=["inorbit", "robops", "robotics"],
-    # TODO(russell) Needs a changed of license
-    license="EULA",
+    license="MIT",
     license_files=["LICENSE"],
     long_description_content_type="text/markdown",
     maintainer="Leandro Pineda",
