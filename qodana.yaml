@@ -1,7 +1,7 @@
 version: "1.0"
 profile:
     name: qodana.recommended
-bootstrap: pip install -r requirements.txt
+bootstrap: pip install -r requirements.txt -r requirements-video.txt
 exclude:
     -   name: All
         paths:

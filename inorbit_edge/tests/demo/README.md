@@ -17,7 +17,7 @@ export INORBIT_API_KEY="foobar123"
 # https://api.inorbit.ai/docs/index.html#operation/generateRobotKey)
 export INORBIT_ROBOT_CONFIG_FILE=`pwd`/robots_config_example.yaml
 # Disable SSL for local development only
-export INORBIT_API_USE_SSL="true"
+export INORBIT_USE_SSL="true"
 # Optionally enable video streaming as camera "0"
 export INORBIT_VIDEO_URL=/dev/video0
 

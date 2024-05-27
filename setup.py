@@ -17,7 +17,7 @@ YOUTRACK_KEY = "ESP"
 YOUTRACK_OPEN = "State:%20-Resolved%20"
 
 with open("README.md") as readme_file:
-    readme = readme_file.read()
+    long_description = readme_file.read()
 
 # Load from the requirements-*.txt files where '*' is anything extra
 requirements = {key: [] for key in ["install", "video"]}
@@ -56,6 +56,7 @@ setup(
     keywords=["inorbit", "robops", "robotics"],
     license="MIT",
     license_files=["LICENSE"],
+    long_description=long_description,
     long_description_content_type="text/markdown",
     maintainer="Leandro Pineda",
     maintainer_email="leandro@inorbit.ai",
@@ -68,7 +69,7 @@ setup(
     python_requires=">=3.8, <3.12",
     url=GITHUB_REPO,
     # Do not edit manually, always use bumpversion (see CONTRIBUTING.rst)
-    version="1.13.0",
+    version=VERSION,
     project_urls={
         "CI/CD": "https://inorbit.teamcity.com/project/"
         "Engineering_Development_DeveloperPortal_EdgeSdkPython",

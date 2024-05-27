@@ -126,7 +126,8 @@ class RobotSession:
         self.robot_name = kwargs.get("robot_name", robot_name)
         # The agent version is generated based on the InOrbit Edge SDK version
         self.agent_version = "{}.edgesdk_py".format(inorbit_edge_version)
-        self.endpoint = kwargs.get("endpoint", INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL)
+        # Cast to string to support URL objects
+        self.endpoint = str(kwargs.get("endpoint", INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL))
         # Track robot's current pose
         self._last_pose = None
         # Unique names of configs
