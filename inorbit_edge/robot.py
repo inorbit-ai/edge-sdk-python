@@ -52,6 +52,7 @@ import re
 from deprecated import deprecated
 
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
+INORBIT_REST_API_URL = "https://api.inorbit.ai"
 
 MQTT_SUBTOPIC_POSE = "ros/loc/data2"
 MQTT_SUBTOPIC_PATH = "ros/loc/path"
@@ -134,6 +135,12 @@ class RobotSession:
         self._laser_config_names = []
         # Use SSL by default
         self.use_ssl = kwargs.get("use_ssl", True)
+        # InOrbit REST API endpoint
+        self.inorbit_rest_api_endpoint = kwargs.get(
+            "rest_api_endpoint", INORBIT_REST_API_URL
+        )
+        # Account the robot belongs to. Used for REST API calls.
+        self.account_id = kwargs.get("account_id")
 
         # Use TCP transport by default. The client will use websockets
         # transport if the environment variable HTTP_PROXY is set.
@@ -686,6 +693,49 @@ class RobotSession:
         with self.camera_streaming_mutex:
             if self.camera_streaming_on:
                 self.camera_streamers[camera_id].start()
+
+    def set_robot_footprint(self, footprint: list[dict], radius: float):
+        """Creates and applies a RobotFootprint configuration at the robot level scope.
+        Note that configurations can be applied at other scopes as well.
+        Refer to the REST APIs documentation for more information.
+
+        Args:
+            footprint (list[dict]): A list of { "x", "y" } dictionaries representing
+            the robot footprint.
+            radius (float): The size of the robot's footprint.
+
+        Raises:
+            ValueError: If the account ID is not provided.
+            HTTPError: If the request to the InOrbit REST API fails.
+
+        Returns:
+            None
+
+        References:
+            https://api.inorbit.ai/docs/index.html
+        """
+
+        if not self.account_id:
+            raise ValueError("Account ID is required to set robot footprint")
+
+        body = {
+            "apiVersion": "v0.1",
+            "kind": "RobotFootprint",
+            "metadata": {
+                "id": "all",
+                "scope": f"robot/{self.account_id}/{self.robot_id}",
+            },
+            "spec": {"footprint": footprint, "radius": radius},
+        }
+
+        res = requests.post(
+            f"{self.inorbit_rest_api_endpoint}/configuration/apply",
+            json=body,
+            headers={"x-auth-inorbit-app-key": f"{self.api_key}"},
+        )
+        res.raise_for_status()
+
+        self.logger.info(f"{self.robot_id}: Robot footprint set: {res.json()}")
 
     def _resend_modules(self):
         """Ask server to resend modules"""
