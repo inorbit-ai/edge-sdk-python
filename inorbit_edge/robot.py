@@ -694,7 +694,7 @@ class RobotSession:
             if self.camera_streaming_on:
                 self.camera_streamers[camera_id].start()
 
-    def set_robot_footprint(self, footprint: list[dict], radius: float):
+    def set_robot_footprint(self, footprint: list, radius: float):
         """Creates and applies a RobotFootprint configuration at the robot level scope.
         Note that configurations can be applied at other scopes as well.
         Refer to the REST APIs documentation for more information.

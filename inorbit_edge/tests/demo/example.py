@@ -32,13 +32,14 @@ NUM_LASERS = 3
 ROBOT_FOOTPRINT = {
     "footprint": [
         {"x": -0.5, "y": -0.5},
-        {"x":  0.3, "y": -0.5},
-        {"x":  0.7, "y":  0.0},
-        {"x":  0.3, "y":  0.5},
-        {"x": -0.5, "y":  0.5},
+        {"x": 0.3, "y": -0.5},
+        {"x": 0.7, "y": 0.0},
+        {"x": 0.3, "y": 0.5},
+        {"x": -0.5, "y": 0.5},
     ],
-    "radius": 0.2
+    "radius": 0.2,
 }
+
 
 class FakeRobot:
     """Class that simulates robot data and generates random data"""
