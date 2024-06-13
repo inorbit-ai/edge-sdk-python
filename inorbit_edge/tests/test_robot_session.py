@@ -130,7 +130,6 @@ def test_apply_footprint(requests_mock):
         footprint=[
             {"x": -0.5, "y": -0.5},
             {"x": 0.3, "y": -0.5},
-            {"x": 0.7, "y": 0.0},
             {"x": 0.3, "y": 0.5},
             {"x": -0.5, "y": 0.5},
         ],
@@ -166,7 +165,6 @@ def test_apply_footprint(requests_mock):
             "footprint": [
                 {"x": -0.5, "y": -0.5},
                 {"x": 0.3, "y": -0.5},
-                {"x": 0.7, "y": 0.0},
                 {"x": 0.3, "y": 0.5},
                 {"x": -0.5, "y": 0.5},
             ],
@@ -175,8 +173,6 @@ def test_apply_footprint(requests_mock):
     }
 
     # HTTP error
-    adapter = requests_mock.post(
-        f"{INORBIT_REST_API_URL}/configuration/apply", status_code=400
-    )
+    requests_mock.post(f"{INORBIT_REST_API_URL}/configuration/apply", status_code=400)
     with pytest.raises(HTTPError):
         robot_session.apply_footprint(footprint)
