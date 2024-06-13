@@ -694,7 +694,7 @@ class RobotSession:
             if self.camera_streaming_on:
                 self.camera_streamers[camera_id].start()
 
-    def set_robot_footprint(self, footprint: list, radius: float):
+    def set_robot_footprint(self, footprint: list = None, radius: float = None):
         """Creates and applies a RobotFootprint configuration at the robot level scope.
         Note that configurations can be applied at other scopes as well.
         Refer to the REST APIs documentation for more information.
@@ -725,8 +725,12 @@ class RobotSession:
                 "id": "all",
                 "scope": f"robot/{self.account_id}/{self.robot_id}",
             },
-            "spec": {"footprint": footprint, "radius": radius},
+            "spec": {}
         }
+        if footprint:
+            body["spec"]["footprint"] = footprint
+        if radius:
+            body["spec"]["radius"] = radius
 
         res = requests.post(
             f"{self.inorbit_rest_api_endpoint}/configuration/apply",
