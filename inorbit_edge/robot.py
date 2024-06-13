@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import io
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 import json
-from typing import Tuple
+from typing import Tuple, Optional, List, Dict
 
 from inorbit_edge import __version__ as inorbit_edge_version
 from inorbit_edge.types import Pose, SpatialTolerance
@@ -100,6 +100,24 @@ class LaserConfig:
         metadata={"help": "The min/max range value of the laser."}
     )
     n_points: int = field(metadata={"help": "The number of points the laser provides."})
+
+
+@dataclass
+class RobotFootprintSpec:
+    """
+    Robot footprint specification. Refer to InOrbit Config API for details.
+
+    References:
+        https://api.inorbit.ai/docs/index.html
+    """
+
+    footprint: Optional[List[Dict]] = field(
+        default=None,
+        metadata={"help": "List of { x, y } dictionary points defining the footprint."},
+    )
+    radius: Optional[float] = field(
+        default=None, metadata={"help": "Footprint radius."}
+    )
 
 
 class RobotSession:
@@ -1080,54 +1098,6 @@ class RobotSession:
 
         self.publish_lasers(x, y, yaw, [ranges], frame_id, ts)
 
-    def publish_footprint(self, footprint: list = None, radius: float = None):
-        """Creates and applies a RobotFootprint configuration at the robot level scope.
-        Calling this method one time applies a persistent footprint configuration.
-        Note that configurations can be applied at other scopes as well.
-        Refer to the REST APIs documentation for more information.
-
-        Args:
-            footprint (list[dict]): A list of { "x", "y" } dictionaries representing
-            the robot footprint.
-            radius (float): The size of the robot's footprint.
-
-        Raises:
-            ValueError: If the account ID is not provided.
-            HTTPError: If the request to the InOrbit REST API fails.
-
-        Returns:
-            None
-
-        References:
-            https://api.inorbit.ai/docs/index.html
-        """
-
-        if not self.account_id:
-            raise ValueError("Account ID is required to set robot footprint")
-
-        body = {
-            "apiVersion": "v0.1",
-            "kind": "RobotFootprint",
-            "metadata": {
-                "id": "all",
-                "scope": f"robot/{self.account_id}/{self.robot_id}",
-            },
-            "spec": {},
-        }
-        if footprint:
-            body["spec"]["footprint"] = footprint
-        if radius:
-            body["spec"]["radius"] = radius
-
-        res = requests.post(
-            f"{self.inorbit_rest_api_endpoint}/configuration/apply",
-            json=body,
-            headers={"x-auth-inorbit-app-key": f"{self.api_key}"},
-        )
-        res.raise_for_status()
-
-        self.logger.info(f"{self.robot_id}: Robot footprint set: {res.json()}")
-
     def register_lasers(self, configs):
         """Register a list of lasers to the system. Note that this order should
         be the same as the order used when using publish_laser(s). This function
@@ -1210,6 +1180,49 @@ class RobotSession:
         msg.paths.append(pb_robot_path)
 
         self.publish_protobuf(MQTT_SUBTOPIC_PATH, msg)
+
+    def apply_footprint(self, spec: RobotFootprintSpec):
+        """Creates and applies a RobotFootprint configuration at the robot level scope.
+        Calling this method one time applies a persistent footprint configuration.
+        Note that configurations can be applied at other scopes as well.
+        Refer to the REST APIs documentation for more information.
+
+        Args:
+            spec (RobotFootprintSpec): Robot footprint configuration spec.
+                Will be added to the `spec` field of the RobotFootprint configuration.
+
+        Raises:
+            ValueError: If the account ID is not set.
+            HTTPError: If the request to the InOrbit REST API fails.
+
+        Returns:
+            None
+
+        References:
+            https://api.inorbit.ai/docs/index.html
+        """
+
+        if not self.account_id:
+            raise ValueError("Account ID is required to set robot footprint")
+
+        body = {
+            "apiVersion": "v0.1",
+            "kind": "RobotFootprint",
+            "metadata": {
+                "id": "all",
+                "scope": f"robot/{self.account_id}/{self.robot_id}",
+            },
+            "spec": asdict(spec),
+        }
+
+        res = requests.post(
+            f"{self.inorbit_rest_api_endpoint}/configuration/apply",
+            json=body,
+            headers={"x-auth-inorbit-app-key": f"{self.api_key}"},
+        )
+        res.raise_for_status()
+
+        self.logger.info(f"{self.robot_id}: Robot footprint set: {res.json()}")
 
 
 class RobotSessionFactory:

@@ -9,7 +9,12 @@ import os
 import sys
 from math import inf
 
-from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool, LaserConfig
+from inorbit_edge.robot import (
+    RobotSessionFactory,
+    RobotSessionPool,
+    LaserConfig,
+    RobotFootprintSpec,
+)
 from inorbit_edge.video import OpenCVCamera
 
 logging.basicConfig(
@@ -29,16 +34,16 @@ LIDAR_MAX = 3.2
 NUM_ROBOTS = 2
 NUM_LASERS = 3
 
-ROBOT_FOOTPRINT = {
-    "footprint": [
+ROBOT_FOOTPRINT = RobotFootprintSpec(
+    footprint=[
         {"x": -0.5, "y": -0.5},
         {"x": 0.3, "y": -0.5},
         {"x": 0.7, "y": 0.0},
         {"x": 0.3, "y": 0.5},
         {"x": -0.5, "y": 0.5},
     ],
-    "radius": 0.2,
-}
+    radius=0.2,
+)
 
 
 class FakeRobot:
@@ -183,8 +188,6 @@ if __name__ == "__main__":
         robot_session = robot_session_pool.get_session(
             robot_id=cur_robot_id, robot_name=cur_robot_id
         )
-        if ROBOT_FOOTPRINT:
-            robot_session.set_robot_footprint(**ROBOT_FOOTPRINT)
         fake_robot_pool[cur_robot_id] = FakeRobot(
             robot_id=cur_robot_id, robot_name=cur_robot_id
         )
@@ -207,6 +210,10 @@ if __name__ == "__main__":
                 )
             )
         robot_session.register_lasers(configs)
+
+        # Configure robot footprint
+        if ROBOT_FOOTPRINT:
+            robot_session.apply_footprint(ROBOT_FOOTPRINT)
 
     # Go through every fake robot and simulate robot movement
     while True:
