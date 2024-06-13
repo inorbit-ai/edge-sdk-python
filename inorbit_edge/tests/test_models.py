@@ -94,7 +94,7 @@ class TestRobotSessionModel:
         return {
             "robot_id": "123",
             "robot_name": "test_robot",
-            "robot_api_key": "valid_robot_api_key",
+            "robot_key": "valid_robot_key",
             "api_key": "valid_api_key",
         }
 
@@ -102,7 +102,7 @@ class TestRobotSessionModel:
         model = RobotSessionModel(**base_model)
         assert model.robot_id == base_model["robot_id"]
         assert model.robot_name == base_model["robot_name"]
-        assert model.robot_api_key == base_model["robot_api_key"]
+        assert model.robot_key == base_model["robot_key"]
         assert model.api_key == base_model["api_key"]
         assert model.use_ssl is True
         assert str(model.endpoint) == INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL
@@ -117,13 +117,18 @@ class TestRobotSessionModel:
         with pytest.raises(ValidationError, match=r"Whitespaces are not allowed"):
             RobotSessionModel(**base_model)
 
-    def test_whitespace_validation_robot_api_key(self, base_model):
-        base_model["robot_api_key"] = "abc def"
+    def test_whitespace_validation_robot_key(self, base_model):
+        base_model["robot_key"] = "abc def"
         with pytest.raises(ValidationError, match=r"Whitespaces are not allowed"):
             RobotSessionModel(**base_model)
 
     def test_whitespace_validation_api_key(self, base_model):
         base_model["api_key"] = "abc def"
+        with pytest.raises(ValidationError, match=r"Whitespaces are not allowed"):
+            RobotSessionModel(**base_model)
+
+    def test_whitespace_validation_account_id(self, base_model):
+        base_model["account_id"] = "abc def"
         with pytest.raises(ValidationError, match=r"Whitespaces are not allowed"):
             RobotSessionModel(**base_model)
 
@@ -136,7 +141,7 @@ class TestRobotSessionModel:
         init_input = {
             "robot_id": "123",
             "robot_name": "test_robot",
-            "robot_api_key": "valid_robot_api_key",
+            "robot_key": "valid_robot_key",
         }
         model = RobotSessionModel(**init_input)
         assert model.api_key == "env_valid_key"
@@ -150,7 +155,7 @@ class TestRobotSessionModel:
         init_input = {
             "robot_id": "123",
             "robot_name": "test_robot",
-            "robot_api_key": "valid_robot_api_key",
+            "robot_key": "valid_robot_key",
         }
         model = RobotSessionModel(**init_input)
         assert model.use_ssl is False
