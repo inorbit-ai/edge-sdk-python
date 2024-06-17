@@ -9,7 +9,12 @@ import os
 import sys
 from math import inf
 
-from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool, LaserConfig
+from inorbit_edge.robot import (
+    RobotSessionFactory,
+    RobotSessionPool,
+    LaserConfig,
+    RobotFootprintSpec,
+)
 from inorbit_edge.video import OpenCVCamera
 
 logging.basicConfig(
@@ -28,6 +33,17 @@ LIDAR_MAX = 3.2
 
 NUM_ROBOTS = 2
 NUM_LASERS = 3
+
+ROBOT_FOOTPRINT = RobotFootprintSpec(
+    footprint=[
+        {"x": -0.5, "y": -0.5},
+        {"x": 0.3, "y": -0.5},
+        {"x": 0.7, "y": 0.0},
+        {"x": 0.3, "y": 0.5},
+        {"x": -0.5, "y": 0.5},
+    ],
+    radius=0.2,
+)
 
 
 class FakeRobot:
@@ -132,6 +148,7 @@ def my_command_handler(robot_id, command_name, args, options):
 if __name__ == "__main__":
     inorbit_api_endpoint = os.environ.get("INORBIT_URL")
     inorbit_api_url = os.environ.get("INORBIT_API_URL")
+    inorbit_account_id = os.environ.get("INORBIT_ACCOUNT_ID")
     inorbit_api_use_ssl = os.environ.get("INORBIT_USE_SSL")
     inorbit_api_key = os.environ.get("INORBIT_API_KEY")
 
@@ -144,14 +161,18 @@ if __name__ == "__main__":
     video_url = os.environ.get("INORBIT_VIDEO_URL")
 
     assert inorbit_api_endpoint, "Environment variable INORBIT_URL not specified"
-    assert inorbit_api_url, "Environment variable INORBIT_API_URL not specified"
     assert inorbit_api_key, "Environment variable INORBIT_API_KEY not specified"
+    # Required for setting configurations, such as robot footprints.
+    assert inorbit_api_url, "Environment variable INORBIT_API_URL not specified"
+    assert inorbit_account_id, "Environment variable INORBIT_ACCOUNT_ID not specified"
 
     # Create robot session factory and session pool
     robot_session_factory = RobotSessionFactory(
         endpoint=inorbit_api_endpoint,
+        rest_api_endpoint=inorbit_api_url,
         api_key=inorbit_api_key,
         use_ssl=inorbit_api_use_ssl == "true",
+        account_id=inorbit_account_id,
     )
     robot_session_factory.register_command_callback(log_command)
     robot_session_factory.register_command_callback(my_command_handler)
@@ -189,6 +210,10 @@ if __name__ == "__main__":
                 )
             )
         robot_session.register_lasers(configs)
+
+        # Configure robot footprint
+        if ROBOT_FOOTPRINT:
+            robot_session.apply_footprint(ROBOT_FOOTPRINT)
 
     # Go through every fake robot and simulate robot movement
     while True:

@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from inorbit_edge.robot import RobotSession
-from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL
+import pytest
+from requests import HTTPError
+
+from inorbit_edge.robot import RobotSession, RobotFootprintSpec
+from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, INORBIT_REST_API_URL
 from inorbit_edge import get_module_version
 
 
@@ -116,3 +119,60 @@ def test_method_throttling():
     )
     robot_session._publish_throttling["publish_key_values"]["bar"]["last_ts"] = 0
     assert robot_session._should_publish_message(method="publish_key_values", key="bar")
+
+
+def test_apply_footprint(requests_mock):
+    adapter = requests_mock.post(
+        f"{INORBIT_REST_API_URL}/configuration/apply",
+        json={"operationStatus": "SUCCESS"},
+    )
+    footprint = RobotFootprintSpec(
+        footprint=[
+            {"x": -0.5, "y": -0.5},
+            {"x": 0.3, "y": -0.5},
+            {"x": 0.3, "y": 0.5},
+            {"x": -0.5, "y": 0.5},
+        ],
+        radius=0.2,
+    )
+
+    # Missing account_id
+    robot_session = RobotSession(
+        robot_id="id_123",
+        robot_name="name_123",
+        api_key="apikey_123",
+    )
+    with pytest.raises(ValueError):
+        robot_session.apply_footprint(footprint)
+
+    # Successful request
+    robot_session = RobotSession(
+        robot_id="id_123",
+        robot_name="name_123",
+        api_key="apikey_123",
+        account_id="account_123",
+    )
+    robot_session.apply_footprint(footprint)
+    assert adapter.called_once
+    assert adapter.last_request.json() == {
+        "apiVersion": "v0.1",
+        "kind": "RobotFootprint",
+        "metadata": {
+            "id": "all",
+            "scope": "robot/account_123/id_123",
+        },
+        "spec": {
+            "footprint": [
+                {"x": -0.5, "y": -0.5},
+                {"x": 0.3, "y": -0.5},
+                {"x": 0.3, "y": 0.5},
+                {"x": -0.5, "y": 0.5},
+            ],
+            "radius": 0.2,
+        },
+    }
+
+    # HTTP error
+    requests_mock.post(f"{INORBIT_REST_API_URL}/configuration/apply", status_code=400)
+    with pytest.raises(HTTPError):
+        robot_session.apply_footprint(footprint)
