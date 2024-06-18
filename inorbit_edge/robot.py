@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import io
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 import json
-from typing import Tuple
+from typing import Tuple, Optional, List, Dict
 
 from inorbit_edge import __version__ as inorbit_edge_version
 from inorbit_edge.types import Pose, SpatialTolerance
@@ -52,6 +52,7 @@ import re
 from deprecated import deprecated
 
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
+INORBIT_REST_API_URL = "https://api.inorbit.ai"
 
 MQTT_SUBTOPIC_POSE = "ros/loc/data2"
 MQTT_SUBTOPIC_PATH = "ros/loc/path"
@@ -101,6 +102,24 @@ class LaserConfig:
     n_points: int = field(metadata={"help": "The number of points the laser provides."})
 
 
+@dataclass
+class RobotFootprintSpec:
+    """
+    Robot footprint specification. Refer to InOrbit Config API for details.
+
+    References:
+        https://api.inorbit.ai/docs/index.html
+    """
+
+    footprint: Optional[List[Dict]] = field(
+        default=None,
+        metadata={"help": "List of { x, y } dictionary points defining the footprint."},
+    )
+    radius: Optional[float] = field(
+        default=None, metadata={"help": "Footprint radius."}
+    )
+
+
 class RobotSession:
 
     def __init__(self, robot_id, robot_name, api_key=None, **kwargs) -> None:
@@ -110,10 +129,15 @@ class RobotSession:
             robot_id (str): ID of the robot.
             api_key (str): API key for authenticating against InOrbit Cloud services.
             robot_name (str): Robot name.
+        Kwargs:
             robot_key(str): Robot key for authenticating against InOrbit Cloud services
-            when using InOrbit Connect (https://connect.inorbit.ai/).
+                when using InOrbit Connect (https://connect.inorbit.ai/).
             endpoint (str): InOrbit URL. Defaults: INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL.
             use_ssl (bool): Configures MQTT client to use SSL. Defaults: True.
+            rest_api_endpoint (str): The URL of the InOrbit REST API.
+                Defaults: INORBIT_REST_API_URL.
+            account_id (str): The account ID of the robot owner. Required for applying
+                configurations to the robot.
         """
 
         self.api_key = api_key
@@ -134,6 +158,12 @@ class RobotSession:
         self._laser_config_names = []
         # Use SSL by default
         self.use_ssl = kwargs.get("use_ssl", True)
+        # InOrbit REST API endpoint
+        self.inorbit_rest_api_endpoint = kwargs.get(
+            "rest_api_endpoint", INORBIT_REST_API_URL
+        )
+        # Account the robot belongs to. Used for REST API calls.
+        self.account_id = kwargs.get("account_id")
 
         # Use TCP transport by default. The client will use websockets
         # transport if the environment variable HTTP_PROXY is set.
@@ -1150,6 +1180,49 @@ class RobotSession:
         msg.paths.append(pb_robot_path)
 
         self.publish_protobuf(MQTT_SUBTOPIC_PATH, msg)
+
+    def apply_footprint(self, spec: RobotFootprintSpec):
+        """Creates and applies a RobotFootprint configuration at the robot level scope.
+        Calling this method one time applies a persistent footprint configuration.
+        Note that configurations can be applied at other scopes as well.
+        Refer to the REST APIs documentation for more information.
+
+        Args:
+            spec (RobotFootprintSpec): Robot footprint configuration spec.
+                Will be added to the `spec` field of the RobotFootprint configuration.
+
+        Raises:
+            ValueError: If the account ID is not set.
+            HTTPError: If the request to the InOrbit REST API fails.
+
+        Returns:
+            None
+
+        References:
+            https://api.inorbit.ai/docs/index.html
+        """
+
+        if not self.account_id:
+            raise ValueError("Account ID is required to set robot footprint")
+
+        body = {
+            "apiVersion": "v0.1",
+            "kind": "RobotFootprint",
+            "metadata": {
+                "id": "all",
+                "scope": f"robot/{self.account_id}/{self.robot_id}",
+            },
+            "spec": asdict(spec),
+        }
+
+        res = requests.post(
+            f"{self.inorbit_rest_api_endpoint}/configuration/apply",
+            json=body,
+            headers={"x-auth-inorbit-app-key": f"{self.api_key}"},
+        )
+        res.raise_for_status()
+
+        self.logger.info(f"{self.robot_id}: Robot footprint set: {res.json()}")
 
 
 class RobotSessionFactory:

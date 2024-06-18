@@ -11,7 +11,7 @@ from typing import Optional
 from pydantic import BaseModel, AnyUrl, field_validator, HttpUrl
 
 # InOrbit
-from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL
+from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, INORBIT_REST_API_URL
 
 
 class CameraConfig(BaseModel):
@@ -85,6 +85,10 @@ class RobotSessionModel(BaseModel):
 
     * INORBIT_API_KEY (required): The InOrbit API key
     * INORBIT_USE_SSL: If SSL should be used (default is true)
+    * INORBIT_API_URL: The URL of the API (default is
+        inorbit_edge.robot.INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL)
+    * INORBIT_REST_API_URL: The URL of the InOrbit REST API (default is
+        inorbit_edge.robot.INORBIT_REST_API_URL)
 
     Attributes:
         robot_id (str): The unique ID of the robot
@@ -94,6 +98,10 @@ class RobotSessionModel(BaseModel):
         use_ssl (bool, optional): If SSL is used for the InOrbit API connection
         endpoint (HttpUrl, optional): The URL of the API or inorbit_edge's
                                       INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL by default
+        rest_api_endpoint (HttpUrl, optional): The URL of the InOrbit REST API.
+                                               INORBIT_REST_API_URL by default.
+        account_id (str, optional): The account ID of the robot owner. Required for
+                                    applying configurations to the robot.
     """
 
     robot_id: str
@@ -104,9 +112,13 @@ class RobotSessionModel(BaseModel):
     endpoint: HttpUrl = os.environ.get(
         "INORBIT_API_URL", INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL
     )
+    rest_api_endpoint: Optional[HttpUrl] = os.environ.get(
+        "INORBIT_REST_API_URL", INORBIT_REST_API_URL
+    )
+    account_id: Optional[str] = None
 
     # noinspection PyMethodParameters
-    @field_validator("robot_id", "robot_name", "robot_key", "api_key")
+    @field_validator("robot_id", "robot_name", "robot_key", "api_key", "account_id")
     def check_whitespace(cls, value: str) -> str:
         """Check if the field contains whitespace.
 

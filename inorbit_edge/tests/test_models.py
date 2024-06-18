@@ -127,6 +127,11 @@ class TestRobotSessionModel:
         with pytest.raises(ValidationError, match=r"Whitespaces are not allowed"):
             RobotSessionModel(**base_model)
 
+    def test_whitespace_validation_account_id(self, base_model):
+        base_model["account_id"] = "abc def"
+        with pytest.raises(ValidationError, match=r"Whitespaces are not allowed"):
+            RobotSessionModel(**base_model)
+
     @mock.patch.dict(os.environ, {"INORBIT_API_KEY": "env_valid_key"})
     def test_reads_api_key_from_environment_variable(self, base_model):
         # Re-import after Mock
