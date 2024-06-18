@@ -93,7 +93,7 @@ class RobotSessionModel(BaseModel):
     Attributes:
         robot_id (str): The unique ID of the robot
         robot_name (str): The name of the robot
-        robot_api_key (str | None, optional): The robot key for InOrbit cloud services
+        robot_key (str | None, optional): The robot key for InOrbit cloud services
         api_key (str | None, optional): The InOrbit API token
         use_ssl (bool, optional): If SSL is used for the InOrbit API connection
         endpoint (HttpUrl, optional): The URL of the API or inorbit_edge's
@@ -106,7 +106,7 @@ class RobotSessionModel(BaseModel):
 
     robot_id: str
     robot_name: str
-    robot_api_key: Optional[str] = None
+    robot_key: Optional[str] = None
     api_key: Optional[str] = os.getenv("INORBIT_API_KEY")
     use_ssl: bool = os.environ.get("INORBIT_USE_SSL", "true").lower() == "true"
     endpoint: HttpUrl = os.environ.get(
@@ -118,11 +118,11 @@ class RobotSessionModel(BaseModel):
     account_id: Optional[str] = None
 
     # noinspection PyMethodParameters
-    @field_validator("robot_id", "robot_name", "robot_api_key", "api_key", "account_id")
+    @field_validator("robot_id", "robot_name", "robot_key", "api_key", "account_id")
     def check_whitespace(cls, value: str) -> str:
         """Check if the field contains whitespace.
 
-        This is used for the robot_id, robot_name, robot_api_key, and api_key.
+        This is used for the robot_id, robot_name, robot_key, and api_key.
 
         Args:
             value (str): The field to be checked
