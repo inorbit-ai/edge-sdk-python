@@ -44,6 +44,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     description="InOrbit Edge SDK for Python",
@@ -66,7 +67,7 @@ setup(
     #  package_dir={"": "src"},
     packages=find_packages(exclude=["tests", "*.tests", "*.tests.*"]),
     platforms=["Linux", "Mac OS-X", "Windows"],
-    python_requires=">=3.8, <3.12",
+    python_requires=">=3.8, <3.13",
     url=GITHUB_REPO,
     # Do not edit manually, always use bumpversion (see CONTRIBUTING.rst)
     version=VERSION,
