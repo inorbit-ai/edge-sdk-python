@@ -67,7 +67,7 @@ class TestCameraConfig:
         error = (
             "1 validation error for CameraConfig\nvideo_url\n  Field required "
             "[type=missing, input_value={}, input_type=dict]\n    For further "
-            "information visit https://errors.pydantic.dev/2.7/v/missing"
+            "information visit https://errors.pydantic.dev/2.9/v/missing"
         )
         with pytest.raises(ValidationError, match=re.escape(error)):
             CameraConfig()
@@ -77,7 +77,7 @@ class TestCameraConfig:
             "1 validation error for CameraConfig\nvideo_url\n  Input should be a "
             "valid URL, relative URL without a base [type=url_parsing, "
             "input_value='invalid_video_url', input_type=str]\n    For further "
-            "information visit https://errors.pydantic.dev/2.7/v/url_parsing"
+            "information visit https://errors.pydantic.dev/2.9/v/url_parsing"
         )
         with pytest.raises(ValidationError, match=re.escape(error)):
             CameraConfig(video_url="invalid_video_url")
