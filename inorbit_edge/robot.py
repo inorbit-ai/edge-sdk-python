@@ -16,7 +16,6 @@ import socks
 import ssl
 import threading
 import yaml
-import time
 
 from inorbit_edge.inorbit_pb2 import (
     CustomDataMessage,
