@@ -607,9 +607,21 @@ class RobotSession:
         """Executes registered command callbacks for a specific incoming command."""
         for callback in self.command_callbacks:
 
-            def result_function(result_code):
+            def result_function(
+                result_code,
+                execution_status_details=None,
+                stdout=None,
+                stderr=None
+            ):
                 if execution_id is not None:
-                    return self.report_command_result(args, execution_id, result_code)
+                    return self.report_command_result(
+                        args,
+                        execution_id,
+                        result_code,
+                        execution_status_details,
+                        stdout,
+                        stderr,
+                    )
 
             # TODO: Implement progress reporting function
             def progress_function(output, error):
@@ -622,7 +634,9 @@ class RobotSession:
             }
             callback(command_name, args, options)
 
-    def report_command_result(self, args, execution_id, result_code):
+    def report_command_result(
+        self, args, execution_id, result_code, execution_status_details, stdout, stderr
+    ):
         """Send to server the result code of a command executed by a user callback."""
 
         msg = CustomScriptStatusMessage()
@@ -634,6 +648,13 @@ class RobotSession:
             else CUSTOM_COMMAND_STATUS_ABORTED
         )
         msg.return_code = result_code
+        if execution_status_details:
+            msg.execution_status_details = execution_status_details
+        if stdout:
+            msg.stdout = stdout
+        if stderr:
+            msg.stderr = stderr
+        msg.ts = int(time.time() * 1000)
         self.publish_protobuf(MQTT_SCRIPT_OUTPUT_TOPIC, msg)
 
     def register_commands_path(self, path="./user_scripts", exec_name_regex=r".*"):
