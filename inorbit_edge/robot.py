@@ -608,10 +608,7 @@ class RobotSession:
         for callback in self.command_callbacks:
 
             def result_function(
-                result_code,
-                execution_status_details=None,
-                stdout=None,
-                stderr=None
+                result_code, execution_status_details=None, stdout=None, stderr=None
             ):
                 if execution_id is not None:
                     return self.report_command_result(
