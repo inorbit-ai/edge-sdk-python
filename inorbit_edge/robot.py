@@ -33,6 +33,7 @@ from inorbit_edge.inorbit_pb2 import (
     CameraMessage,
     SystemStatsMessage,
     MapMessage,
+    MapRequest,
 )
 from inorbit_edge.video import CameraStreamer, Camera
 from inorbit_edge.missions import MissionsModule
@@ -69,6 +70,7 @@ MQTT_TOPIC_ECHO = "echo"
 MQTT_NAV_GOAL_GOAL = "ros/loc/nav_goal"
 MQTT_NAV_GOAL_MULTI = "ros/loc/goal_path"
 MQTT_INITIAL_POSE = "ros/loc/set_pose"
+MQTT_MAP_REQ = "ros/loc/mapreq"
 MQTT_MAP_TOPIC = "ros/loc/map2"
 MQTT_CUSTOM_COMMAND = "custom_command/script/command"
 MQTT_CUSTOM_COMMAND_MESSAGE = "custom_command/ros"
@@ -118,6 +120,22 @@ class RobotFootprintSpec:
     radius: Optional[float] = field(
         default=None, metadata={"help": "Footprint radius."}
     )
+
+
+@dataclass
+class MapData:
+    """
+    Map data to be sent to the InOrbit platform.
+    """
+
+    file: str
+    map_id: str
+    frame_id: str
+    x: float
+    y: float
+    resolution: float
+    width: int
+    height: int
 
 
 class RobotSession:
@@ -222,12 +240,15 @@ class RobotSession:
         self.camera_streamers = {}
         self.camera_streaming_on = False
         self.camera_streaming_mutex = threading.Lock()
+        self.map_data_mutex = threading.Lock()
+        self.map_files: dict[str, MapData] = {}  # label to map data
 
         self.message_handlers[MQTT_INITIAL_POSE] = self._handle_initial_pose
         self.message_handlers[MQTT_CUSTOM_COMMAND] = self._handle_custom_command
         self.message_handlers[MQTT_CUSTOM_COMMAND_MESSAGE] = self._handle_custom_message
         self.message_handlers[MQTT_NAV_GOAL_GOAL] = self._handle_nav_goal
         self.message_handlers[MQTT_IN_CMD] = self._handle_in_cmd
+        self.message_handlers[MQTT_MAP_REQ] = self._handle_mapreq
 
         # Internal variables for configuring throttling
         # The throttling is done by method instead of by topic because the same topic
@@ -396,6 +417,7 @@ class RobotSession:
             topic=self._get_robot_subtopic(subtopic=MQTT_NAV_GOAL_GOAL)
         )
         self.client.subscribe(topic=self._get_robot_subtopic(subtopic=MQTT_IN_CMD))
+        self.client.subscribe(topic=self._get_robot_subtopic(subtopic=MQTT_MAP_REQ))
         # ask server to resend modules, so our state is consistent with the server side
         self._resend_modules()
 
@@ -536,6 +558,95 @@ class RobotSession:
             for s in self.camera_streamers.values():
                 s.stop()
 
+    def _read_map_file(self, file: str) -> Optional[bytes]:
+        """Read a map file and return its bytes. If loading fails return None and log
+        an error."""
+
+        try:
+            # Open the image file
+            img = Image.open(file)
+            # Verify opens and reads the entire image file
+            img.verify()
+        except IOError:
+            self.logger.error(f"{file} is not accessible.")
+            return (None, None, None)
+
+        # img.verify() closes the file, reload it now that its validated
+        img = Image.open(file)
+
+        # Create a BytesIO object
+        img_byte_arr = io.BytesIO()
+        img.save(img_byte_arr, format="PNG")
+
+        return (img_byte_arr.getvalue(), img.width, img.height)
+
+    def _publish_map_bytes(
+        self,
+        img_bytes: bytes,
+        map_data: MapData,
+        ts: Optional[int],
+        is_update: bool,
+        include_pixels: bool,
+    ):
+        """Publishes a map message with the provided map data"""
+        # Build the protobuf message
+        data = MapMessage()
+        data.width = map_data.width
+        data.height = map_data.height
+        data.data_hash = hash(tuple(img_bytes))
+        data.label = map_data.map_id
+        data.map_id = map_data.map_id
+        data.frame_id = map_data.frame_id
+        data.x = map_data.x
+        data.y = map_data.y
+        data.resolution = map_data.resolution
+        data.ts = ts if ts else int(time.time() * 1000)
+        data.is_update = is_update
+        if include_pixels:
+            data.pixels = img_bytes
+
+        # Publish the map
+        self.publish_protobuf(MQTT_MAP_TOPIC, data, qos=1, retain=True)
+
+    def _handle_mapreq(self, msg):
+        """Publishes a full map message in response to a map request message"""
+
+        mapreq_message = MapRequest()
+        mapreq_message.ParseFromString(msg)
+        requested_label = mapreq_message.label
+        requested_hash = int(mapreq_message.data_hash)
+
+        self.logger.info(
+            f"Received map request for label '{requested_label}' with hash "
+            f"{requested_hash}"
+        )
+
+        with self.map_data_mutex:
+            # Find and load the map image if it was previously published
+            map: MapData = self.map_files.get(requested_label, None)
+            if map is None:
+                self.logger.error(f"Map file for label '{requested_label}' not found")
+                return
+            img_bytes, _, _ = self._read_map_file(map.file)
+
+        # Validate the data is the same as requested
+        data_hash = hash(tuple(img_bytes))
+        if data_hash != requested_hash:
+            self.logger.error(
+                f"Map data hash mismatch for label {requested_label}. Expected "
+                f"{requested_hash}, got {data_hash}"
+            )
+            return
+
+        # Send the map
+        self._publish_map_bytes(
+            img_bytes=img_bytes,
+            map_data=map,
+            ts=None,
+            is_update=False,
+            include_pixels=True,
+        )
+
     def publish_map(
         self,
         file,
@@ -546,6 +657,7 @@ class RobotSession:
         resolution=0.05,
         ts=None,
         is_update=False,
+        force_upload=False,
     ):
         """
         Sends the information about a map and optionally its contents. The map message
@@ -553,45 +665,37 @@ class RobotSession:
         be actually sent. An is_update flag can be provided to inform in the message
         that this is an update message, aimed to correct a previous one, currently
         used for frame_id/map_id updates.
+        By default, pixels are not sent, only the hash of the image data. Pixels will
+        be sent automatically if requested.
         """
-        try:
-            # Open the image file
-            img = Image.open(file)
-            # Check if image file is a png image
-            if img.format != "PNG":
-                self.logger.error(f"{file} is not a PNG image")
-                return None
-            # Verify opens and reads the entire image file
-            img.verify()
-        except IOError:
-            self.logger.error(f"{file} is not accessible.")
-            return None
 
-        # img.verify() closes the file, reload it now that its validated
-        img = Image.open(file)
+        # Load the image file
+        # _read_map_file will log an error if the file is not accessible
+        img_bytes, width, height = self._read_map_file(file)
+        if img_bytes is None:
+            return
 
-        # Create a BytesIO object
-        img_byte_arr = io.BytesIO()
-        img.save(img_byte_arr, format="PNG")
-        img_byte_arr = img_byte_arr.getvalue()
-
-        # Build the protobuf message
-        data = MapMessage()
-        data.width = img.width
-        data.height = img.height
-        data.data_hash = hash(tuple(img_byte_arr))
-        data.pixels = img_byte_arr
-        data.label = map_id
-        data.map_id = map_id
-        data.frame_id = frame_id
-        data.x = x
-        data.y = y
-        data.resolution = resolution
-        data.ts = ts if ts else int(time.time() * 1000)
-        data.is_update = is_update
-
-        # Publish the map
-        self.publish_protobuf(MQTT_MAP_TOPIC, data, qos=1, retain=True)
+        map_data = MapData(
+            file=file,
+            map_id=map_id,
+            frame_id=frame_id,
+            x=x,
+            y=y,
+            resolution=resolution,
+            width=width,
+            height=height,
+        )
+        # Store the filename for future map requests
+        with self.map_data_mutex:
+            self.map_files[map_id] = map_data
+        # Publish it
+        self._publish_map_bytes(
+            img_bytes=img_bytes,
+            map_data=map_data,
+            ts=ts,
+            is_update=is_update,
+            include_pixels=force_upload,
+        )
 
     def publish_camera_frame(self, camera_id, image, width, height, ts):
         """Publishes a camera frame"""

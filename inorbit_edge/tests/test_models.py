@@ -65,21 +65,27 @@ class TestCameraConfig:
     def test_video_url_validation(self):
         # Test missing URL
         error = (
-            "1 validation error for CameraConfig\nvideo_url\n  Field required "
-            "[type=missing, input_value={}, input_type=dict]\n    For further "
-            "information visit https://errors.pydantic.dev/2.9/v/missing"
-        )
-        with pytest.raises(ValidationError, match=re.escape(error)):
+            re.escape(
+                "1 validation error for CameraConfig\nvideo_url\n  Field required "
+                "[type=missing, input_value={}, input_type=dict]\n    For further "
+                "information visit https://errors.pydantic.dev/"
+            )
+            + r"\d+\.\d+/v/missing"
+        )  # match: "https://errors...dev/x.x/v/missing"
+        with pytest.raises(ValidationError, match=error):
             CameraConfig()
 
         # Test invalid URL
         error = (
-            "1 validation error for CameraConfig\nvideo_url\n  Input should be a "
-            "valid URL, relative URL without a base [type=url_parsing, "
-            "input_value='invalid_video_url', input_type=str]\n    For further "
-            "information visit https://errors.pydantic.dev/2.9/v/url_parsing"
-        )
-        with pytest.raises(ValidationError, match=re.escape(error)):
+            re.escape(
+                "1 validation error for CameraConfig\nvideo_url\n  Input should be a "
+                "valid URL, relative URL without a base [type=url_parsing, "
+                "input_value='invalid_video_url', input_type=str]\n    For further "
+                "information visit https://errors.pydantic.dev/"
+            )
+            + r"\d+\.\d+/v/url_parsing"
+        )  # match: "https://errors...dev/x.x/v/url_parsing"
+        with pytest.raises(ValidationError, match=error):
             CameraConfig(video_url="invalid_video_url")
 
         # Test valid URL
