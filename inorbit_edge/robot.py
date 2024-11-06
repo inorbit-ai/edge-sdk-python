@@ -123,19 +123,59 @@ class RobotFootprintSpec:
 
 
 @dataclass
-class MapData:
+class RobotMap:
     """
-    Map data to be sent to the InOrbit platform.
+    Map data to send to the InOrbit platform. Will only open the file once image data
+    is requested.
+    Raises an error if the file is not accessible.
     """
 
     file: str
     map_id: str
     frame_id: str
-    x: float
-    y: float
+    origin_x: float
+    origin_y: float
     resolution: float
-    width: int
-    height: int
+    _last_modified_time: float = None
+    _last_hash: int = None
+    _last_dimensions: Tuple[int, int] = None
+    _last_pixels: bytes = None
+
+    def _refresh_data(self):
+        """Read the image file and update the in memory map data."""
+
+        try:
+            # Open the image file
+            img = Image.open(self.file)
+            # Verify opens and reads the entire image file
+            img.verify()
+        except IOError as e:
+            logging.getLogger(__class__.__name__).error(
+                f"{self.file} is not accessible."
+            )
+            raise e
+
+        # img.verify() closes the file, reload it now that its validated
+        img = Image.open(self.file)
+
+        # Create a BytesIO object
+        img_byte_arr = io.BytesIO()
+        img.save(img_byte_arr, format="PNG")
+
+        # Refresh values
+        self._last_pixels = img_byte_arr.getvalue()
+        self._last_dimensions = (img.width, img.height)
+        self._last_modified_time = os.path.getmtime(self.file)
+        self._last_hash = hash(tuple(self._last_pixels))
+
+    def get_image_data(self) -> Tuple[bytes, int, Tuple[int, int]]:
+        """Read a map file and return it as a byte stream. Throws an error if the file
+        is not readable."""
+
+        last_modified_time = os.path.getmtime(self.file)
+        if last_modified_time != self._last_modified_time:
+            self._refresh_data()
+        return self._last_pixels, self._last_hash, self._last_dimensions
 
 
 class RobotSession:
@@ -241,7 +281,7 @@ class RobotSession:
         self.camera_streaming_on = False
         self.camera_streaming_mutex = threading.Lock()
         self.map_data_mutex = threading.Lock()
-        self.map_files: dict[str, MapData] = {}  # label to map data
+        self.map_files: dict[str, RobotMap] = {}  # label to map data
 
         self.message_handlers[MQTT_INITIAL_POSE] = self._handle_initial_pose
         self.message_handlers[MQTT_CUSTOM_COMMAND] = self._handle_custom_command
@@ -558,52 +598,37 @@ class RobotSession:
             for s in self.camera_streamers.values():
                 s.stop()
 
-    def _read_map_file(self, file: str) -> Optional[bytes]:
-        """Read a map file and return its bytes. If loading fails return None and log
-        an error."""
-
-        try:
-            # Open the image file
-            img = Image.open(file)
-            # Verify opens and reads the entire image file
-            img.verify()
-        except IOError:
-            self.logger.error(f"{file} is not accessible.")
-            return (None, None, None)
-
-        # img.verify() closes the file, reload it now that its validated
-        img = Image.open(file)
-
-        # Create a BytesIO object
-        img_byte_arr = io.BytesIO()
-        img.save(img_byte_arr, format="PNG")
-
-        return (img_byte_arr.getvalue(), img.width, img.height)
-
-    def _publish_map_bytes(
+    def _send_map(
         self,
-        img_bytes: bytes,
-        map_data: MapData,
+        map_data: RobotMap,
         ts: Optional[int],
         is_update: bool,
         include_pixels: bool,
     ):
         """Publishes a map message with the provided map data"""
         # Build the protobuf message
+        try:
+            pixels, hash, dimensions = map_data.get_image_data()
+        except Exception:
+            self.logger.error(
+                f"Failed to read map file {map_data.file}. Message will not be sent"
+            )
+            return
+
         data = MapMessage()
-        data.width = map_data.width
-        data.height = map_data.height
-        data.data_hash = hash(tuple(img_bytes))
+        data.width = dimensions[0]
+        data.height = dimensions[1]
+        data.data_hash = hash
         data.label = map_data.map_id
         data.map_id = map_data.map_id
         data.frame_id = map_data.frame_id
-        data.x = map_data.x
-        data.y = map_data.y
+        data.x = map_data.origin_x
+        data.y = map_data.origin_y
         data.resolution = map_data.resolution
         data.ts = ts if ts else int(time.time() * 1000)
         data.is_update = is_update
         if include_pixels:
-            data.pixels = img_bytes
+            data.pixels = pixels
 
         # Publish the map
         self.publish_protobuf(MQTT_MAP_TOPIC, data, qos=1, retain=True)
@@ -623,25 +648,33 @@ class RobotSession:
 
         with self.map_data_mutex:
             # Find and load the map image if it was previously published
-            map: MapData = self.map_files.get(requested_label, None)
-            if map is None:
-                self.logger.error(f"Map file for label '{requested_label}' not found")
+            robot_map: RobotMap = self.map_files.get(requested_label, None)
+            if robot_map is None:
+                self.logger.error(
+                    f"Map data for label {requested_label} not found. "
+                    "Message will not be sent"
+                )
                 return
-            img_bytes, _, _ = self._read_map_file(map.file)
+            try:
+                _, curr_hash, _ = robot_map.get_image_data()
+            except Exception:
+                self.logger.error(
+                    f"Failed to read map file {robot_map.file}. "
+                    "Message will not be sent"
+                )
+                return
 
-        # Validate the data is the same as requested
-        data_hash = hash(tuple(img_bytes))
-        if data_hash != requested_hash:
+        # Validate the data corresponds to the requested map
+        if curr_hash != requested_hash:
             self.logger.error(
                 f"Map data hash mismatch for label {requested_label}. Expected "
-                f"{requested_hash}, got {data_hash}"
+                f"{requested_hash}, got {curr_hash}"
             )
             return
 
         # Send the map
-        self._publish_map_bytes(
-            img_bytes=img_bytes,
-            map_data=map,
+        self._send_map(
+            map_data=robot_map,
             ts=None,
             is_update=False,
             include_pixels=True,
@@ -669,29 +702,20 @@ class RobotSession:
         be sent automatically if requested.
         """
 
-        # Load the image file
-        # _read_map_file will log an error if the file is not accessible
-        img_bytes, width, height = self._read_map_file(file)
-        if img_bytes is None:
-            return
-
-        map_data = MapData(
+        robot_map = RobotMap(
             file=file,
             map_id=map_id,
             frame_id=frame_id,
-            x=x,
-            y=y,
+            origin_x=x,
+            origin_y=y,
             resolution=resolution,
-            width=width,
-            height=height,
         )
-        # Store the filename for future map requests
+        # Cache map data for future requests
         with self.map_data_mutex:
-            self.map_files[map_id] = map_data
+            self.map_files[map_id] = robot_map
         # Publish it
-        self._publish_map_bytes(
-            img_bytes=img_bytes,
-            map_data=map_data,
+        self._send_map(
+            map_data=robot_map,
             ts=ts,
             is_update=is_update,
             include_pixels=force_upload,

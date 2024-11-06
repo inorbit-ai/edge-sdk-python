@@ -207,7 +207,7 @@ def test_robot_session_handles_map_requests(
         robot_name="name_123",
         api_key="apikey_123",
     )
-    robot_session._publish_map_bytes = MagicMock()
+    robot_session._send_map = MagicMock()
 
     # connect robot_session, so it populates properties with API response data
     robot_session.connect()
@@ -236,12 +236,12 @@ def test_robot_session_handles_map_requests(
         is_update=False,
         force_upload=False,
     )
-    robot_session._publish_map_bytes.assert_called_once()
-    args1 = robot_session._publish_map_bytes.call_args_list[0]
+    robot_session._send_map.assert_called_once()
+    args1 = robot_session._send_map.call_args_list[0]
     assert args1.kwargs["include_pixels"] is False
     robot_session._on_message(..., ..., msg)
-    assert robot_session._publish_map_bytes.call_count == 2
-    args2 = robot_session._publish_map_bytes.call_args_list[1]
+    assert robot_session._send_map.call_count == 2
+    args2 = robot_session._send_map.call_args_list[1]
     assert args2.kwargs["include_pixels"] is True
 
     # test it doesn't publish if the hash doesn't match
