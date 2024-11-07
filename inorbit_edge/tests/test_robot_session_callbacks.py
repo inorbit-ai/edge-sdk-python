@@ -1,13 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 from unittest.mock import MagicMock, call
 import pytest
 from inorbit_edge.robot import RobotSession
 from paho.mqtt.client import MQTTMessage
 from inorbit_edge.inorbit_pb2 import Echo
 import time
-from inorbit_edge.inorbit_pb2 import CustomScriptCommandMessage, CustomCommandRosMessage
+from inorbit_edge.inorbit_pb2 import (
+    CustomScriptCommandMessage,
+    CustomCommandRosMessage,
+    MapRequest,
+)
 from inorbit_edge.tests.utils.helpers import test_robot_session_connect_helper
 
 
@@ -54,7 +59,7 @@ def test_robot_session_register_command_callback(mock_mqtt_client, mock_inorbit_
             call(topic="r/id_123/in_cmd"),
         ]
     )
-    assert robot_session.client.subscribe.call_count == 5
+    assert robot_session.client.subscribe.call_count == 6
 
 
 def test_robot_session_echo(mocker, mock_mqtt_client, mock_inorbit_api):
@@ -192,3 +197,54 @@ def test_robot_session_executes_commands(
 
     # Tests asserted here
     test_robot_session_connect_helper(robot_session, mock_popen)
+
+
+def test_robot_session_handles_map_requests(
+    mock_mqtt_client, mock_inorbit_api, mock_popen
+):
+    robot_session = RobotSession(
+        robot_id="id_123",
+        robot_name="name_123",
+        api_key="apikey_123",
+    )
+    robot_session._send_map = MagicMock()
+
+    # connect robot_session, so it populates properties with API response data
+    robot_session.connect()
+    # manually execute on_connect callback, so the ``custom_command_callback``
+    # callback gets registered
+    robot_session._on_connect(..., ..., ..., 0)
+
+    msg = MQTTMessage(topic=b"r/id_123/ros/loc/mapreq")
+    msg.payload = MapRequest(
+        label="map_id", data_hash=4565286020005755223
+    ).SerializeToString()
+
+    # test it doesn't publish if the map hasn't been published before
+    robot_session._on_message(..., ..., msg)
+    robot_session.client._publish_map_bytes.assert_not_called()
+
+    # test it publishes the map if it has been published before
+    robot_session.publish_map(
+        file=f"{os.path.dirname(__file__)}/utils/test_map.png",
+        map_id="map_id",
+        frame_id="frame_id",
+        x=1,
+        y=2,
+        resolution=0.005,
+        ts=123,
+        is_update=False,
+        force_upload=False,
+    )
+    robot_session._send_map.assert_called_once()
+    args1 = robot_session._send_map.call_args_list[0]
+    assert args1.kwargs["include_pixels"] is False
+    robot_session._on_message(..., ..., msg)
+    assert robot_session._send_map.call_count == 2
+    args2 = robot_session._send_map.call_args_list[1]
+    assert args2.kwargs["include_pixels"] is True
+
+    # test it doesn't publish if the hash doesn't match
+    msg.payload = MapRequest(label="map_id", data_hash=123).SerializeToString()
+    robot_session._on_message(..., ..., msg)
+    robot_session.client._publish_map_bytes.assert_not_called()
