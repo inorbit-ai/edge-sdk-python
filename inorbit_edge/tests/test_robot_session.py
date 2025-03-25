@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
+from unittest.mock import MagicMock
 import pytest
 from requests import HTTPError
 
-from inorbit_edge.robot import RobotSession, RobotFootprintSpec
+from inorbit_edge.robot import RobotSession, RobotFootprintSpec, RobotMap
 from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, INORBIT_REST_API_URL
 from inorbit_edge import get_module_version
+from inorbit_edge.inorbit_pb2 import MapMessage
 
 
 def test_robot_session_init(monkeypatch):
@@ -176,3 +179,144 @@ def test_apply_footprint(requests_mock):
     requests_mock.post(f"{INORBIT_REST_API_URL}/configuration/apply", status_code=400)
     with pytest.raises(HTTPError):
         robot_session.apply_footprint(footprint)
+
+
+def test_robot_map_data():
+    # Test with good file
+    robot_map = RobotMap(
+        file=f"{os.path.dirname(__file__)}/utils/test_map.png",
+        map_id="map_id",
+        frame_id="frame_id",
+        origin_x=1,
+        origin_y=2,
+        resolution=0.005,
+    )
+    pixels, hash, dimensions = robot_map.get_image_data()
+    assert hash == 4565286020005755223
+    assert dimensions == (4, 4)
+    assert (
+        pixels
+        == b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x04\x00\x00\x00\x04\x08\x02\x00\x00\x00&\x93\t)\x00\x00\x01\x84iCCPICC Profile\x00\x00x\x9c}\x91=H\xc3@\x1c\xc5_S\xb5\xa2-\x0ev\x10q\x88P\x9d,\x88\x8a8j\x15\x8aP!\xd4\n\xad:\x98\\\xfa\x05M\x1a\x92\x14\x17G\xc1\xb5\xe0\xe0\xc7b\xd5\xc1\xc5YW\x07WA\x10\xfc\x00qvpRt\x91\x12\xff\xd7\x14Z\xc4xp\xdc\x8fw\xf7\x1ew\xef\x00\xa1Vb\x9a\xd51\x0eh\xbam&\xe311\x9dY\x15\x03\xaf\xe8E\x17B\x18\xc6\xb4\xcc,cN\x92\x12\xf0\x1c_\xf7\xf0\xf1\xf5.\xca\xb3\xbc\xcf\xfd9Bj\xd6b\x80O$\x9ee\x86i\x13o\x10Oo\xda\x06\xe7}\xe20+\xc8*\xf19\xf1\x98I\x17$~\xe4\xba\xe2\xf2\x1b\xe7|\x83\x05\x9e\x196S\xc9y\xe20\xb1\x98oc\xa5\x8dY\xc1\xd4\x88\xa7\x88#\xaa\xa6S\xbe\x90vY\xe5\xbc\xc5Y+UX\xf3\x9e\xfc\x85\xc1\xac\xbe\xb2\xccu\x9aC\x88c\x11K\x90 BA\x05E\x94`#J\xabN\x8a\x85$\xed\xc7<\xfc\x83\r\xbfD.\x85\\E0r,\xa0\x0c\rr\xc3\x0f\xfe\x07\xbf\xbb\xb5r\x93\x13nR0\x06t\xbe8\xce\xc7\x08\x10\xd8\x05\xeaU\xc7\xf9>v\x9c\xfa\t\xe0\x7f\x06\xae\xf4\x96\xbf\\\x03f>I\xaf\xb6\xb4\xc8\x11\xd0\xb7\r\\\\\xb74e\x0f\xb8\xdc\x01\x06\x9e\x0c\xd9\x94\x1b\x92\x9f\xa6\x90\xcb\x01\xefg\xf4M\x19\xa0\xff\x16\xe8Ys{k\xee\xe3\xf4\x01HQW\x89\x1b\xe0\xe0\x10\x18\xcdS\xf6\xba\xc7\xbb\xbb\xdb{\xfb\xf7L\xb3\xbf\x1f\x98Nr\xb6\xd8\x8a\xb30\x00\x00\x00\x14IDATx\x9cc\xfc\xff\xff?\x03\x0c01 \x01\xdc\x1c\x00\x96n\x03\x05\xf2%\xbe\xf9\x00\x00\x00\x00IEND\xaeB`\x82"  # noqa E501
+    )
+
+    # Test with bad file
+    robot_map = RobotMap(
+        file="you/are/not/going/to/find.me",
+        map_id="map_id",
+        frame_id="frame_id",
+        origin_x=1,
+        origin_y=2,
+        resolution=0.005,
+    )
+    with pytest.raises(FileNotFoundError):
+        robot_map.get_image_data()
+
+    # Test cache invalidation
+    robot_map = RobotMap(
+        file=f"{os.path.dirname(__file__)}/utils/test_map.png",
+        map_id="map_id",
+        frame_id="frame_id",
+        origin_x=1,
+        origin_y=2,
+        resolution=0.005,
+    )
+    pixels, hash, dimensions = robot_map.get_image_data()
+    robot_map._refresh_data = MagicMock()
+    # File was not updated. Should not refresh data
+    pixels, hash, dimensions = robot_map.get_image_data()
+    robot_map._refresh_data.assert_not_called()
+    # Update the file's modification time
+    os.utime(robot_map.file, None)
+    pixels, hash, dimensions = robot_map.get_image_data()
+    robot_map._refresh_data.assert_called_once()
+
+
+def test_robot_session_publishes_map_data(
+    mock_mqtt_client, mock_inorbit_api, mock_popen
+):
+    robot_session = RobotSession(
+        robot_id="id_123",
+        robot_name="name_123",
+        api_key="apikey_123",
+    )
+
+    # Test with bad file
+    robot_session.publish_map(
+        file="you/are/not/going/to/find.me",
+        map_id="map_id",
+        frame_id="frame_id",
+        x=1,
+        y=2,
+        resolution=0.005,
+        ts=123,
+        is_update=False,
+        force_upload=False,
+    )
+    robot_session.client.publish.assert_not_called()
+
+    # Tets without force_upload
+    robot_session.publish_map(
+        file=f"{os.path.dirname(__file__)}/utils/test_map.png",
+        map_id="map_id",
+        frame_id="frame_id",
+        x=1,
+        y=2,
+        resolution=0.005,
+        ts=123,
+        is_update=False,
+        force_upload=False,
+    )
+
+    expected_payload = MapMessage()
+    expected_payload.width = 4
+    expected_payload.height = 4
+    expected_payload.data_hash = 4565286020005755223
+    expected_payload.label = "map_id"
+    expected_payload.map_id = "map_id"
+    expected_payload.frame_id = "frame_id"
+    expected_payload.x = 1
+    expected_payload.y = 2
+    expected_payload.resolution = 0.005
+    expected_payload.ts = 123
+    expected_payload.is_update = False
+
+    robot_session.client.publish.assert_any_call(
+        topic="r/id_123/ros/loc/map2",
+        payload=bytearray(expected_payload.SerializeToString()),
+        qos=1,
+        retain=True,
+    )
+
+    # Test with force_upload
+    robot_session.publish_map(
+        file=f"{os.path.dirname(__file__)}/utils/test_map.png",
+        map_id="map_id",
+        frame_id="frame_id",
+        x=1,
+        y=2,
+        resolution=0.005,
+        ts=123,
+        is_update=False,
+        force_upload=True,
+    )
+
+    expected_payload = MapMessage()
+    expected_payload.width = 4
+    expected_payload.height = 4
+    expected_payload.data_hash = 4565286020005755223
+    expected_payload.label = "map_id"
+    expected_payload.map_id = "map_id"
+    expected_payload.frame_id = "frame_id"
+    expected_payload.x = 1
+    expected_payload.y = 2
+    expected_payload.resolution = 0.005
+    expected_payload.ts = 123
+    expected_payload.is_update = False
+    expected_payload.pixels = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x04\x00\x00\x00\x04\x08\x02\x00\x00\x00&\x93\t)\x00\x00\x01\x84iCCPICC Profile\x00\x00x\x9c}\x91=H\xc3@\x1c\xc5_S\xb5\xa2-\x0ev\x10q\x88P\x9d,\x88\x8a8j\x15\x8aP!\xd4\n\xad:\x98\\\xfa\x05M\x1a\x92\x14\x17G\xc1\xb5\xe0\xe0\xc7b\xd5\xc1\xc5YW\x07WA\x10\xfc\x00qvpRt\x91\x12\xff\xd7\x14Z\xc4xp\xdc\x8fw\xf7\x1ew\xef\x00\xa1Vb\x9a\xd51\x0eh\xbam&\xe311\x9dY\x15\x03\xaf\xe8E\x17B\x18\xc6\xb4\xcc,cN\x92\x12\xf0\x1c_\xf7\xf0\xf1\xf5.\xca\xb3\xbc\xcf\xfd9Bj\xd6b\x80O$\x9ee\x86i\x13o\x10Oo\xda\x06\xe7}\xe20+\xc8*\xf19\xf1\x98I\x17$~\xe4\xba\xe2\xf2\x1b\xe7|\x83\x05\x9e\x196S\xc9y\xe20\xb1\x98oc\xa5\x8dY\xc1\xd4\x88\xa7\x88#\xaa\xa6S\xbe\x90vY\xe5\xbc\xc5Y+UX\xf3\x9e\xfc\x85\xc1\xac\xbe\xb2\xccu\x9aC\x88c\x11K\x90 BA\x05E\x94`#J\xabN\x8a\x85$\xed\xc7<\xfc\x83\r\xbfD.\x85\\E0r,\xa0\x0c\rr\xc3\x0f\xfe\x07\xbf\xbb\xb5r\x93\x13nR0\x06t\xbe8\xce\xc7\x08\x10\xd8\x05\xeaU\xc7\xf9>v\x9c\xfa\t\xe0\x7f\x06\xae\xf4\x96\xbf\\\x03f>I\xaf\xb6\xb4\xc8\x11\xd0\xb7\r\\\\\xb74e\x0f\xb8\xdc\x01\x06\x9e\x0c\xd9\x94\x1b\x92\x9f\xa6\x90\xcb\x01\xefg\xf4M\x19\xa0\xff\x16\xe8Ys{k\xee\xe3\xf4\x01HQW\x89\x1b\xe0\xe0\x10\x18\xcdS\xf6\xba\xc7\xbb\xbb\xdb{\xfb\xf7L\xb3\xbf\x1f\x98Nr\xb6\xd8\x8a\xb30\x00\x00\x00\x14IDATx\x9cc\xfc\xff\xff?\x03\x0c01 \x01\xdc\x1c\x00\x96n\x03\x05\xf2%\xbe\xf9\x00\x00\x00\x00IEND\xaeB`\x82"  # noqa E501
+
+    robot_session.client.publish.assert_any_call(
+        topic="r/id_123/ros/loc/map2",
+        payload=bytearray(expected_payload.SerializeToString()),
+        qos=1,
+        retain=True,
+    )
