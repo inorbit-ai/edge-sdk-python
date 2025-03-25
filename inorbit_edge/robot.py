@@ -965,7 +965,7 @@ class RobotSession:
         # Configure MQTT client hostname and port
         hostname = robot_config["hostname"]
         port = (
-            robot_config["websockets_port"]
+            robot_config["websocket_port"]
             if self.use_websockets
             else robot_config["port"]
         )
