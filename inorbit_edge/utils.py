@@ -47,7 +47,7 @@ def encode_floating_point_list(ranges):
     return runs, values
 
 
-def reduce_path(path: list, maxn: int) -> list:
+def reduce_path(path: list, maxn: int, epsilon: float) -> list:
     """
     Applies the Ramer-Douglas-Peucker algorithm to reduce the number of points in a
     path.
@@ -63,7 +63,7 @@ def reduce_path(path: list, maxn: int) -> list:
         list[tuple[float, float]]: Reduced list of tuples (x, y) representing points in
             the path.
     """
-    reduced_path = rdp(path, epsilon=0.01)
+    reduced_path = rdp(path, epsilon=epsilon)
     if len(reduced_path) <= maxn:
         return reduced_path
     return downsample_array(reduced_path, maxn)
