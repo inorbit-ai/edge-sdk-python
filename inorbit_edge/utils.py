@@ -1,4 +1,5 @@
 import math
+from rdp2 import rdp
 
 
 def encode_floating_point_list(ranges):
@@ -44,3 +45,51 @@ def encode_floating_point_list(ranges):
         )
 
     return runs, values
+
+
+def reduce_path(
+    path: list[tuple[float, float]], maxn: int
+) -> list[tuple[float, float]]:
+    """
+    Applies the Ramer-Douglas-Peucker algorithm to reduce the number of points in a
+    path.
+    If after compression the number of points is still greater than maxn, remaining
+    points are uniformly downsampled.
+
+    Args:
+        path (list[tuple[float, float]]): List of tuples (x, y) representing points in
+            the path.
+        maxn (int): Maximum number of points in the reduced path.
+
+    Returns:
+        list[tuple[float, float]]: Reduced list of tuples (x, y) representing points in
+            the path.
+    """
+    reduced_path = rdp(path, epsilon=0.01)
+    if len(reduced_path) <= maxn:
+        return reduced_path
+    return downsample_array(reduced_path, maxn)
+
+
+def downsample_array(arr: list, maxn: int) -> list:
+    """
+    Downsamples (any) array to N elements, taking at regular
+    intervals. First and last element are always returned (provided N>=2).
+
+    Args:
+        arr (list): Array to downsample.
+        maxn (int): Maximum number of elements in the downsampled array.
+
+    Returns:
+        list: Downsampled array.
+    """
+    if len(arr) <= maxn or maxn <= 1:
+        # It is assumed that _downsample will return a new array,
+        # so just save the iterators logic but still return a copy
+        return arr[:]
+
+    # Take exactly maxn elements. Select at regular (non-int) intervals
+    # maxn-1 of them, and the last one manually.
+    return [arr[int(float(i * len(arr)) / (maxn - 1))] for i in range(maxn - 1)] + [
+        arr[-1]
+    ]

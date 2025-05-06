@@ -46,7 +46,7 @@ from inorbit_edge.commands import (
 import time
 import requests
 import math
-from inorbit_edge.utils import encode_floating_point_list
+from inorbit_edge.utils import encode_floating_point_list, reduce_path
 import certifi
 import subprocess
 import re
@@ -1299,11 +1299,12 @@ class RobotSession:
             return None
 
         if len(path_points) > ROBOT_PATH_POINTS_LIMIT:
-            self.logger.warning(
-                "Path has {} points. Only the first {} points will be used.".format(
+            self.logger.debug(
+                "Path has {} points. Intelligently downsampling to {} points.".format(
                     len(path_points), ROBOT_PATH_POINTS_LIMIT
                 )
             )
+            path_points = reduce_path(path_points, ROBOT_PATH_POINTS_LIMIT)
 
         # Generate ``PathPoint`` protobuf messages
         # from the list of path point tuples
