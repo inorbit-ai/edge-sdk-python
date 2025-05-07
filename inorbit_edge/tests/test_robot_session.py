@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import math
 import os
 from unittest.mock import MagicMock
 import pytest
@@ -9,7 +10,7 @@ from requests import HTTPError
 from inorbit_edge.robot import RobotSession, RobotFootprintSpec, RobotMap
 from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, INORBIT_REST_API_URL
 from inorbit_edge import get_module_version
-from inorbit_edge.inorbit_pb2 import MapMessage
+from inorbit_edge.inorbit_pb2 import MapMessage, RobotPath, PathDataMessage, PathPoint
 
 
 def test_robot_session_init(monkeypatch):
@@ -319,4 +320,63 @@ def test_robot_session_publishes_map_data(
         payload=bytearray(expected_payload.SerializeToString()),
         qos=1,
         retain=True,
+    )
+
+
+def test_robot_session_publishes_path_data(mock_mqtt_client, mock_inorbit_api):
+    robot_session = RobotSession(
+        robot_id="id_123",
+        robot_name="name_123",
+        api_key="apikey_123",
+    )
+    # Publishes a simple path with 3 points
+    path_points = [
+        (1, 2),
+        (3, 4),
+        (5, 6),
+    ]
+    robot_session.publish_path(path_points, ts=1)
+    robot_path = RobotPath()
+    robot_path.ts = 1
+    robot_path.path_id = "0"
+    robot_path.frame_id = "map"
+    robot_path.points.extend(
+        [
+            PathPoint(x=1, y=2),
+            PathPoint(x=3, y=4),
+            PathPoint(x=5, y=6),
+        ]
+    )
+    expected_payload = PathDataMessage()
+    expected_payload.ts = 1
+    expected_payload.paths.append(robot_path)
+    robot_session.client.publish.assert_any_call(
+        topic="r/id_123/ros/loc/path",
+        payload=bytearray(expected_payload.SerializeToString()),
+        qos=0,
+        retain=False,
+    )
+    robot_session.client.reset_mock()
+    # Reset throttling state
+    robot_session._publish_throttling["publish_path"]["last_ts"] = 0
+
+    # Publishes a path with 2000 points
+    # The path should be simplified to a maximum of 1000 points
+    path_points = [(math.sin(i), math.cos(i)) for i in range(2000)]
+    robot_session.publish_path(path_points, ts=1)
+
+    robot_session.client.publish.assert_called_once()
+
+    call_kwargs = robot_session.client.publish.call_args[1]
+    assert call_kwargs["qos"] == 0
+    assert call_kwargs["retain"] is False
+
+    path_data_message = PathDataMessage()
+    path_data_message.ParseFromString(call_kwargs["payload"])
+
+    decoded_points = [(point.x, point.y) for point in path_data_message.paths[0].points]
+    assert len(decoded_points) <= 1000
+    assert all(isinstance(point, tuple) and len(point) == 2 for point in decoded_points)
+    assert all(
+        isinstance(coord, (int, float)) for point in decoded_points for coord in point
     )

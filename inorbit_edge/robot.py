@@ -46,7 +46,7 @@ from inorbit_edge.commands import (
 import time
 import requests
 import math
-from inorbit_edge.utils import encode_floating_point_list
+from inorbit_edge.utils import encode_floating_point_list, reduce_path
 import certifi
 import subprocess
 import re
@@ -1279,13 +1279,19 @@ class RobotSession:
                     retain=True,
                 )
 
-    def publish_path(self, path_points, path_id="0", frame_id="map", ts=None):
+    def publish_path(
+        self, path_points, path_id="0", frame_id="map", ts=None, rdp_epsilon=0.001
+    ):
         """Publish robot path
 
         Send a list of points representing the path the robot
         is traversing. This method only sends the data to InOrbit
         for displaying purposes, meaning that the path provided
-        here won't make the robot to move
+        here won't make the robot to move.
+
+        If the provided path is longer than ROBOT_PATH_POINTS_LIMIT points,
+        it will be downsampled using the Ramer-Douglas-Peucker algorithm with the
+        provided epsilon.
 
         Args:
             path_points (List[Tuple[int. int]]): List of x, y points
@@ -1293,16 +1299,22 @@ class RobotSession:
             path_id (str, optional):
             frame_id (str, optional): Robot map frame identifier. Defaults to "map".
             ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
+            rdp_epsilon (float, optional): epsilon value for the RDP downsampling.
+                Defaults to 0.001. Change only if the downsampling appears too
+                aggressive.
         """
 
         if not self._should_publish_message(method="publish_path"):
             return None
 
         if len(path_points) > ROBOT_PATH_POINTS_LIMIT:
-            self.logger.warning(
-                "Path has {} points. Only the first {} points will be used.".format(
-                    len(path_points), ROBOT_PATH_POINTS_LIMIT
-                )
+            self.logger.debug(
+                "Path has {} points. Intelligently downsampling to a maximum of {} "
+                "points.".format(len(path_points), ROBOT_PATH_POINTS_LIMIT)
+            )
+            path_points = reduce_path(path_points, ROBOT_PATH_POINTS_LIMIT, rdp_epsilon)
+            self.logger.debug(
+                "Downsampled path has {} points.".format(len(path_points))
             )
 
         # Generate ``PathPoint`` protobuf messages
