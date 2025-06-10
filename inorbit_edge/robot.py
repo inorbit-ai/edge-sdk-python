@@ -243,10 +243,18 @@ class RobotSession:
 
         # Create mqtt client
         if self.use_websockets:
-            self.client = mqtt.Client(protocol=mqtt.MQTTv311, transport="websockets")
+            self.client = mqtt.Client(
+                callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
+                protocol=mqtt.MQTTv311,
+                transport="websockets",
+            )
             self.logger.debug("MQTT client created using websockets transport")
         else:
-            self.client = mqtt.Client(protocol=mqtt.MQTTv311, transport="tcp")
+            self.client = mqtt.Client(
+                callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
+                protocol=mqtt.MQTTv311,
+                transport="tcp",
+            )
             self.logger.debug("MQTT client created using tcp transport")
 
         # Configure proxy hostname and port if necessary
@@ -417,24 +425,34 @@ class RobotSession:
         # TODO: validate fetched config
         return response.json()
 
-    def _on_connect(self, client, userdata, flags, rc):
+    def _on_connect(self, client, userdata, flags, reason_code, properties):
         """MQTT client connect callback.
 
         Args:
-            client:     the client instance for this callback
-            userdata:   the private user data as set in Client() or userdata_set()
-            flags:      response flags sent by the broker
-            rc:         the connection result
+            client:         the client instance for this callback
+            userdata:       the private user data as set in Client() or userdata_set()
+            flags:          response flags sent by the broker
+            reason_code:    the connection reason code received from the broker.
+                In MQTT v5.0: the reason code defined by the standard.
+                In MQTT v3: the return code is converted to a reason code. See
+                `Client.convert_connack_rc_to_reason_code()`. `ReasonCode` may be
+                compared to integer.
+            properties:     the MQTT v5.0 properties received from the broker.
+                For MQTT v3.1 and v3.1.1 properties is not provided and an empty
+                `Properties` object is always used.
         """
 
         # Only assume that the robot is connected if return code is 0.
         # Other values are taken as errors (check here:
         # http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718035)
         # so connection process needs to be aborted.
-        if rc == 0:
+        if reason_code == 0:
             self.logger.info("Connected to MQTT")
         else:
-            self.logger.warning("Unable to connect. rc = {:d}.".format(rc))
+            self.logger.warning(
+                f"Unable to connect. reason_code '{reason_code.value}': "
+                f"{reason_code.getName()}."
+            )
             return
 
         # Send robot online status.
@@ -485,18 +503,29 @@ class RobotSession:
             self.logger.error("Unexpected error while processing message.")
             raise
 
-    def _on_disconnect(self, client, userdata, rc):
+    def _on_disconnect(
+        self, client, userdata, disconnect_flags, reason_code, properties
+    ):
         """MQTT client disconnect callback.
 
         Args:
-            client:     the client instance for this callback
-            userdata:   the private user data as set in Client() or userdata_set()
-            rc:         disconnection result
+            client:         the client instance for this callback
+            userdata:       the private user data as set in Client() or userdata_set()
+            disconnect_flags:   the flags for this disconnection.
+            reason_code:    the disconnection reason code received from the broker.
+                In MQTT v5.0: the reason code defined by the standard.
+                In MQTT v3: the return code is converted to a reason code. See
+                `Client.convert_disconnect_error_code_to_reason_code()`.
+                `ReasonCode` may be compared to integer.
+            properties:     the MQTT v5.0 properties received from the broker.
+                For MQTT v3.1 and v3.1.1 properties is not provided and an empty
+                Properties object is always used.
         """
 
-        if rc != 0:
+        if reason_code != 0:
             self.logger.warning(
-                "Unexpected disconnection: {}".format(mqtt.error_string(rc))
+                f"Unexpected disconnection: reason_code '{reason_code.value}': "
+                f"{reason_code.getName()}."
             )
         else:
             self.logger.info("Disconnected from MQTT broker")
