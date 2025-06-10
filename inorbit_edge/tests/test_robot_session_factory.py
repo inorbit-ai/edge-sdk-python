@@ -82,14 +82,14 @@ def test_built_robot_session_executes_command_callback_on_message(
     robot_session.connect()
     # manually execute on_connect callback so the ``custom_command_callback``
     # callback gets registered
-    robot_session._on_connect(..., ..., ..., 0)
+    robot_session._on_connect(None, None, None, 0, None)
 
     msg = MQTTMessage(topic=b"r/id_123/custom_command/script/command")
     msg.payload = CustomScriptCommandMessage(
         file_name="foo", arg_options=["a", "b"], execution_id="1"
     ).SerializeToString()
 
-    robot_session._on_message(..., ..., msg)
+    robot_session._on_message(None, None, msg)
 
     _test_command_handler_helper(my_command_handler)
     _test_command_handler_helper(another_command_handler)

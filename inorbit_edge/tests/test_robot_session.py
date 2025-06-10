@@ -75,7 +75,7 @@ def test_robot_session_connect(mock_mqtt_client, mock_inorbit_api):
     )
     robot_session.connect()
     # manually execute on_connect callback so robot status is sent
-    robot_session._on_connect(..., ..., ..., 0)
+    robot_session._on_connect(None, None, None, 0, None)
     assert robot_session.api_key == "apikey_123"
     assert robot_session.robot_api_key == "robot_apikey_123"
     # check publish state was called with the correct API key
