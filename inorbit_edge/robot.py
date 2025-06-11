@@ -212,6 +212,8 @@ class RobotSession:
         self.endpoint = str(kwargs.get("endpoint", INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL))
         # Track robot's current pose
         self._last_pose = None
+        # Track the last path points
+        self._last_path_points = None
         # Unique names of configs
         self._laser_config_names = []
         # Use SSL by default
@@ -1335,8 +1337,18 @@ class RobotSession:
                 aggressive.
         """
 
+        # TODO: Implement DeltaInt encoding for path points
+
         if not self._should_publish_message(method="publish_path"):
             return None
+
+        # Check if the path is the same as the last one
+        if self._last_path_points == path_points:
+            self.logger.debug("Path is the same as the last one. Skipping.")
+            return None
+
+        # Update the last path points
+        self._last_path_points = path_points
 
         if len(path_points) > ROBOT_PATH_POINTS_LIMIT:
             self.logger.debug(

@@ -380,3 +380,27 @@ def test_robot_session_publishes_path_data(mock_mqtt_client, mock_inorbit_api):
     assert all(
         isinstance(coord, (int, float)) for point in decoded_points for coord in point
     )
+
+
+def test_robot_session_publishes_path_data_only_if_changed(
+    mock_mqtt_client,
+    mock_inorbit_api,
+):
+    robot_session = RobotSession(
+        robot_id="id_123",
+        robot_name="name_123",
+        api_key="apikey_123",
+    )
+    # Publishes a simple path with 3 points
+    path_points = [
+        (1, 2),
+        (3, 4),
+        (5, 6),
+    ]
+    robot_session.publish_path(path_points, ts=1)
+
+    # Reset throttling state
+    robot_session._publish_throttling["publish_path"]["last_ts"] = 0
+
+    robot_session.publish_path(path_points, ts=1)
+    robot_session.client.publish.assert_called_once()
