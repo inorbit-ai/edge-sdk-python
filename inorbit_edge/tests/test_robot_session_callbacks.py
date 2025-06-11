@@ -39,7 +39,9 @@ def test_builtin_callbacks(mock_mqtt_client, mock_inorbit_api, monkeypatch):
     robot_session.client.subscribe.assert_any_call(topic="r/id_123/ros/loc/mapreq")
 
 
-def test_robot_session_register_command_callback(mock_mqtt_client, mock_inorbit_api, monkeypatch):
+def test_robot_session_register_command_callback(
+    mock_mqtt_client, mock_inorbit_api, monkeypatch
+):
     monkeypatch.setattr("time.sleep", lambda x: None)
     my_command_handler = MagicMock()
     my_command_handler.__name__ = "my_command_handler"
@@ -76,6 +78,7 @@ def test_robot_session_register_command_callback(mock_mqtt_client, mock_inorbit_
 
 def test_robot_session_echo(mocker, mock_mqtt_client, mock_inorbit_api, monkeypatch):
     monkeypatch.setattr("time.sleep", lambda x: None)
+
     def my_command_handler(*_):
         pass
 
