@@ -20,7 +20,7 @@ with open("README.md") as readme_file:
     long_description = readme_file.read()
 
 # Load from the requirements-*.txt files where '*' is anything extra
-requirements = {key: [] for key in ["install", "video"]}
+requirements = {key: [] for key in ["dev", "install", "video"]}
 base_path = os.path.dirname(os.path.abspath(__file__))
 for key in requirements:
     fname = os.path.join(
@@ -52,6 +52,7 @@ setup(
     download_url=f"{GITHUB_REPO}/archive/refs/tags/v1.13.0.zip",
     extras_require={
         "video": requirements["video"],
+        "dev": requirements["dev"],
     },
     install_requires=requirements["install"],
     keywords=["inorbit", "robops", "robotics"],
@@ -72,8 +73,6 @@ setup(
     # Do not edit manually, always use bumpversion (see CONTRIBUTING.rst)
     version=VERSION,
     project_urls={
-        "CI/CD": "https://inorbit.teamcity.com/project/"
-        "Engineering_Development_DeveloperPortal_EdgeSdkPython",
         "Tracker": f"{YOUTRACK_URL}/issues/{YOUTRACK_KEY}/?q={YOUTRACK_OPEN}",
         "Contributing": f"{GITHUB_REPO}/blob/v{VERSION}/CONTRIBUTING.md",
         "Code of Conduct": f"{GITHUB_REPO}/blob/v{VERSION}/CODE_OF_CONDUCT.md",
