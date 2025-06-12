@@ -5,7 +5,7 @@ from inorbit_edge.robot import RobotSessionFactory, RobotSessionPool
 import os
 
 
-def test_robot_session_pool_get_session(mock_mqtt_client, mock_inorbit_api):
+def test_robot_session_pool_get_session(mock_mqtt_client, mock_inorbit_api, mock_sleep):
     factory = RobotSessionFactory(api_key="apikey_123")
     pool = RobotSessionPool(factory)
 
@@ -25,7 +25,9 @@ def test_robot_session_pool_get_session(mock_mqtt_client, mock_inorbit_api):
 
 # The robot config data (name, robot_key) for the `get_session` method is
 # provided using a config yaml.
-def test_robot_session_pool_get_session_from_yaml(mock_mqtt_client, mock_inorbit_api):
+def test_robot_session_pool_get_session_from_yaml(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
     dirname = os.path.dirname(__file__)
     robot_config_yaml = os.path.join(dirname, "config/robots_config_robot_key.yaml")
 
@@ -46,7 +48,8 @@ def test_robot_session_pool_get_session_from_yaml(mock_mqtt_client, mock_inorbit
     )
 
 
-def test_robot_session_pool_free(mock_mqtt_client, mock_inorbit_api):
+def test_robot_session_pool_free(mock_mqtt_client, mock_inorbit_api, mock_sleep):
+
     factory = RobotSessionFactory(api_key="apikey_123")
     pool = RobotSessionPool(factory)
 
@@ -61,7 +64,8 @@ def test_robot_session_pool_free(mock_mqtt_client, mock_inorbit_api):
     assert all([not pool.has_robot("id_1"), pool.has_robot("id_2")])
 
 
-def test_robot_session_pool_tear_down(mock_mqtt_client, mock_inorbit_api):
+def test_robot_session_pool_tear_down(mock_mqtt_client, mock_inorbit_api, mock_sleep):
+
     factory = RobotSessionFactory(api_key="apikey_123")
     pool = RobotSessionPool(factory)
 

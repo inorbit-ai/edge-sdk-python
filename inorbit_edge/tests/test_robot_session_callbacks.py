@@ -18,7 +18,7 @@ from inorbit_edge.robot import RobotSession
 from inorbit_edge.tests.utils.helpers import test_robot_session_connect_helper
 
 
-def test_builtin_callbacks(mock_mqtt_client, mock_inorbit_api):
+def test_builtin_callbacks(mock_mqtt_client, mock_inorbit_api, mock_sleep):
     robot_session = RobotSession(
         robot_id="id_123",
         robot_name="name_123",
@@ -38,7 +38,9 @@ def test_builtin_callbacks(mock_mqtt_client, mock_inorbit_api):
     robot_session.client.subscribe.assert_any_call(topic="r/id_123/ros/loc/mapreq")
 
 
-def test_robot_session_register_command_callback(mock_mqtt_client, mock_inorbit_api):
+def test_robot_session_register_command_callback(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
     my_command_handler = MagicMock()
     my_command_handler.__name__ = "my_command_handler"
     robot_session = RobotSession(
@@ -72,7 +74,8 @@ def test_robot_session_register_command_callback(mock_mqtt_client, mock_inorbit_
     )
 
 
-def test_robot_session_echo(mocker, mock_mqtt_client, mock_inorbit_api):
+def test_robot_session_echo(mocker, mock_mqtt_client, mock_inorbit_api, mock_sleep):
+
     def my_command_handler(*_):
         pass
 
@@ -92,13 +95,13 @@ def test_robot_session_echo(mocker, mock_mqtt_client, mock_inorbit_api):
     msg = MQTTMessage(topic=b"r/id_123/ros/loc/set_pose")
     msg.payload = "1|123456789|1.23|4.56|-0.1".encode()
 
-    with mocker.patch.object(time, "time", return_value=123456.789):
-        robot_session._on_message(None, None, msg)
+    mocker.patch.object(time, "time", return_value=123456.789)
+    robot_session._on_message(None, None, msg)
 
-        echo_msg = Echo()
-        echo_msg.topic = "r/id_123/ros/loc/set_pose"
-        echo_msg.time_stamp = int(time.time() * 1000)
-        echo_msg.string_payload = msg.payload.decode("utf-8", errors="ignore")
+    echo_msg = Echo()
+    echo_msg.topic = "r/id_123/ros/loc/set_pose"
+    echo_msg.time_stamp = int(time.time() * 1000)
+    echo_msg.string_payload = msg.payload.decode("utf-8", errors="ignore")
 
     robot_session.client.publish.assert_any_call(
         topic="r/id_123/echo",
@@ -152,7 +155,7 @@ def test_robot_session_echo(mocker, mock_mqtt_client, mock_inorbit_api):
     ],
 )
 def test_robot_session_executes_command_callback_on_message(
-    mock_mqtt_client, mock_inorbit_api, test_input, expected
+    mock_mqtt_client, mock_inorbit_api, mock_sleep, test_input, expected
 ):
     # Mock command handler.
     my_command_handler = MagicMock()
@@ -188,7 +191,7 @@ def test_robot_session_executes_command_callback_on_message(
 
 
 def test_robot_session_executes_commands(
-    mock_mqtt_client, mock_inorbit_api, mock_popen
+    mock_mqtt_client, mock_inorbit_api, mock_popen, mock_sleep
 ):
     robot_session = RobotSession(
         robot_id="id_123",
@@ -203,7 +206,7 @@ def test_robot_session_executes_commands(
 
 
 def test_robot_session_handles_map_requests(
-    mock_mqtt_client, mock_inorbit_api, mock_popen
+    mock_mqtt_client, mock_inorbit_api, mock_popen, mock_sleep
 ):
     robot_session = RobotSession(
         robot_id="id_123",

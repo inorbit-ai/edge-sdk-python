@@ -6,7 +6,9 @@ from inorbit_edge.video import OpenCVCamera
 from inorbit_edge.robot import INORBIT_MODULE_CAMERAS
 
 
-def test_robot_session_register_camera(mock_mqtt_client, mock_inorbit_api, mocker):
+def test_robot_session_register_camera(
+    mock_mqtt_client, mock_inorbit_api, mocker, mock_sleep
+):
     camera_id = "cam0"
     runlevel = 0
 
