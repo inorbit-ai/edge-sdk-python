@@ -95,6 +95,7 @@ def test_robot_session_echo(mocker, mock_mqtt_client, mock_inorbit_api, mock_sle
     msg = MQTTMessage(topic=b"r/id_123/ros/loc/set_pose")
     msg.payload = "1|123456789|1.23|4.56|-0.1".encode()
 
+    mocker.patch.object(time, "time", return_value=123456.789)
     robot_session._on_message(None, None, msg)
 
     echo_msg = Echo()
