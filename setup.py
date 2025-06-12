@@ -49,7 +49,7 @@ setup(
     ],
     description="InOrbit Edge SDK for Python",
     # Do not edit manually, always use bumpversion (see CONTRIBUTING.rst)
-    download_url=f"{GITHUB_REPO}/archive/refs/tags/v1.19.0.zip",
+    download_url=f"{GITHUB_REPO}/archive/refs/tags/v1.20.0.zip",
     extras_require={
         "video": requirements["video"],
         "dev": requirements["dev"],
