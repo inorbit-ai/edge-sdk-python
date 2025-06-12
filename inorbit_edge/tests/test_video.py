@@ -7,9 +7,8 @@ from inorbit_edge.robot import INORBIT_MODULE_CAMERAS
 
 
 def test_robot_session_register_camera(
-    mock_mqtt_client, mock_inorbit_api, mocker, monkeypatch
+    mock_mqtt_client, mock_inorbit_api, mocker, mock_sleep
 ):
-    monkeypatch.setattr("time.sleep", lambda x: None)
     camera_id = "cam0"
     runlevel = 0
 
