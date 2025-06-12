@@ -8,8 +8,7 @@ from inorbit_edge.inorbit_pb2 import CustomScriptCommandMessage
 from inorbit_edge.tests.utils.helpers import test_robot_session_connect_helper
 
 
-def test_robot_factory_build(mock_mqtt_client, monkeypatch):
-    monkeypatch.setattr("time.sleep", lambda x: None)
+def test_robot_factory_build(mock_mqtt_client, mock_sleep):
     robot_session_factory = RobotSessionFactory(
         api_key="apikey_123", endpoint="http://myendpoint/"
     )
@@ -64,9 +63,8 @@ def test_robot_factory_build(mock_mqtt_client, monkeypatch):
 
 
 def test_built_robot_session_executes_command_callback_on_message(
-    mock_mqtt_client, mock_inorbit_api, monkeypatch
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
 ):
-    monkeypatch.setattr("time.sleep", lambda x: None)
     # Mock command handler.
     my_command_handler = MagicMock()
     another_command_handler = MagicMock()
@@ -114,9 +112,8 @@ def _test_command_handler_helper(command_handler):
 
 
 def test_built_robot_session_executes_commands(
-    mock_mqtt_client, mock_inorbit_api, mock_popen, monkeypatch
+    mock_mqtt_client, mock_inorbit_api, mock_popen, mock_sleep
 ):
-    monkeypatch.setattr("time.sleep", lambda x: None)
     robot_session_factory = RobotSessionFactory(api_key="apikey_123")
     robot_session_factory.register_commands_path("./user_scripts", r".*\.sh")
 

@@ -13,7 +13,7 @@ from inorbit_edge import get_module_version
 from inorbit_edge.inorbit_pb2 import MapMessage, RobotPath, PathDataMessage, PathPoint
 
 
-def test_robot_session_init(monkeypatch):
+def test_robot_session_init(monkeypatch, mock_sleep):
     # test required parameters only (using api_key)
     robot_session = RobotSession(
         robot_id="id_123", robot_name="name_123", api_key="apikey_123"
@@ -69,7 +69,7 @@ def test_robot_session_init(monkeypatch):
     )
 
 
-def test_robot_session_connect(mock_mqtt_client, mock_inorbit_api):
+def test_robot_session_connect(mock_mqtt_client, mock_inorbit_api, mock_sleep):
     robot_session = RobotSession(
         robot_id="id_123", robot_name="name_123", api_key="apikey_123"
     )
@@ -96,7 +96,7 @@ def test_robot_session_connect(mock_mqtt_client, mock_inorbit_api):
     )
 
 
-def test_method_throttling():
+def test_method_throttling(mock_sleep):
     robot_session = RobotSession(
         robot_id="id_123",
         robot_name="name_123",
@@ -125,7 +125,7 @@ def test_method_throttling():
     assert robot_session._should_publish_message(method="publish_key_values", key="bar")
 
 
-def test_apply_footprint(requests_mock):
+def test_apply_footprint(requests_mock, mock_sleep):
     adapter = requests_mock.post(
         f"{INORBIT_REST_API_URL}/configuration/apply",
         json={"operationStatus": "SUCCESS"},
@@ -233,7 +233,7 @@ def test_robot_map_data():
 
 
 def test_robot_session_publishes_map_data(
-    mock_mqtt_client, mock_inorbit_api, mock_popen
+    mock_mqtt_client, mock_inorbit_api, mock_popen, mock_sleep
 ):
     robot_session = RobotSession(
         robot_id="id_123",
@@ -323,7 +323,9 @@ def test_robot_session_publishes_map_data(
     )
 
 
-def test_robot_session_publishes_path_data(mock_mqtt_client, mock_inorbit_api):
+def test_robot_session_publishes_path_data(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
     robot_session = RobotSession(
         robot_id="id_123",
         robot_name="name_123",
@@ -383,8 +385,7 @@ def test_robot_session_publishes_path_data(mock_mqtt_client, mock_inorbit_api):
 
 
 def test_robot_session_publishes_path_data_only_if_changed(
-    mock_mqtt_client,
-    mock_inorbit_api,
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
 ):
     robot_session = RobotSession(
         robot_id="id_123",
