@@ -196,6 +196,7 @@ class RobotSession:
                 Defaults: INORBIT_REST_API_URL.
             account_id (str): The account ID of the robot owner. Required for applying
                 configurations to the robot.
+            keepalive_secs (int): Keepalive for MQTT connection (seconds). Default: 10.
         """
 
         self.api_key = api_key
@@ -228,6 +229,9 @@ class RobotSession:
         # Use TCP transport by default. The client will use websockets
         # transport if the environment variable HTTP_PROXY is set.
         self.use_websockets = kwargs.get("use_websockets", False)
+
+        # Keepalive for MQTT connection (seconds)
+        self.keepalive_secs = kwargs.get("keepalive_secs", 10)
 
         # Read optional proxy configuration from environment variables
         # We use ``self.http_proxy`` to indicate if proxy configuration should be used.
@@ -1002,7 +1006,7 @@ class RobotSession:
             if self.use_websockets
             else robot_config["port"]
         )
-        self.client.connect(hostname, port, keepalive=10)
+        self.client.connect(hostname, port, keepalive=self.keepalive_secs)
         self.client.loop_start()
         self._wait_for_connection_state(self._is_connected)
 
