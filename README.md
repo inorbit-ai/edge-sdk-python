@@ -67,8 +67,8 @@ robot_session.publish_pose(x=0.0, y=0.0, yaw=0.0)
 ## Installation
 
 **Stable Release:** `pip install inorbit-edge`<br>
-**Development Head:
-** `pip install git+https://github.com/inorbit-ai/edge-sdk-python.git`
+
+**Development Head:** `pip install git+https://github.com/inorbit-ai/edge-sdk-python.git`
 
 ## Documentation
 

@@ -23,6 +23,26 @@ def test_robot_session_pool_get_session(mock_mqtt_client, mock_inorbit_api, mock
     )
 
 
+def test_robot_session_pool_arguments(mock_mqtt_client, mock_inorbit_api, mock_sleep):
+    factory = RobotSessionFactory(
+        api_key="apikey_123",
+        keepalive_secs=30,
+        use_websockets=True,
+    )
+    pool = RobotSessionPool(factory)
+
+    robot1 = pool.get_session("id_1", "name_1")
+
+    assert all(
+        [
+            robot1.robot_id == "id_1",
+            robot1.robot_name == "name_1",
+            robot1.keepalive_secs == 30,
+            robot1.use_websockets is True,
+        ]
+    )
+
+
 # The robot config data (name, robot_key) for the `get_session` method is
 # provided using a config yaml.
 def test_robot_session_pool_get_session_from_yaml(
