@@ -96,3 +96,37 @@ the code.
 
    This will clean up various Python and build generated files so that you can
    ensure that you are working in a clean environment.
+
+## Metrics
+
+The SDK is capable of collecting internal metrics such as number of calls to
+publishing functions. It uses [OpenTelemetry](https://opentelemetry.io/),
+which supports various exporting mechanisms.
+Connectors are responsible for configuring the exporter of their choice;
+as well as adding more metrics if they chose to do so.
+
+To do so, add these `opentelemetry-api` and `opentelemetry-sdk` packages
+to the connector project. Depending on the exporter, another package such
+as `opentelemetry-exporter-prometheus` (for Prometheus) is required.
+The following is an example initialization code that enables a
+[Prometheus](https://prometheus.io/) HTTP endpoint, where all SDK metrics
+(including system metrics such as CPU usage) and any metric added by the
+connector can be scraped and exported to any external system (Grafana,
+StackDriver, etc.)
+
+```
+from opentelemetry import metrics
+from opentelemetry.exporter.prometheus import PrometheusMetricReader
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.resources import Resource
+from prometheus_client import start_http_server
+
+# ...
+
+resource = Resource(attributes={"service.name": "my-connector"})
+# Note: Do not use "-" in the MetricsReader namefor GCP envs
+metric_reader = PrometheusMetricReader("my_connector")
+meter_provider = MeterProvider(metric_readers=[metric_reader], resource=resource)
+metrics.set_meter_provider(meter_provider)
+start_http_server(port=9464, addr="0.0.0.0")
+```
