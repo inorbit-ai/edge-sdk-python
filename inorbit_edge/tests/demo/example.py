@@ -192,7 +192,15 @@ if __name__ == "__main__":
             robot_id=cur_robot_id, robot_name=cur_robot_id
         )
         img = os.path.join(os.path.dirname(os.path.abspath(__file__)), "map.png")
-        robot_session.publish_map(img, "map", "map", -1.5, -1.5, 0.05)
+        robot_session.publish_map(
+            file=img,
+            map_id="my_map",
+            map_label="Testing facilities",
+            frame_id="map",
+            x=-1.5,
+            y=-1.5,
+            resolution=0.05,
+        )
         if video_url is not None:
             robot_session.register_camera("0", OpenCVCamera(video_url))
 

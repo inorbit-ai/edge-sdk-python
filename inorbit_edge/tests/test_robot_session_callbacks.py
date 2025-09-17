@@ -234,6 +234,7 @@ def test_robot_session_handles_map_requests(
     robot_session.publish_map(
         file=f"{os.path.dirname(__file__)}/utils/test_map.png",
         map_id="map_id",
+        map_label="Test Map Label",
         frame_id="frame_id",
         x=1,
         y=2,

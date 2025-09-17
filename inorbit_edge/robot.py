@@ -147,6 +147,7 @@ class RobotMap:
     origin_x: float
     origin_y: float
     resolution: float
+    map_label: Optional[str] = None
     _last_modified_time: float = None
     _last_hash: int = None
     _last_dimensions: Tuple[int, int] = None
@@ -665,7 +666,7 @@ class RobotSession:
         data.width = dimensions[0]
         data.height = dimensions[1]
         data.data_hash = hash
-        data.label = map_data.map_id
+        data.label = map_data.map_label
         data.map_id = map_data.map_id
         data.frame_id = map_data.frame_id
         data.x = map_data.origin_x
@@ -731,6 +732,7 @@ class RobotSession:
         self,
         file,
         map_id="map",
+        map_label=None,
         frame_id="map",
         x=0,
         y=0,
@@ -756,6 +758,7 @@ class RobotSession:
             origin_x=x,
             origin_y=y,
             resolution=resolution,
+            map_label=map_label if map_label is not None else map_id,
         )
         # Cache map data for future requests
         with self.map_data_mutex:
