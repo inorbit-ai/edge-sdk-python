@@ -255,7 +255,7 @@ def test_robot_session_publishes_map_data(
     )
     robot_session.client.publish.assert_not_called()
 
-    # Tets without force_upload
+    # Test without force_upload and without map_label (should default to map_id)
     robot_session.publish_map(
         file=f"{os.path.dirname(__file__)}/utils/test_map.png",
         map_id="map_id",
@@ -272,7 +272,7 @@ def test_robot_session_publishes_map_data(
     expected_payload.width = 4
     expected_payload.height = 4
     expected_payload.data_hash = 4565286020005755223
-    expected_payload.label = "map_id"
+    expected_payload.label = "map_id"  # Should default to map_id when map_label is None
     expected_payload.map_id = "map_id"
     expected_payload.frame_id = "frame_id"
     expected_payload.x = 1
@@ -288,10 +288,11 @@ def test_robot_session_publishes_map_data(
         retain=True,
     )
 
-    # Test with force_upload
+    # Test with force_upload and explicit map_label
     robot_session.publish_map(
         file=f"{os.path.dirname(__file__)}/utils/test_map.png",
         map_id="map_id",
+        map_label="Custom Map Label",
         frame_id="frame_id",
         x=1,
         y=2,
@@ -305,7 +306,7 @@ def test_robot_session_publishes_map_data(
     expected_payload.width = 4
     expected_payload.height = 4
     expected_payload.data_hash = 4565286020005755223
-    expected_payload.label = "map_id"
+    expected_payload.label = "Custom Map Label"  # Should use explicit map_label
     expected_payload.map_id = "map_id"
     expected_payload.frame_id = "frame_id"
     expected_payload.x = 1

@@ -143,11 +143,11 @@ class RobotMap:
 
     file: str
     map_id: str
-    map_label: str
     frame_id: str
     origin_x: float
     origin_y: float
     resolution: float
+    map_label: Optional[str] = None
     _last_modified_time: float = None
     _last_hash: int = None
     _last_dimensions: Tuple[int, int] = None
@@ -754,11 +754,11 @@ class RobotSession:
         robot_map = RobotMap(
             file=file,
             map_id=map_id,
-            map_label=map_label or map_id,
             frame_id=frame_id,
             origin_x=x,
             origin_y=y,
             resolution=resolution,
+            map_label=map_label if map_label is not None else map_id,
         )
         # Cache map data for future requests
         with self.map_data_mutex:
