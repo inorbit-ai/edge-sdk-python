@@ -143,6 +143,7 @@ class RobotMap:
 
     file: str
     map_id: str
+    map_label: str
     frame_id: str
     origin_x: float
     origin_y: float
@@ -665,7 +666,7 @@ class RobotSession:
         data.width = dimensions[0]
         data.height = dimensions[1]
         data.data_hash = hash
-        data.label = map_data.map_id
+        data.label = map_data.map_label
         data.map_id = map_data.map_id
         data.frame_id = map_data.frame_id
         data.x = map_data.origin_x
@@ -731,6 +732,7 @@ class RobotSession:
         self,
         file,
         map_id="map",
+        map_label=None,
         frame_id="map",
         x=0,
         y=0,
@@ -752,6 +754,7 @@ class RobotSession:
         robot_map = RobotMap(
             file=file,
             map_id=map_id,
+            map_label=map_label or map_id,
             frame_id=frame_id,
             origin_x=x,
             origin_y=y,
