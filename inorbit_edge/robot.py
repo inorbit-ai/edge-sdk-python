@@ -695,7 +695,7 @@ class RobotSession:
 
         with self.map_data_mutex:
             # Find and load the map image if it was previously published
-            robot_map: RobotMap = self.map_files.get(requested_label, None)
+            robot_map = self.map_files.get(requested_label, None)
             if robot_map is None:
                 self.logger.error(
                     f"Map data for label {requested_label} not found. "
@@ -762,7 +762,7 @@ class RobotSession:
         )
         # Cache map data for future requests
         with self.map_data_mutex:
-            self.map_files[map_id] = robot_map
+            self.map_files[robot_map.map_label] = robot_map
         # Publish it
         self._send_map(
             map_data=robot_map,
