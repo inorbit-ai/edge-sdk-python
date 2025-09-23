@@ -287,6 +287,8 @@ def test_robot_session_publishes_map_data(
         qos=1,
         retain=True,
     )
+    assert len(robot_session.map_files) == 1
+    assert robot_session.map_files.get("map_id") is not None
 
     # Test with force_upload and explicit map_label
     robot_session.publish_map(
@@ -322,6 +324,8 @@ def test_robot_session_publishes_map_data(
         qos=1,
         retain=True,
     )
+    assert len(robot_session.map_files) == 2
+    assert robot_session.map_files.get("Custom Map Label") is not None
 
 
 def test_robot_session_publishes_path_data(
