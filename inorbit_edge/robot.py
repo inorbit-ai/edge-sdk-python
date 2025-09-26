@@ -309,6 +309,9 @@ class RobotSession:
         self.map_data_mutex = threading.Lock()
         self.map_files: dict[str, RobotMap] = {}  # label to map data
 
+        # Callback for determining robot online status
+        self._online_status_callback = None
+
         self.message_handlers[MQTT_INITIAL_POSE] = self._handle_initial_pose
         self.message_handlers[MQTT_CUSTOM_COMMAND] = self._handle_custom_command
         self.message_handlers[MQTT_CUSTOM_COMMAND_MESSAGE] = self._handle_custom_message
@@ -619,6 +622,8 @@ class RobotSession:
             self._handle_load_module(args[1], args[2])
         if args[0] == "unload_module" and len(args) >= 2:
             self._handle_unload_module(args[1])
+        if args[0] == "get_state":
+            self._handle_get_state()
 
     def _handle_load_module(self, module_name, run_level):
         """Handles a load_module command"""
@@ -629,6 +634,22 @@ class RobotSession:
         """Handles an unload_module command"""
         if module_name == INORBIT_MODULE_CAMERAS:
             self._stop_cameras_streaming()
+
+    def _handle_get_state(self):
+        """Handle get_state command from InOrbit."""
+        is_online = True  # Default assumption
+
+        if self._online_status_callback:
+            try:
+                is_online = self._online_status_callback()
+            except Exception as e:
+                self.logger.error(f"Online status callback failed: {e}")
+                # Fall back to default (True) on callback error
+
+        self._send_robot_status(online=is_online)
+        self.logger.debug(
+            f"Responded to get_state: robot {'online' if is_online else 'offline'}"
+        )
 
     def _start_cameras_streaming(self):
         """Start streaming on all registered cameras"""
@@ -891,6 +912,17 @@ class RobotSession:
             return
 
         self.command_callbacks.append(callback)
+
+    def set_online_status_callback(self, callback):
+        """Set callback to determine robot online status.
+
+        Args:
+            callback: A callable that returns bool indicating if robot is online.
+                Should return True if robot is online, False otherwise.
+                Will be called when InOrbit requests status via get_state command.
+        """
+        if callable(callback):
+            self._online_status_callback = callback
 
     def unregister_command_callback(self, callback):
         """Unregisters the specified callback"""
