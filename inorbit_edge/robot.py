@@ -473,11 +473,10 @@ class RobotSession:
             )
             return
 
-        # Send robot online status.
-        # This method is blocking so do it on a separate thread just in case.
-        threading.Thread(
-            target=self._send_robot_status, kwargs={"robot_status": "1"}
-        ).start()
+        # Send robot online status (best effort)
+        # If this fails and InOrbit is getting data, it will detect discrepancy
+        # and request a status update via get_state command.
+        self._send_robot_status(online=True)
 
         # Subscribe to interesting topics
         self.client.subscribe(
@@ -922,48 +921,36 @@ class RobotSession:
             qos=1,
         )
 
-    def _send_robot_status(self, robot_status):
-        """Sends robot online/offline status message.
-
-        This method blocks until either the message
-        is sent or the client errors out.
+    def _send_robot_status(self, online=True):
+        """Send robot online/offline status (best effort, non-blocking).
 
         Args:
-            robot_status (Union[bool,str]): Connection status
-                It supports ``bool`` and ``str`` values ("0" or "1")
-
-        Raises:
-            ValueError: on invalid ``robot_status``
+            online (bool): True for online status, False for offline status.
         """
+        status_value = "1" if online else "0"
+        status_str = "online" if online else "offline"
 
-        # Validate ``robot_status`` parameter.
-        if isinstance(robot_status, bool):
-            robot_status = "1" if robot_status else "0"
-
-        if robot_status not in ["0", "1"]:
-            raise ValueError("Robot status must be boolean, '0' or '1'")
-
-        # Every time we connect or disconnect to the service, send
-        # updated status including online/offline bit
-        status_message = "{}|{}|{}|{}".format(
-            robot_status, self.robot_api_key, self.agent_version, self.robot_name
-        )
-        ret = self.publish(
-            self._get_robot_subtopic(subtopic=MQTT_SUBTOPIC_STATE),
-            status_message,
-            qos=1,
-            retain=True,
-        )
-        self.logger.info("Publishing status {}. ret = {}.".format(robot_status, ret))
-
-        # TODO: handle errors while waiting for publish. Consider that
-        # this method would typically run on a separate thread.
-        ret.wait_for_publish()
-        published = ret.is_published()
-
-        self.logger.info(
-            "Robot status '{}' published: {:b}.".format(robot_status, published)
-        )
+        try:
+            status_message = (
+                f"{status_value}|{self.robot_api_key}|"
+                f"{self.agent_version}|{self.robot_name}"
+            )
+            self.client.publish(
+                self._get_robot_subtopic(subtopic=MQTT_SUBTOPIC_STATE),
+                status_message,
+                qos=1,
+                retain=True,
+            )
+            self.logger.debug(f"{status_str.capitalize()} status sent successfully")
+        except Exception as e:
+            fallback_msg = (
+                "InOrbit will detect via data messages"
+                if online
+                else "InOrbit will detect via data absence"
+            )
+            self.logger.debug(
+                f"{status_str.capitalize()} status failed: {e} - {fallback_msg}"
+            )
 
     def _is_connected(self):
         return self.client.is_connected()
@@ -1036,7 +1023,10 @@ class RobotSession:
         """Ends session, disconnecting from cloud services"""
         self.logger.info("Ending robot session")
         self._stop_cameras_streaming()
-        self._send_robot_status(robot_status="0")
+
+        # Send offline status (best effort, non-blocking)
+        # InOrbit will detect offline via data absence if this fails
+        self._send_robot_status(online=False)
 
         # TODO: Unsubscribe from topics
 
