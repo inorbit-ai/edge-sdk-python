@@ -15,6 +15,7 @@ from inorbit_edge.inorbit_pb2 import (
     MapRequest,
 )
 from inorbit_edge.robot import RobotSession
+from inorbit_edge import get_module_version
 from inorbit_edge.tests.utils.helpers import test_robot_session_connect_helper
 
 
@@ -36,6 +37,96 @@ def test_builtin_callbacks(mock_mqtt_client, mock_inorbit_api, mock_sleep):
     robot_session.client.subscribe.assert_any_call(topic="r/id_123/ros/loc/nav_goal")
     robot_session.client.subscribe.assert_any_call(topic="r/id_123/in_cmd")
     robot_session.client.subscribe.assert_any_call(topic="r/id_123/ros/loc/mapreq")
+
+
+def test_responds_to_get_state_with_default_online_status(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
+    """Test that get_state command responds with default online status."""
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+    robot_session.connect()
+    robot_session._on_connect(None, None, None, 0, None)
+
+    # Simulate get_state command
+    robot_session._handle_in_cmd(b"get_state")
+
+    # Verify online status was published
+    robot_session.client.publish.assert_any_call(
+        "r/id_123/state",
+        "1|robot_apikey_123|{}.edgesdk_py|name_123".format(get_module_version()),
+        qos=1,
+        retain=True,
+    )
+
+
+def test_responds_to_get_state_with_callback_online_status(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
+    """Test that get_state command uses callback for online status."""
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+    robot_session.connect()
+    robot_session._on_connect(None, None, None, 0, None)
+
+    # Set callback that returns False (offline)
+    robot_session.set_online_status_callback(lambda: False)
+
+    # Simulate get_state command
+    robot_session._handle_in_cmd(b"get_state")
+
+    # Verify offline status was published
+    robot_session.client.publish.assert_any_call(
+        "r/id_123/state",
+        "0|robot_apikey_123|{}.edgesdk_py|name_123".format(get_module_version()),
+        qos=1,
+        retain=True,
+    )
+
+
+def test_get_state_handles_callback_exception(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
+    """Test that get_state handles callback exceptions gracefully."""
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+    robot_session.connect()
+    robot_session._on_connect(None, None, None, 0, None)
+
+    # Set callback that raises exception
+    def failing_callback():
+        raise RuntimeError("Test error")
+
+    robot_session.set_online_status_callback(failing_callback)
+
+    # Simulate get_state command - should not raise exception
+    robot_session._handle_in_cmd(b"get_state")
+
+    # Verify default online status was published despite callback error
+    robot_session.client.publish.assert_any_call(
+        "r/id_123/state",
+        "1|robot_apikey_123|{}.edgesdk_py|name_123".format(get_module_version()),
+        qos=1,
+        retain=True,
+    )
+
+
+def test_set_online_status_callback_ignores_non_callable(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
+    """Test that set_online_status_callback ignores non-callable values."""
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+
+    # Try to set non-callable
+    robot_session.set_online_status_callback("not_callable")
+
+    # Should remain None
+    assert robot_session._online_status_callback is None
 
 
 def test_robot_session_register_command_callback(
