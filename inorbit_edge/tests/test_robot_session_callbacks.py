@@ -15,6 +15,7 @@ from inorbit_edge.inorbit_pb2 import (
     MapRequest,
 )
 from inorbit_edge.robot import RobotSession
+from inorbit_edge import get_module_version
 from inorbit_edge.tests.utils.helpers import test_robot_session_connect_helper
 
 
@@ -54,7 +55,7 @@ def test_responds_to_get_state_with_default_online_status(
     # Verify online status was published
     robot_session.client.publish.assert_any_call(
         "r/id_123/state",
-        "1|robot_apikey_123|1.23.1.edgesdk_py|name_123",
+        "1|robot_apikey_123|{}.edgesdk_py|name_123".format(get_module_version()),
         qos=1,
         retain=True,
     )
@@ -79,7 +80,7 @@ def test_responds_to_get_state_with_callback_online_status(
     # Verify offline status was published
     robot_session.client.publish.assert_any_call(
         "r/id_123/state",
-        "0|robot_apikey_123|1.23.1.edgesdk_py|name_123",
+        "0|robot_apikey_123|{}.edgesdk_py|name_123".format(get_module_version()),
         qos=1,
         retain=True,
     )
@@ -107,7 +108,7 @@ def test_get_state_handles_callback_exception(
     # Verify default online status was published despite callback error
     robot_session.client.publish.assert_any_call(
         "r/id_123/state",
-        "1|robot_apikey_123|1.23.1.edgesdk_py|name_123",
+        "1|robot_apikey_123|{}.edgesdk_py|name_123".format(get_module_version()),
         qos=1,
         retain=True,
     )
