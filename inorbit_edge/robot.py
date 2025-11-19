@@ -1137,16 +1137,8 @@ class RobotSession:
             frame_id (str, optional): Robot map frame identifier. Defaults to "map".
             ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
         """
-        if not self._should_publish_message(method="publish_pose"):
-            return None
 
-        msg = LocationAndPoseMessage()
-        msg.ts = ts if ts else int(time.time() * 1000)
-        msg.pos_x = x
-        msg.pos_y = y
-        msg.yaw = yaw
-        msg.frame_id = frame_id
-
+        # Assign the current pose before checking for throttling
         previous_pose = self._last_pose
         self._last_pose = Pose(frame_id=frame_id, x=x, y=y, theta=yaw)
 
@@ -1159,6 +1151,16 @@ class RobotSession:
             )
             self._odometry_accumulator_linear += linear_distance
             self._odometry_accumulator_angular += angular_distance
+
+        if not self._should_publish_message(method="publish_pose"):
+            return None
+
+        msg = LocationAndPoseMessage()
+        msg.ts = ts if ts else int(time.time() * 1000)
+        msg.pos_x = x
+        msg.pos_y = y
+        msg.yaw = yaw
+        msg.frame_id = frame_id
 
         self.publish_protobuf(MQTT_SUBTOPIC_POSE, msg)
 
@@ -1252,7 +1254,7 @@ class RobotSession:
         previously published poses to calculate linear distance and angular distance.
 
         Args:
-            ts_start (int, optional): Timestamp (milliseconds) when the started to
+            ts_start (int, optional): Timestamp (milliseconds) when the robot started to
                 accumulate odometry. Defaults to int(time() * 1000).
             ts (int, optional): Timestamp (milliseconds) of the last time odometry
                 accumulator was updated. Defaults to int(time() * 1000).
