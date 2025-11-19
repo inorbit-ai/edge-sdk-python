@@ -1250,7 +1250,7 @@ class RobotSession:
         angular_speed=0,
     ):
         """Publish odometry data. This method should be called even if the robot doesn't
-        provide any of these vales, as it will use an internal accumulator based on the
+        provide any of these values, as it will use an internal accumulator based on the
         previously published poses to calculate linear distance and angular distance.
 
         Args:
@@ -1258,12 +1258,12 @@ class RobotSession:
                 accumulate odometry. Defaults to int(time() * 1000).
             ts (int, optional): Timestamp (milliseconds) of the last time odometry
                 accumulator was updated. Defaults to int(time() * 1000).
-            linear_distance (int, optional): Accumulated displacement (meters).
+            linear_distance (float, optional): Accumulated displacement (meters).
                 Defaults to None. If None, it uses the internal accumulator.
-            angular_distance (int, optional): Accumulated rotation (radians).
+            angular_distance (float, optional): Accumulated rotation (radians).
                 Defaults to None. If None, it uses the internal accumulator.
-            linear_speed (int, optional): Linear speed (m/s). Defaults to 0.
-            angular_speed (int, optional): Angular speed (rad/s). Defaults to 0.
+            linear_speed (float, optional): Linear speed (m/s). Defaults to 0.
+            angular_speed (float, optional): Angular speed (rad/s). Defaults to 0.
         """
 
         if not self._should_publish_message(method="publish_odometry"):

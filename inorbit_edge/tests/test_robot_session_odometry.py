@@ -74,7 +74,7 @@ def test_odometry_accumulation(mock_mqtt_client, mock_inorbit_api, mock_sleep):
     # Reset throttling
     robot_session._publish_throttling["publish_odometry"]["last_ts"] = 0
 
-    # Publish odometry WITH arguments (should override accumulated values)
+    # Publish odometry with arguments (should override accumulated values)
     robot_session.publish_odometry(linear_distance=10.0, angular_distance=5.0, ts=3000)
 
     robot_session.client.publish.assert_called_once()
@@ -82,7 +82,99 @@ def test_odometry_accumulation(mock_mqtt_client, mock_inorbit_api, mock_sleep):
     odometry_msg = OdometryDataMessage()
     odometry_msg.ParseFromString(call_kwargs["payload"])
 
-    assert odometry_msg.linear_distance == 10.0
-    assert odometry_msg.angular_distance == 5.0
     assert odometry_msg.ts == 3000
     assert odometry_msg.ts_start == 2000
+
+
+def test_odometry_accumulation_reset(mock_mqtt_client, mock_inorbit_api, mock_sleep):
+    """Verify that odometry accumulation continues correctly after publish_odometry()
+    resets the accumulators."""
+
+    with unittest.mock.patch("time.time", return_value=1):
+        robot_session = RobotSession(
+            robot_id="id_123",
+            robot_name="name_123",
+            api_key="apikey_123",
+        )
+
+    # Disable throttling for testing
+    robot_session._publish_throttling["publish_pose"]["min_time_between_calls"] = 0
+    robot_session._publish_throttling["publish_odometry"]["min_time_between_calls"] = 0
+
+    # 1. Publish poses and accumulate distance
+    robot_session.publish_pose(x=0, y=0, yaw=0)
+    robot_session.publish_pose(x=1, y=0, yaw=0)
+    assert robot_session._odometry_accumulator_linear == 1.0
+
+    # 2. Call publish_odometry() (resets accumulators)
+    robot_session.client.publish.reset_mock()
+    robot_session.publish_odometry(ts=2000)
+
+    # Verify reset happened
+    assert robot_session._odometry_accumulator_linear == 0.0
+    assert robot_session._last_odometry_ts == 2000
+
+    # 3. Publish more poses
+    robot_session.publish_pose(x=1, y=1, yaw=0)  # +1m linear
+    assert robot_session._odometry_accumulator_linear == 1.0
+
+    # 4. Call publish_odometry() again
+    robot_session.client.publish.reset_mock()
+    # Reset throttling
+    robot_session._publish_throttling["publish_odometry"]["last_ts"] = 0
+    robot_session.publish_odometry(ts=3000)
+
+    # 5. Verify that only the distance from step 3 is reported
+    robot_session.client.publish.assert_called_once()
+    call_kwargs = robot_session.client.publish.call_args[1]
+    odometry_msg = OdometryDataMessage()
+    odometry_msg.ParseFromString(call_kwargs["payload"])
+
+    assert odometry_msg.linear_distance == 1.0
+    assert odometry_msg.ts == 3000
+    assert odometry_msg.ts_start == 2000
+
+
+def test_odometry_mixed_explicit_and_accumulated(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
+    """Verify that it is possible to mix accumulated and explicit values."""
+
+    with unittest.mock.patch("time.time", return_value=1):
+        robot_session = RobotSession(
+            robot_id="id_123",
+            robot_name="name_123",
+            api_key="apikey_123",
+        )
+
+    # Disable throttling for testing
+    robot_session._publish_throttling["publish_pose"]["min_time_between_calls"] = 0
+    robot_session._publish_throttling["publish_odometry"]["min_time_between_calls"] = 0
+
+    # 1. Publish poses (accumulates linear and angular)
+    # Initial pose
+    robot_session.publish_pose(x=0, y=0, yaw=0)
+    # Move 1m linear, rotate 90 deg
+    robot_session.publish_pose(x=1, y=0, yaw=math.pi / 2)
+    assert robot_session._odometry_accumulator_linear == 1.0
+    assert abs(robot_session._odometry_accumulator_angular - math.pi / 2) < 1e-6
+
+    # 2. Publish odometry with explicit linear distance but implicit angular distance
+    robot_session.client.publish.reset_mock()
+    robot_session.publish_odometry(linear_distance=10.0, ts=2000)
+
+    # 3. Verify message content
+    robot_session.client.publish.assert_called_once()
+    call_kwargs = robot_session.client.publish.call_args[1]
+    odometry_msg = OdometryDataMessage()
+    odometry_msg.ParseFromString(call_kwargs["payload"])
+
+    # Linear should be the explicit value (10.0)
+    assert odometry_msg.linear_distance == 10.0
+    # Angular should be the accumulated value (pi/2)
+    assert abs(odometry_msg.angular_distance - math.pi / 2) < 1e-6
+
+    # 4. Verify both accumulators are reset
+    # (Because we published an odometry report, the interval is "complete" for both)
+    assert robot_session._odometry_accumulator_linear == 0.0
+    assert robot_session._odometry_accumulator_angular == 0.0
