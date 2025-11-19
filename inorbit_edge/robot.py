@@ -57,7 +57,11 @@ from inorbit_edge.commands import (
 import time
 import requests
 import math
-from inorbit_edge.utils import encode_floating_point_list, reduce_path
+from inorbit_edge.utils import (
+    encode_floating_point_list,
+    reduce_path,
+    calculate_pose_delta,
+)
 import certifi
 import subprocess
 import re
@@ -311,6 +315,11 @@ class RobotSession:
 
         # Callback for determining robot online status
         self._online_status_callback = None
+
+        # Odometry accumulation
+        self._odometry_accumulator_linear = 0.0
+        self._odometry_accumulator_angular = 0.0
+        self._last_odometry_ts = int(time.time() * 1000)
 
         self.message_handlers[MQTT_INITIAL_POSE] = self._handle_initial_pose
         self.message_handlers[MQTT_CUSTOM_COMMAND] = self._handle_custom_command
@@ -1137,7 +1146,20 @@ class RobotSession:
         msg.pos_y = y
         msg.yaw = yaw
         msg.frame_id = frame_id
+
+        previous_pose = self._last_pose
         self._last_pose = Pose(frame_id=frame_id, x=x, y=y, theta=yaw)
+
+        # Calculate distance from previous pose
+        # This allows estimating linear and angular distances if odometry is not
+        # available
+        if previous_pose is not None:
+            linear_distance, angular_distance = calculate_pose_delta(
+                previous_pose, self._last_pose
+            )
+            self._odometry_accumulator_linear += linear_distance
+            self._odometry_accumulator_angular += angular_distance
+
         self.publish_protobuf(MQTT_SUBTOPIC_POSE, msg)
 
     def reached_waypoint(self, waypoint: Pose, tolerance: SpatialTolerance):
@@ -1220,12 +1242,14 @@ class RobotSession:
         self,
         ts_start=None,
         ts=None,
-        linear_distance=0,
-        angular_distance=0,
+        linear_distance=None,
+        angular_distance=None,
         linear_speed=0,
         angular_speed=0,
     ):
-        """Publish odometry data
+        """Publish odometry data. This method should be called even if the robot doesn't
+        provide any of these vales, as it will use an internal accumulator based on the
+        previously published poses to calculate linear distance and angular distance.
 
         Args:
             ts_start (int, optional): Timestamp (milliseconds) when the started to
@@ -1233,9 +1257,9 @@ class RobotSession:
             ts (int, optional): Timestamp (milliseconds) of the last time odometry
                 accumulator was updated. Defaults to int(time() * 1000).
             linear_distance (int, optional): Accumulated displacement (meters).
-                Defaults to 0.
+                Defaults to None. If None, it uses the internal accumulator.
             angular_distance (int, optional): Accumulated rotation (radians).
-                Defaults to 0.
+                Defaults to None. If None, it uses the internal accumulator.
             linear_speed (int, optional): Linear speed (m/s). Defaults to 0.
             angular_speed (int, optional): Angular speed (rad/s). Defaults to 0.
         """
@@ -1244,14 +1268,27 @@ class RobotSession:
             return None
 
         msg = OdometryDataMessage()
-        msg.ts_start = ts_start if ts_start else int(time.time() * 1000)
+        msg.ts_start = ts_start if ts_start else self._last_odometry_ts
         msg.ts = ts if ts else int(time.time() * 1000)
-        msg.linear_distance = linear_distance
-        msg.angular_distance = angular_distance
+        msg.linear_distance = (
+            linear_distance
+            if linear_distance is not None
+            else self._odometry_accumulator_linear
+        )
+        msg.angular_distance = (
+            angular_distance
+            if angular_distance is not None
+            else self._odometry_accumulator_angular
+        )
         msg.linear_speed = linear_speed
         msg.angular_speed = angular_speed
         msg.speed_available = True
         self.publish_protobuf(MQTT_SUBTOPIC_ODOMETRY, msg)
+
+        # Update last odometry timestamp and reset accumulators
+        self._last_odometry_ts = msg.ts
+        self._odometry_accumulator_linear = 0.0
+        self._odometry_accumulator_angular = 0.0
 
     @with_counter_metric(publish_laser_counter)
     def publish_lasers(self, x, y, yaw, ranges, frame_id="map", ts=None):

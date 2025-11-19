@@ -91,3 +91,25 @@ def downsample_array(arr: list, maxn: int) -> list:
     return [arr[int(float(i * len(arr)) / (maxn - 1))] for i in range(maxn - 1)] + [
         arr[-1]
     ]
+
+
+def calculate_pose_delta(pose1, pose2):
+    """
+    Calculates the linear and angular distance between two poses.
+
+    Args:
+        pose1 (Pose): First pose.
+        pose2 (Pose): Second pose.
+
+    Returns:
+        tuple[float, float]: A tuple containing (linear_distance, angular_distance).
+    """
+    linear_delta = math.sqrt((pose1.x - pose2.x) ** 2 + (pose1.y - pose2.y) ** 2)
+    angular_delta = abs(pose1.theta - pose2.theta)
+
+    # Normalize angle difference to [0, pi]
+    angular_delta = angular_delta % (2 * math.pi)
+    if angular_delta > math.pi:
+        angular_delta = 2 * math.pi - angular_delta
+
+    return linear_delta, angular_delta
