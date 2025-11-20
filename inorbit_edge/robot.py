@@ -194,6 +194,68 @@ class RobotMap:
         return self._last_pixels, self._last_hash, self._last_dimensions
 
 
+class RobotDistanceAccumulator:
+    """Handles the accumulation of odometry data.
+
+    For cases where odometry is not available, RobotSession.publish_odometry may publish
+    an estimation of linear and angular distance based on the previously published
+    poses.
+    This class handles the accumulation of these values and provides a method to get the
+    accumulated values and reset the accumulator.
+    """
+
+    def __init__(self):
+        self.last_pose: Pose | None = None
+        self._reset()
+
+    def _reset(self, ts: int | None = None):
+        """Resets the odometry accumulator.
+
+        Args:
+            ts (int, optional): Timestamp (milliseconds) of the start of the odometry
+            interval.
+                Defaults to the current time.
+        """
+        self._start_ts: int = ts if ts else int(time.time() * 1000)
+        self._linear_distance: float = 0.0
+        self._angular_distance: float = 0.0
+
+    def accumulate(self, pose: Pose):
+        """Updates the odometry accumulator with the new pose.
+        In the case of a frame_id change, the pose delta is not accumulated as a change
+        in frame_id does not represent robot travel. In this case the accumulator is not
+        reset.
+
+        Args:
+            pose (Pose): The new pose to accumulate.
+        """
+
+        # Ignore the delta and keep the pose as last pose if the frame_id changes or
+        # if this is the first pose.
+        if self.last_pose is None or self.last_pose.frame_id != pose.frame_id:
+            self.last_pose = pose
+            return
+
+        linear_delta, angular_delta = calculate_pose_delta(self.last_pose, pose)
+        self._linear_distance += linear_delta
+        self._angular_distance += angular_delta
+        self.last_pose = pose
+
+    def get_values_and_reset(self, ts: int | None = None) -> tuple[float, float, int]:
+        """Get the accumulated values and reset the accumulator.
+
+        Args:
+            ts (int, optional): Timestamp (milliseconds) of the start of the odometry
+            interval.
+                Defaults to the current time.
+        """
+        linear_distance = self._linear_distance
+        angular_distance = self._angular_distance
+        last_ts = self._start_ts
+        self._reset(ts)
+        return linear_distance, angular_distance, last_ts
+
+
 class RobotSession:
 
     def __init__(self, robot_id, robot_name, api_key=None, **kwargs) -> None:
@@ -316,10 +378,8 @@ class RobotSession:
         # Callback for determining robot online status
         self._online_status_callback = None
 
-        # Odometry accumulation
-        self._odometry_accumulator_linear = 0.0
-        self._odometry_accumulator_angular = 0.0
-        self._last_odometry_ts = int(time.time() * 1000)
+        # Odometry accumulator for estimating odometry data when it is not available.
+        self._distance_accumulator = RobotDistanceAccumulator()
 
         self.message_handlers[MQTT_INITIAL_POSE] = self._handle_initial_pose
         self.message_handlers[MQTT_CUSTOM_COMMAND] = self._handle_custom_command
@@ -1139,18 +1199,11 @@ class RobotSession:
         """
 
         # Assign the current pose before checking for throttling
-        previous_pose = self._last_pose
         self._last_pose = Pose(frame_id=frame_id, x=x, y=y, theta=yaw)
 
-        # Calculate distance from previous pose
-        # This allows estimating linear and angular distances if odometry is not
-        # available
-        if previous_pose is not None:
-            linear_distance, angular_distance = calculate_pose_delta(
-                previous_pose, self._last_pose
-            )
-            self._odometry_accumulator_linear += linear_distance
-            self._odometry_accumulator_angular += angular_distance
+        # Calculate distance from previous pose. This allows estimating linear and
+        # angular distances if odometry is not available.
+        self._distance_accumulator.accumulate(self._last_pose)
 
         if not self._should_publish_message(method="publish_pose"):
             return None
@@ -1269,28 +1322,24 @@ class RobotSession:
         if not self._should_publish_message(method="publish_odometry"):
             return None
 
+        # Get the accumulated values and reset the accumulator.
+        acc_linear_distance, acc_angular_distance, acc_start_ts = (
+            self._distance_accumulator.get_values_and_reset(ts)
+        )
+
         msg = OdometryDataMessage()
-        msg.ts_start = ts_start if ts_start else self._last_odometry_ts
+        msg.ts_start = ts_start if ts_start else acc_start_ts
         msg.ts = ts if ts else int(time.time() * 1000)
         msg.linear_distance = (
-            linear_distance
-            if linear_distance is not None
-            else self._odometry_accumulator_linear
+            linear_distance if linear_distance is not None else acc_linear_distance
         )
         msg.angular_distance = (
-            angular_distance
-            if angular_distance is not None
-            else self._odometry_accumulator_angular
+            angular_distance if angular_distance is not None else acc_angular_distance
         )
         msg.linear_speed = linear_speed
         msg.angular_speed = angular_speed
         msg.speed_available = True
         self.publish_protobuf(MQTT_SUBTOPIC_ODOMETRY, msg)
-
-        # Update last odometry timestamp and reset accumulators
-        self._last_odometry_ts = msg.ts
-        self._odometry_accumulator_linear = 0.0
-        self._odometry_accumulator_angular = 0.0
 
     @with_counter_metric(publish_laser_counter)
     def publish_lasers(self, x, y, yaw, ranges, frame_id="map", ts=None):
