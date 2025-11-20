@@ -726,7 +726,13 @@ class RobotSession:
             self._stop_cameras_streaming()
 
     def _handle_get_state(self):
-        """Handle get_state command from InOrbit."""
+        """Handle get_state command from InOrbit.
+
+        If the robot is offline, the next pose should not be accumulated for odometry
+        estimation.
+
+        TODO(b-Tomas): implement a proactive way to set the robot online status.
+        """
         is_online = True  # Default assumption
 
         if self._online_status_callback:
@@ -740,6 +746,10 @@ class RobotSession:
         self.logger.debug(
             f"Responded to get_state: robot {'online' if is_online else 'offline'}"
         )
+
+        # Discard the next pose for odometry estimation if the robot is offline
+        if not is_online:
+            self._distance_accumulator.discard_next_delta()
 
     def _start_cameras_streaming(self):
         """Start streaming on all registered cameras"""

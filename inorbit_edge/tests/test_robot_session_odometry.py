@@ -246,3 +246,41 @@ def test_odometry_accumulation_initial_pose_command(robot_session):
         abs(robot_session._distance_accumulator._angular_distance - math.pi / 2) < 1e-6
     )
     assert robot_session._distance_accumulator._start_ts == 0
+
+
+def test_odometry_accumulation_ignores_next_delta_on_offline(robot_session):
+    """
+    Test that when robot is offline (via get_state), the next pose delta is ignored.
+    The pose after the next will be accumulated anyway.
+    TODO(b-Tomas): implement a proactive way to set the robot online status.
+    """
+
+    # 1. Publish poses
+    robot_session.publish_pose(x=0, y=0, yaw=0, frame_id="map")
+    robot_session.publish_pose(x=1, y=0, yaw=0, frame_id="map")
+    assert robot_session._distance_accumulator._linear_distance == 1.0
+    assert robot_session._distance_accumulator._angular_distance == 0.0
+    assert robot_session._distance_accumulator._start_ts == 0
+
+    # 2. Set robot offline callback
+    robot_session.set_online_status_callback(lambda: False)
+
+    # 3. Trigger get_state command to detect robot is offline and discard next delta
+    robot_session._handle_in_cmd(b"get_state")
+
+    # 4. Publish another pose. This pose is ignored by the accumulator.
+    robot_session.publish_pose(x=10, y=11, yaw=math.pi, frame_id="map")
+    assert robot_session._distance_accumulator._linear_distance == 1.0
+    assert robot_session._distance_accumulator._angular_distance == 0.0
+    assert robot_session._distance_accumulator._start_ts == 0
+
+    # 5. Reset robot online status callback
+    robot_session.set_online_status_callback(lambda: True)
+
+    # 6. Publish another pose. This pose is accumulated.
+    robot_session.publish_pose(x=11, y=11, yaw=math.pi / 2, frame_id="map")
+    assert robot_session._distance_accumulator._linear_distance == 2.0
+    assert (
+        abs(robot_session._distance_accumulator._angular_distance - math.pi / 2) < 1e-6
+    )
+    assert robot_session._distance_accumulator._start_ts == 0
