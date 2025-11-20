@@ -100,6 +100,9 @@ CUSTOM_COMMAND_STATUS_ABORTED = "aborted"
 
 ROBOT_PATH_POINTS_LIMIT = 1000
 
+# Sets the threshold for discarding poses when estimating odometry values
+DISTANCE_ACCUMULATION_INTERVAL_LIMIT_MS = 30 * 1000
+
 
 @dataclass
 class LaserConfig:
@@ -304,7 +307,8 @@ class RobotSession:
         # Cast to string to support URL objects
         self.endpoint = str(kwargs.get("endpoint", INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL))
         # Track robot's current pose
-        self._last_pose = None
+        self._last_pose: Pose | None = None
+        self._last_pose_ts: int | None = None
         # Track the last path points
         self._last_path_points = None
         # Unique names of configs
@@ -1230,26 +1234,31 @@ class RobotSession:
         """
 
         pose = Pose(frame_id=frame_id, x=x, y=y, theta=yaw)
+        pose_ts = ts if ts else int(time.time() * 1000)
 
         # Accumulate the distance from the previous pose. This allows estimating linear
         # and angular distances if odometry is not available.
-        # In the case of a frame_id change, the pose should not be accumulated as a
-        # change in frame_id does not represent robot travel.
-        if self._last_pose:
-            self._distance_accumulator.accumulate(
-                pose, discard_delta=pose.frame_id != self._last_pose.frame_id
-            )
-        else:
-            self._distance_accumulator.accumulate(pose)
+        # The delta is explicitly discarded if:
+        # - the frame_id changes, meaning the move does not represent robot travel.
+        # - the last update was more than ODOMETRY_ACCUMULATION_INTERVAL_LIMIT_MS ago.
+        discard_delta = (
+            pose.frame_id != self._last_pose.frame_id if self._last_pose else False
+        ) or (
+            pose_ts - self._last_pose_ts > DISTANCE_ACCUMULATION_INTERVAL_LIMIT_MS
+            if self._last_pose_ts
+            else False
+        )
+        self._distance_accumulator.accumulate(pose, discard_delta=discard_delta)
 
-        # Assign the current pose before checking for throttling
+        # Store the pose before checking for throttling
         self._last_pose = pose
+        self._last_pose_ts = pose_ts
 
         if not self._should_publish_message(method="publish_pose"):
             return None
 
         msg = LocationAndPoseMessage()
-        msg.ts = ts if ts else int(time.time() * 1000)
+        msg.ts = pose_ts
         msg.pos_x = x
         msg.pos_y = y
         msg.yaw = yaw
