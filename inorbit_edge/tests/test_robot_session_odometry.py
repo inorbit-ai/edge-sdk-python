@@ -206,10 +206,43 @@ def test_odometry_accumulation_reset_on_frame_id_change(robot_session):
     odometry_msg.ParseFromString(call_kwargs["payload"])
 
     assert odometry_msg.linear_distance == 6.0
-    assert odometry_msg.angular_distance - math.pi < 1e-6
+    assert abs(odometry_msg.angular_distance - math.pi) < 1e-6
     assert odometry_msg.ts == 3000
     assert odometry_msg.ts_start == 0
 
     assert robot_session._distance_accumulator._linear_distance == 0.0
     assert robot_session._distance_accumulator._angular_distance == 0.0
     assert robot_session._distance_accumulator._start_ts == 3000
+
+
+def test_odometry_accumulation_initial_pose_command(robot_session):
+    """Verify that the next pose is not accumulated if the initial pose command is
+    received, but the accumulator is not reset.
+    """
+
+    # 1. Publish poses
+    robot_session.publish_pose(x=0, y=0, yaw=0, frame_id="map")
+    robot_session.publish_pose(x=1, y=0, yaw=0, frame_id="map")
+    assert robot_session._distance_accumulator._linear_distance == 1.0
+    assert robot_session._distance_accumulator._angular_distance == 0.0
+    assert robot_session._distance_accumulator._start_ts == 0
+
+    # 2. Publish initial pose command
+    robot_session._handle_initial_pose("0|1000|10|10|0.7854".encode())
+    assert robot_session._distance_accumulator._linear_distance == 1.0
+    assert robot_session._distance_accumulator._angular_distance == 0.0
+    assert robot_session._distance_accumulator._start_ts == 0
+
+    # 3. Publish another pose. This pose is ignored by the accumulator.
+    robot_session.publish_pose(x=10, y=11, yaw=math.pi, frame_id="map")
+    assert robot_session._distance_accumulator._linear_distance == 1.0
+    assert robot_session._distance_accumulator._angular_distance == 0.0
+    assert robot_session._distance_accumulator._start_ts == 0
+
+    # 4. Publish another pose. This pose is accumulated.
+    robot_session.publish_pose(x=11, y=11, yaw=math.pi / 2, frame_id="map")
+    assert robot_session._distance_accumulator._linear_distance == 2.0
+    assert (
+        abs(robot_session._distance_accumulator._angular_distance - math.pi / 2) < 1e-6
+    )
+    assert robot_session._distance_accumulator._start_ts == 0

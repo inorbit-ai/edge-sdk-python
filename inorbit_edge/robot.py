@@ -224,6 +224,8 @@ class RobotDistanceAccumulator:
         """Updates the odometry accumulator with the new pose.
 
         The delta can be discarded explicitly by setting discard_delta to True.
+        This is useful for cases where the pose change doesn't represent robot travel,
+        such as frame_id changes.
 
         Args:
             pose (Pose): The new pose to accumulate.
@@ -255,6 +257,17 @@ class RobotDistanceAccumulator:
         last_ts = self._start_ts
         self._reset(ts)
         return linear_distance, angular_distance, last_ts
+
+    def discard_next_delta(self):
+        """Discard the next delta from the accumulator.
+
+        This is used to ignore the next delta in cases where the next pose doesn't
+        represent robot travel, but the final pose is not known yet, such as
+        relocalization events.
+        For updating the last pose without accumulating the delta, use
+        `accumulate(pose, discard_delta=True)`.
+        """
+        self.last_pose = None
 
 
 class RobotSession:
@@ -653,7 +666,14 @@ class RobotSession:
     def _handle_initial_pose(self, msg):
         """Handle incoming MQTT_INITIAL_POSE message."""
 
+        # Dispatch the message as a command to the command callbacks
         self._handle_pose_msg_helper(msg, COMMAND_INITIAL_POSE)
+
+        # An MQTT_INITIAL_POSE message may or may not imply a change in the robot's pose
+        # that doesn't represent robot travel.
+        # For this reason the next pose should not be accumulated for odometry
+        # estimation.
+        self._distance_accumulator.discard_next_delta()
 
     def _handle_custom_command(self, msg):
         """Handle incoming MQTT_CUSTOM_COMMAND message."""
