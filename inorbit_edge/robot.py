@@ -220,22 +220,23 @@ class RobotDistanceAccumulator:
         self._linear_distance: float = 0.0
         self._angular_distance: float = 0.0
 
-    def accumulate(self, pose: Pose):
+    def accumulate(self, pose: Pose, discard_delta: bool = False):
         """Updates the odometry accumulator with the new pose.
-        In the case of a frame_id change, the pose delta is not accumulated as a change
-        in frame_id does not represent robot travel. In this case the accumulator is not
-        reset.
+
+        The delta can be discarded explicitly by setting discard_delta to True.
 
         Args:
             pose (Pose): The new pose to accumulate.
+            discard_delta (bool, optional): If True, the delta is not accumulated.
+                Defaults to False.
         """
 
-        # Ignore the delta and keep the pose as last pose if the frame_id changes or
-        # if this is the first pose.
-        if self.last_pose is None or self.last_pose.frame_id != pose.frame_id:
+        # Ignore the delta if this is the first pose or if discard_delta is True.
+        if discard_delta or self.last_pose is None:
             self.last_pose = pose
             return
 
+        # Otherwise, accumulate the delta.
         linear_delta, angular_delta = calculate_pose_delta(self.last_pose, pose)
         self._linear_distance += linear_delta
         self._angular_distance += angular_delta
@@ -1198,12 +1199,21 @@ class RobotSession:
             ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
         """
 
-        # Assign the current pose before checking for throttling
-        self._last_pose = Pose(frame_id=frame_id, x=x, y=y, theta=yaw)
+        pose = Pose(frame_id=frame_id, x=x, y=y, theta=yaw)
 
-        # Calculate distance from previous pose. This allows estimating linear and
-        # angular distances if odometry is not available.
-        self._distance_accumulator.accumulate(self._last_pose)
+        # Accumulate the distance from the previous pose. This allows estimating linear
+        # and angular distances if odometry is not available.
+        # In the case of a frame_id change, the pose should not be accumulated as a
+        # change in frame_id does not represent robot travel.
+        if self._last_pose:
+            self._distance_accumulator.accumulate(
+                pose, discard_delta=pose.frame_id != self._last_pose.frame_id
+            )
+        else:
+            self._distance_accumulator.accumulate(pose)
+
+        # Assign the current pose before checking for throttling
+        self._last_pose = pose
 
         if not self._should_publish_message(method="publish_pose"):
             return None
