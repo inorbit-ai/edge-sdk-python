@@ -311,7 +311,7 @@ class TestRobotSessionDistanceAccumulation:
 
         # 3. Publish a pose after the interval limit (should discard delta)
         # DISTANCE_ACCUMULATION_INTERVAL_LIMIT_MS is 30 seconds = 30000 ms
-        # So a pose at 1000 + 30001 = 31001 should discard the delta
+        # So a pose at 2000 + 30001 = 32001 should discard the delta
         interval_limit = DISTANCE_ACCUMULATION_INTERVAL_LIMIT_MS
         robot_session.publish_pose(
             x=10, y=10, yaw=math.pi, frame_id="map", ts=2000 + interval_limit + 1
