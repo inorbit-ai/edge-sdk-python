@@ -4,8 +4,13 @@
 import math
 import unittest.mock
 import pytest
-from inorbit_edge.robot import RobotSession, DISTANCE_ACCUMULATION_INTERVAL_LIMIT_MS
+from inorbit_edge.robot import (
+    RobotSession,
+    RobotDistanceAccumulator,
+    DISTANCE_ACCUMULATION_INTERVAL_LIMIT_MS,
+)
 from inorbit_edge.inorbit_pb2 import OdometryDataMessage
+from inorbit_edge.types import Pose
 
 
 class TestRobotSessionDistanceAccumulation:
@@ -480,3 +485,294 @@ class TestRobotSessionDistanceAccumulation:
         assert odometry_msg.angular_distance == 0.0
         assert odometry_msg.ts == 2000
         assert odometry_msg.ts_start == 0
+
+
+class TestRobotDistanceAccumulator:
+    """Unit tests for RobotDistanceAccumulator class."""
+
+    @pytest.fixture
+    def accumulator(self):
+        """Create a default accumulator with both estimates enabled."""
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=1.0):
+            return RobotDistanceAccumulator()
+
+    def test_initialization_default(self):
+        """Test default initialization with both estimates enabled."""
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=1.0):
+            acc = RobotDistanceAccumulator()
+            assert acc._estimate_distance_linear is True
+            assert acc._estimate_distance_angular is True
+            assert acc.last_pose is None
+            assert acc._linear_distance == 0.0
+            assert acc._angular_distance == 0.0
+            assert acc._start_ts == 1000
+
+    def test_initialization_linear_disabled(self):
+        """Test initialization with linear distance estimation disabled."""
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=2.0):
+            acc = RobotDistanceAccumulator(estimate_distance_linear=False)
+            assert acc._estimate_distance_linear is False
+            assert acc._estimate_distance_angular is True
+            assert acc._start_ts == 2000
+
+    def test_initialization_angular_disabled(self):
+        """Test initialization with angular distance estimation disabled."""
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=3.0):
+            acc = RobotDistanceAccumulator(estimate_distance_angular=False)
+            assert acc._estimate_distance_linear is True
+            assert acc._estimate_distance_angular is False
+            assert acc._start_ts == 3000
+
+    def test_initialization_both_disabled(self):
+        """Test initialization with both estimates disabled."""
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=4.0):
+            acc = RobotDistanceAccumulator(
+                estimate_distance_linear=False, estimate_distance_angular=False
+            )
+            assert acc._estimate_distance_linear is False
+            assert acc._estimate_distance_angular is False
+            assert acc._start_ts == 4000
+
+    def test_reset_with_timestamp(self, accumulator):
+        """Test reset with explicit timestamp."""
+        accumulator._linear_distance = 5.0
+        accumulator._angular_distance = 2.0
+        accumulator._reset(ts=5000)
+        assert accumulator._linear_distance == 0.0
+        assert accumulator._angular_distance == 0.0
+        assert accumulator._start_ts == 5000
+
+    def test_reset_without_timestamp(self):
+        """Test reset without timestamp uses current time."""
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=6.0):
+            acc = RobotDistanceAccumulator()
+            acc._linear_distance = 10.0
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=7.0):
+            acc._reset()
+        assert acc._linear_distance == 0.0
+        assert acc._angular_distance == 0.0
+        assert acc._start_ts == 7000
+
+    def test_accumulate_first_pose(self, accumulator):
+        """Test that first pose doesn't accumulate distance."""
+        pose = Pose(frame_id="map", x=1.0, y=2.0, theta=0.5)
+        accumulator.accumulate(pose)
+        assert accumulator._linear_distance == 0.0
+        assert accumulator._angular_distance == 0.0
+        assert accumulator.last_pose.frame_id == pose.frame_id
+        assert accumulator.last_pose.x == pose.x
+        assert accumulator.last_pose.y == pose.y
+        assert accumulator.last_pose.theta == pose.theta
+
+    def test_accumulate_linear_movement(self, accumulator):
+        """Test accumulation of linear movement."""
+        pose1 = Pose(frame_id="map", x=0.0, y=0.0, theta=0.0)
+        pose2 = Pose(frame_id="map", x=3.0, y=4.0, theta=0.0)
+        accumulator.accumulate(pose1)
+        accumulator.accumulate(pose2)
+        assert accumulator._linear_distance == 5.0
+        assert accumulator._angular_distance == 0.0
+        assert accumulator.last_pose.frame_id == pose2.frame_id
+        assert accumulator.last_pose.x == pose2.x
+        assert accumulator.last_pose.y == pose2.y
+        assert accumulator.last_pose.theta == pose2.theta
+
+    def test_accumulate_angular_movement(self, accumulator):
+        """Test accumulation of angular movement."""
+        pose1 = Pose(frame_id="map", x=0.0, y=0.0, theta=0.0)
+        pose2 = Pose(frame_id="map", x=0.0, y=0.0, theta=math.pi / 2)
+        accumulator.accumulate(pose1)
+        accumulator.accumulate(pose2)
+        assert accumulator._linear_distance == 0.0
+        assert accumulator._angular_distance == pytest.approx(math.pi / 2)
+        assert accumulator.last_pose.frame_id == pose2.frame_id
+        assert accumulator.last_pose.x == pose2.x
+        assert accumulator.last_pose.y == pose2.y
+        assert accumulator.last_pose.theta == pose2.theta
+
+    def test_accumulate_both_movements(self, accumulator):
+        """Test accumulation of both linear and angular movement."""
+        pose1 = Pose(frame_id="map", x=0.0, y=0.0, theta=0.0)
+        pose2 = Pose(frame_id="map", x=3.0, y=4.0, theta=math.pi / 4)
+        accumulator.accumulate(pose1)
+        accumulator.accumulate(pose2)
+        assert accumulator._linear_distance == 5.0
+        assert accumulator._angular_distance == pytest.approx(math.pi / 4)
+        assert accumulator.last_pose.frame_id == pose2.frame_id
+        assert accumulator.last_pose.x == pose2.x
+        assert accumulator.last_pose.y == pose2.y
+        assert accumulator.last_pose.theta == pose2.theta
+
+    def test_accumulate_multiple_poses(self, accumulator):
+        """Test accumulation across multiple poses."""
+        poses = [
+            Pose(frame_id="map", x=0.0, y=0.0, theta=0.0),
+            Pose(frame_id="map", x=1.0, y=0.0, theta=0.0),
+            Pose(frame_id="map", x=1.0, y=1.0, theta=math.pi / 2),
+            Pose(frame_id="map", x=2.0, y=1.0, theta=math.pi / 2),
+        ]
+        for pose in poses:
+            accumulator.accumulate(pose)
+        assert accumulator._linear_distance == 3.0
+        assert accumulator._angular_distance == pytest.approx(math.pi / 2)
+        assert accumulator.last_pose.frame_id == poses[-1].frame_id
+        assert accumulator.last_pose.x == poses[-1].x
+        assert accumulator.last_pose.y == poses[-1].y
+        assert accumulator.last_pose.theta == poses[-1].theta
+
+    def test_accumulate_with_discard_delta(self, accumulator):
+        """Test that discard_delta=True doesn't accumulate but updates last_pose."""
+        pose1 = Pose(frame_id="map", x=0.0, y=0.0, theta=0.0)
+        pose2 = Pose(frame_id="map", x=10.0, y=10.0, theta=math.pi)
+        accumulator.accumulate(pose1)
+        accumulator.accumulate(pose2, discard_delta=True)
+        assert accumulator._linear_distance == 0.0
+        assert accumulator._angular_distance == 0.0
+        assert accumulator.last_pose.frame_id == pose2.frame_id
+        assert accumulator.last_pose.x == pose2.x
+        assert accumulator.last_pose.y == pose2.y
+        assert accumulator.last_pose.theta == pose2.theta
+
+    def test_accumulate_discard_delta_after_accumulation(self, accumulator):
+        """Test discard_delta after some accumulation."""
+        pose1 = Pose(frame_id="map", x=0.0, y=0.0, theta=0.0)
+        pose2 = Pose(frame_id="map", x=1.0, y=0.0, theta=0.0)
+        pose3 = Pose(frame_id="map", x=100.0, y=100.0, theta=math.pi)
+        accumulator.accumulate(pose1)
+        accumulator.accumulate(pose2)
+        assert accumulator._linear_distance == 1.0
+        accumulator.accumulate(pose3, discard_delta=True)
+        assert accumulator._linear_distance == 1.0
+        assert accumulator.last_pose.frame_id == pose3.frame_id
+        assert accumulator.last_pose.x == pose3.x
+        assert accumulator.last_pose.y == pose3.y
+        assert accumulator.last_pose.theta == pose3.theta
+
+    def test_get_values_and_reset_returns_correct_values(self, accumulator):
+        """Test that get_values_and_reset returns accumulated values."""
+        pose1 = Pose(frame_id="map", x=0.0, y=0.0, theta=0.0)
+        pose2 = Pose(frame_id="map", x=3.0, y=4.0, theta=math.pi / 2)
+        accumulator.accumulate(pose1)
+        accumulator.accumulate(pose2)
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=2.0):
+            linear, angular, start_ts = accumulator.get_values_and_reset()
+        assert linear == 5.0
+        assert angular == pytest.approx(math.pi / 2)
+        assert start_ts == 1000
+        assert accumulator._linear_distance == 0.0
+        assert accumulator._angular_distance == 0.0
+
+    def test_get_values_and_reset_with_timestamp(self, accumulator):
+        """Test get_values_and_reset with explicit timestamp."""
+        pose1 = Pose(frame_id="map", x=0.0, y=0.0, theta=0.0)
+        pose2 = Pose(frame_id="map", x=1.0, y=0.0, theta=0.0)
+        accumulator.accumulate(pose1)
+        accumulator.accumulate(pose2)
+        linear, angular, start_ts = accumulator.get_values_and_reset(ts=5000)
+        assert linear == 1.0
+        assert angular == 0.0
+        assert start_ts == 1000
+        assert accumulator._start_ts == 5000
+
+    def test_get_values_and_reset_respects_linear_flag(self):
+        """Test that get_values_and_reset respects estimate_distance_linear flag."""
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=1.0):
+            acc = RobotDistanceAccumulator(estimate_distance_linear=False)
+        pose1 = Pose(frame_id="map", x=0.0, y=0.0, theta=0.0)
+        pose2 = Pose(frame_id="map", x=10.0, y=0.0, theta=0.0)
+        acc.accumulate(pose1)
+        acc.accumulate(pose2)
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=2.0):
+            linear, angular, _ = acc.get_values_and_reset()
+        assert linear == 0.0
+        assert acc._linear_distance == 0.0
+
+    def test_get_values_and_reset_respects_angular_flag(self):
+        """Test that get_values_and_reset respects estimate_distance_angular flag."""
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=1.0):
+            acc = RobotDistanceAccumulator(estimate_distance_angular=False)
+        pose1 = Pose(frame_id="map", x=0.0, y=0.0, theta=0.0)
+        pose2 = Pose(frame_id="map", x=0.0, y=0.0, theta=math.pi)
+        acc.accumulate(pose1)
+        acc.accumulate(pose2)
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=2.0):
+            linear, angular, _ = acc.get_values_and_reset()
+        assert angular == 0.0
+        assert acc._angular_distance == 0.0
+
+    def test_get_values_and_reset_respects_both_flags(self):
+        """Test that get_values_and_reset respects both flags."""
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=1.0):
+            acc = RobotDistanceAccumulator(
+                estimate_distance_linear=False, estimate_distance_angular=False
+            )
+        pose1 = Pose(frame_id="map", x=0.0, y=0.0, theta=0.0)
+        pose2 = Pose(frame_id="map", x=10.0, y=0.0, theta=math.pi)
+        acc.accumulate(pose1)
+        acc.accumulate(pose2)
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=2.0):
+            linear, angular, _ = acc.get_values_and_reset()
+        assert linear == 0.0
+        assert angular == 0.0
+        assert acc._linear_distance == 0.0
+        assert acc._angular_distance == 0.0
+
+    def test_discard_next_delta(self, accumulator):
+        """Test that discard_next_delta sets last_pose to None."""
+        pose1 = Pose(frame_id="map", x=0.0, y=0.0, theta=0.0)
+        pose2 = Pose(frame_id="map", x=1.0, y=0.0, theta=0.0)
+        accumulator.accumulate(pose1)
+        accumulator.accumulate(pose2)
+        assert accumulator._linear_distance == 1.0
+        accumulator.discard_next_delta()
+        assert accumulator.last_pose is None
+
+    def test_discard_next_delta_prevents_accumulation(self, accumulator):
+        """Test that after discard_next_delta, next accumulate doesn't accumulate."""
+        pose1 = Pose(frame_id="map", x=0.0, y=0.0, theta=0.0)
+        pose2 = Pose(frame_id="map", x=1.0, y=0.0, theta=0.0)
+        pose3 = Pose(frame_id="map", x=2.0, y=0.0, theta=0.0)
+        accumulator.accumulate(pose1)
+        accumulator.accumulate(pose2)
+        assert accumulator._linear_distance == 1.0
+        accumulator.discard_next_delta()
+        accumulator.accumulate(pose3)
+        assert accumulator._linear_distance == 1.0
+        assert accumulator.last_pose.frame_id == pose3.frame_id
+        assert accumulator.last_pose.x == pose3.x
+        assert accumulator.last_pose.y == pose3.y
+        assert accumulator.last_pose.theta == pose3.theta
+
+    def test_discard_next_delta_then_accumulate_again(self, accumulator):
+        """Test accumulation continues after discard_next_delta."""
+        pose1 = Pose(frame_id="map", x=0.0, y=0.0, theta=0.0)
+        pose2 = Pose(frame_id="map", x=1.0, y=0.0, theta=0.0)
+        pose3 = Pose(frame_id="map", x=100.0, y=0.0, theta=0.0)
+        pose4 = Pose(frame_id="map", x=101.0, y=0.0, theta=0.0)
+        accumulator.accumulate(pose1)
+        accumulator.accumulate(pose2)
+        assert accumulator._linear_distance == 1.0
+        accumulator.discard_next_delta()
+        accumulator.accumulate(pose3)
+        assert accumulator._linear_distance == 1.0
+        accumulator.accumulate(pose4)
+        assert accumulator._linear_distance == 2.0
+        assert accumulator.last_pose.frame_id == pose4.frame_id
+        assert accumulator.last_pose.x == pose4.x
+        assert accumulator.last_pose.y == pose4.y
+        assert accumulator.last_pose.theta == pose4.theta
+
+    def test_get_values_and_reset_preserves_last_pose(self, accumulator):
+        """Test that get_values_and_reset doesn't reset last_pose."""
+        pose1 = Pose(frame_id="map", x=0.0, y=0.0, theta=0.0)
+        pose2 = Pose(frame_id="map", x=1.0, y=0.0, theta=0.0)
+        accumulator.accumulate(pose1)
+        accumulator.accumulate(pose2)
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=2.0):
+            accumulator.get_values_and_reset()
+        assert accumulator.last_pose.frame_id == pose2.frame_id
+        assert accumulator.last_pose.x == pose2.x
+        assert accumulator.last_pose.y == pose2.y
+        assert accumulator.last_pose.theta == pose2.theta
+        assert accumulator._linear_distance == 0.0
+        assert accumulator._angular_distance == 0.0
