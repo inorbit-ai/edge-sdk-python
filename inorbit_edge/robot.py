@@ -231,7 +231,7 @@ class RobotDistanceAccumulator:
             interval.
                 Defaults to the current time.
         """
-        self._start_ts: int = ts if ts else int(time.time() * 1000)
+        self._start_ts: int = ts if ts is not None else int(time.time() * 1000)
         self._linear_distance: float = 0.0
         self._angular_distance: float = 0.0
 
