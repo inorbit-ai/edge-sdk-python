@@ -265,9 +265,8 @@ class RobotDistanceAccumulator:
         """Get the accumulated values and reset the accumulator.
 
         Args:
-            ts (int, optional): Timestamp (milliseconds) of the start of the odometry
-            interval.
-                Defaults to the current time.
+            ts (int, optional): Timestamp (milliseconds) to use as the start of the next odometry
+                interval after reset. Defaults to the current time.
         """
         linear_distance = (
             self._linear_distance if self._estimate_distance_linear else 0.0
