@@ -336,7 +336,7 @@ class TestRobotSessionDistanceAccumulation:
         assert robot_session._distance_accumulator._linear_distance == 0.0
 
         # 2. Publish a pose just before the interval limit (should accumulate)
-        # ODOMETRY_ACCUMULATION_INTERVAL_LIMIT_MS is 30 seconds = 30000 ms
+        # DISTANCE_ACCUMULATION_INTERVAL_LIMIT_MS is 30 seconds = 30000 ms
         # So a pose at 1000 + 30000 = 31000 should still accumulate (limit is >, not >=)
         interval_limit = DISTANCE_ACCUMULATION_INTERVAL_LIMIT_MS
         robot_session.publish_pose(

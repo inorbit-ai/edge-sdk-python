@@ -207,9 +207,9 @@ class RobotDistanceAccumulator:
     accumulated values and reset the accumulator.
 
     Args:
-        estimate_linear_distance (bool, optional): If set to False, the estimated
+        estimate_distance_linear (bool, optional): If set to False, the estimated
             value will always be 0.0.
-        estimate_linear_distance (bool, optional): If set to False, the estimated
+        estimate_distance_angular (bool, optional): If set to False, the estimated
             value will always be 0.0.
     """
 
@@ -259,14 +259,12 @@ class RobotDistanceAccumulator:
         self._angular_distance += angular_delta
         self.last_pose = pose
 
-    def get_values_and_reset(
-        self, ts: int | None = None
-    ) -> tuple[float | None, float | None, int]:
+    def get_values_and_reset(self, ts: int | None = None) -> tuple[float, float, int]:
         """Get the accumulated values and reset the accumulator.
 
         Args:
-            ts (int, optional): Timestamp (milliseconds) to use as the start of the next odometry
-                interval after reset. Defaults to the current time.
+            ts (int, optional): Timestamp (milliseconds) to use as the start of the next
+                odometry interval after reset. Defaults to the current time.
         """
         linear_distance = (
             self._linear_distance if self._estimate_distance_linear else 0.0
@@ -298,13 +296,12 @@ class RobotSession:
         Args:
             robot_id (str): ID of the robot.
             api_key (str): API key for authenticating against InOrbit Cloud services.
-            robot_name (str): Robot name.
+            robot_name (str): Robot hostname. If provided, it will be used to identify
+                the robot in the Control dashboard UI unless a name is set from the UI
+                itself.
         Kwargs:
             robot_key(str): Robot key for authenticating against InOrbit Cloud services
                 when using InOrbit Connect (https://connect.inorbit.ai/).
-            robot_name(str): Robot hostname. If provided, it will be used to identify
-                the robot in the Control dashboard UI unless a name is set from the UI
-                itself.
             endpoint (str): InOrbit URL. Defaults: INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL.
             use_ssl (bool): Configures MQTT client to use SSL. Defaults: True.
             rest_api_endpoint (str): The URL of the InOrbit REST API.
@@ -1269,7 +1266,7 @@ class RobotSession:
         # and angular distances if odometry is not available.
         # The delta is explicitly discarded if:
         # - the frame_id changes, meaning the move does not represent robot travel.
-        # - the last update was more than ODOMETRY_ACCUMULATION_INTERVAL_LIMIT_MS ago.
+        # - the last update was more than DISTANCE_ACCUMULATION_INTERVAL_LIMIT_MS ago.
         discard_delta = (
             pose.frame_id != self._last_pose.frame_id if self._last_pose else False
         ) or (
