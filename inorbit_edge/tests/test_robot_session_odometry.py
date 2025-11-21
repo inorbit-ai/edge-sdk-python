@@ -310,7 +310,7 @@ class TestRobotSessionDistanceAccumulation:
         assert robot_session._distance_accumulator._angular_distance == 0.0
 
         # 3. Publish a pose after the interval limit (should discard delta)
-        # ODOMETRY_ACCUMULATION_INTERVAL_LIMIT_MS is 30 seconds = 30000 ms
+        # DISTANCE_ACCUMULATION_INTERVAL_LIMIT_MS is 30 seconds = 30000 ms
         # So a pose at 1000 + 30001 = 31001 should discard the delta
         interval_limit = DISTANCE_ACCUMULATION_INTERVAL_LIMIT_MS
         robot_session.publish_pose(
