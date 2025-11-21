@@ -372,3 +372,111 @@ class TestRobotSessionDistanceAccumulation:
             x=101, y=100, yaw=math.pi, frame_id="different_map", ts=32000
         )
         assert robot_session._distance_accumulator._linear_distance == 2.0
+
+    def test_linear_distance_accumulation_can_be_disabled(
+        self, mock_mqtt_client, mock_inorbit_api, mock_sleep
+    ):
+        """Verify that the accumulation can be disabled."""
+
+        # Create a robot session with distance accumulation disabled
+        with unittest.mock.patch("time.time", return_value=0):
+            robot_session = RobotSession(
+                robot_id="id_123",
+                robot_name="name_123",
+                api_key="apikey_123",
+                estimate_distance_linear=False,
+                estimate_distance_angular=True,
+            )
+
+        # Disable throttling for testing
+        robot_session._publish_throttling["publish_pose"]["min_time_between_calls"] = 0
+        robot_session._publish_throttling["publish_odometry"][
+            "min_time_between_calls"
+        ] = 0
+
+        # 1. Publish poses
+        robot_session.publish_pose(x=0, y=0, yaw=0, frame_id="map")
+        robot_session.publish_pose(x=1, y=0, yaw=math.pi / 2, frame_id="map")
+
+        # 2. Publish odometry
+        robot_session.publish_odometry(ts=2000)
+        call_kwargs = robot_session.client.publish.call_args[1]
+        odometry_msg = OdometryDataMessage()
+        odometry_msg.ParseFromString(call_kwargs["payload"])
+
+        assert odometry_msg.linear_distance == 0.0
+        assert abs(odometry_msg.angular_distance - math.pi / 2) < 1e-6
+        assert odometry_msg.ts == 2000
+        assert odometry_msg.ts_start == 0
+
+    def test_angular_distance_accumulation_can_be_disabled(
+        self, mock_mqtt_client, mock_inorbit_api, mock_sleep
+    ):
+        """Verify that the angular distance accumulation can be disabled."""
+
+        # Create a robot session with angular distance accumulation disabled
+        with unittest.mock.patch("time.time", return_value=0):
+            robot_session = RobotSession(
+                robot_id="id_123",
+                robot_name="name_123",
+                api_key="apikey_123",
+                estimate_distance_linear=True,
+                estimate_distance_angular=False,
+            )
+
+        # Disable throttling for testing
+        robot_session._publish_throttling["publish_pose"]["min_time_between_calls"] = 0
+        robot_session._publish_throttling["publish_odometry"][
+            "min_time_between_calls"
+        ] = 0
+
+        # 1. Publish poses
+        robot_session.publish_pose(x=0, y=0, yaw=0, frame_id="map")
+        robot_session.publish_pose(x=1, y=0, yaw=math.pi / 2, frame_id="map")
+
+        # 2. Publish odometry
+        robot_session.publish_odometry(ts=2000)
+        call_kwargs = robot_session.client.publish.call_args[1]
+        odometry_msg = OdometryDataMessage()
+        odometry_msg.ParseFromString(call_kwargs["payload"])
+
+        assert odometry_msg.linear_distance == 1.0
+        assert odometry_msg.angular_distance == 0.0
+        assert odometry_msg.ts == 2000
+        assert odometry_msg.ts_start == 0
+
+    def test_both_distances_accumulation_can_be_disabled(
+        self, mock_mqtt_client, mock_inorbit_api, mock_sleep
+    ):
+        """Verify that both distances accumulation can be disabled."""
+
+        # Create a robot session with both distances accumulation disabled
+        with unittest.mock.patch("time.time", return_value=0):
+            robot_session = RobotSession(
+                robot_id="id_123",
+                robot_name="name_123",
+                api_key="apikey_123",
+                estimate_distance_linear=False,
+                estimate_distance_angular=False,
+            )
+
+        # Disable throttling for testing
+        robot_session._publish_throttling["publish_pose"]["min_time_between_calls"] = 0
+        robot_session._publish_throttling["publish_odometry"][
+            "min_time_between_calls"
+        ] = 0
+
+        # 1. Publish poses
+        robot_session.publish_pose(x=0, y=0, yaw=0, frame_id="map")
+        robot_session.publish_pose(x=1, y=0, yaw=math.pi / 2, frame_id="map")
+
+        # 2. Publish odometry
+        robot_session.publish_odometry(ts=2000)
+        call_kwargs = robot_session.client.publish.call_args[1]
+        odometry_msg = OdometryDataMessage()
+        odometry_msg.ParseFromString(call_kwargs["payload"])
+
+        assert odometry_msg.linear_distance == 0.0
+        assert odometry_msg.angular_distance == 0.0
+        assert odometry_msg.ts == 2000
+        assert odometry_msg.ts_start == 0

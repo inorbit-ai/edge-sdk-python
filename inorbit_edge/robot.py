@@ -205,9 +205,21 @@ class RobotDistanceAccumulator:
     poses.
     This class handles the accumulation of these values and provides a method to get the
     accumulated values and reset the accumulator.
+
+    Args:
+        estimate_linear_distance (bool, optional): If set to False, the estimated
+            value will always be 0.0.
+        estimate_linear_distance (bool, optional): If set to False, the estimated
+            value will always be 0.0.
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        estimate_distance_linear: bool = True,
+        estimate_distance_angular: bool = True,
+    ):
+        self._estimate_distance_linear = estimate_distance_linear
+        self._estimate_distance_angular = estimate_distance_angular
         self.last_pose: Pose | None = None
         self._reset()
 
@@ -247,7 +259,9 @@ class RobotDistanceAccumulator:
         self._angular_distance += angular_delta
         self.last_pose = pose
 
-    def get_values_and_reset(self, ts: int | None = None) -> tuple[float, float, int]:
+    def get_values_and_reset(
+        self, ts: int | None = None
+    ) -> tuple[float | None, float | None, int]:
         """Get the accumulated values and reset the accumulator.
 
         Args:
@@ -255,8 +269,12 @@ class RobotDistanceAccumulator:
             interval.
                 Defaults to the current time.
         """
-        linear_distance = self._linear_distance
-        angular_distance = self._angular_distance
+        linear_distance = (
+            self._linear_distance if self._estimate_distance_linear else 0.0
+        )
+        angular_distance = (
+            self._angular_distance if self._estimate_distance_angular else 0.0
+        )
         last_ts = self._start_ts
         self._reset(ts)
         return linear_distance, angular_distance, last_ts
@@ -285,6 +303,9 @@ class RobotSession:
         Kwargs:
             robot_key(str): Robot key for authenticating against InOrbit Cloud services
                 when using InOrbit Connect (https://connect.inorbit.ai/).
+            robot_name(str): Robot hostname. If provided, it will be used to identify
+                the robot in the Control dashboard UI unless a name is set from the UI
+                itself.
             endpoint (str): InOrbit URL. Defaults: INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL.
             use_ssl (bool): Configures MQTT client to use SSL. Defaults: True.
             rest_api_endpoint (str): The URL of the InOrbit REST API.
@@ -292,6 +313,12 @@ class RobotSession:
             account_id (str): The account ID of the robot owner. Required for applying
                 configurations to the robot.
             keepalive_secs (int): Keepalive for MQTT connection (seconds). Default: 10.
+            estimate_distance_linear (bool): Whether to publish an estimate value for
+                linear_distance based on poses when the value is not provided on a
+                publish_odometry() call. Default: True
+            estimate_distance_angular (bool): Whether to publish an estimate value for
+                angular_distance based on poses when the value is not provided on a
+                publish_odometry() call. Default: True
         """
 
         self.api_key = api_key
@@ -397,7 +424,10 @@ class RobotSession:
         self._online_status_callback = None
 
         # Odometry accumulator for estimating odometry data when it is not available.
-        self._distance_accumulator = RobotDistanceAccumulator()
+        self._distance_accumulator = RobotDistanceAccumulator(
+            estimate_distance_linear=kwargs.get("estimate_distance_linear", True),
+            estimate_distance_angular=kwargs.get("estimate_distance_angular", True),
+        )
 
         self.message_handlers[MQTT_INITIAL_POSE] = self._handle_initial_pose
         self.message_handlers[MQTT_CUSTOM_COMMAND] = self._handle_custom_command
