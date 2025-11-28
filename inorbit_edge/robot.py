@@ -57,7 +57,11 @@ from inorbit_edge.commands import (
 import time
 import requests
 import math
-from inorbit_edge.utils import encode_floating_point_list, reduce_path
+from inorbit_edge.utils import (
+    encode_floating_point_list,
+    reduce_path,
+    calculate_pose_delta,
+)
 import certifi
 import subprocess
 import re
@@ -95,6 +99,9 @@ CUSTOM_COMMAND_STATUS_FINISHED = "finished"
 CUSTOM_COMMAND_STATUS_ABORTED = "aborted"
 
 ROBOT_PATH_POINTS_LIMIT = 1000
+
+# Sets the threshold for discarding poses when estimating odometry values
+DISTANCE_ACCUMULATION_INTERVAL_LIMIT_MS = 30 * 1000
 
 
 @dataclass
@@ -190,6 +197,104 @@ class RobotMap:
         return self._last_pixels, self._last_hash, self._last_dimensions
 
 
+class RobotDistanceAccumulator:
+    """Handles the accumulation of odometry data.
+
+    For cases where odometry is not available, RobotSession.publish_odometry may publish
+    an estimation of linear and angular distance based on the previously published
+    poses.
+    This class handles the accumulation of these values and provides a method to get the
+    accumulated values and reset the accumulator. It accumulates values continuously
+    from session start.
+
+    Args:
+        estimate_distance_linear (bool, optional): If set to False, the estimated
+            value will always be 0.0.
+        estimate_distance_angular (bool, optional): If set to False, the estimated
+            value will always be 0.0.
+    """
+
+    def __init__(
+        self,
+        estimate_distance_linear: bool = True,
+        estimate_distance_angular: bool = True,
+    ):
+        self._logger = logging.getLogger(__class__.__name__)
+        self._estimate_distance_linear = estimate_distance_linear
+        self._estimate_distance_angular = estimate_distance_angular
+        self.last_pose: Pose | None = None
+        self._reset()
+
+    def _reset(self):
+        """Resets the odometry accumulator.
+
+        This should only be called when there's an error condition that requires
+        resetting the accumulator state by updating the period start timestamp.
+        """
+        self._start_ts: int = int(time.time() * 1000)
+        self._last_update_ts: int = self._start_ts
+        self._linear_distance: float = 0.0
+        self._angular_distance: float = 0.0
+        self.last_pose: Pose | None = None
+
+    def accumulate(self, pose: Pose, discard_delta: bool = False):
+        """Updates the odometry accumulator with the new pose.
+
+        The delta can be discarded explicitly by setting discard_delta to True.
+        This is useful for cases where the pose change doesn't represent robot travel,
+        such as frame_id changes.
+
+        Args:
+            pose (Pose): The new pose to accumulate.
+            discard_delta (bool, optional): If True, the delta is not accumulated.
+                Defaults to False.
+        """
+
+        # Ignore the delta if this is the first pose or if discard_delta is True.
+        if discard_delta or self.last_pose is None:
+            self.last_pose = pose
+            self._last_update_ts = int(time.time() * 1000)
+            return
+
+        # Otherwise, accumulate the delta.
+        linear_delta, angular_delta = calculate_pose_delta(self.last_pose, pose)
+        self._linear_distance += linear_delta
+        self._angular_distance += angular_delta
+        self._last_update_ts = int(time.time() * 1000)
+        self.last_pose = pose
+
+    def get_values(self) -> tuple[float, float, int, int]:
+        """Get the accumulated values without resetting the accumulator.
+
+        Returns cumulative values from session start.
+
+        Returns:
+            tuple: (linear_distance, angular_distance, start_ts, last_update_ts)
+                - linear_distance: Cumulative linear distance in meters
+                - angular_distance: Cumulative angular distance in radians
+                - start_ts: Timestamp when accumulation started (milliseconds)
+                - last_update_ts: Timestamp of last accumulation update (milliseconds)
+        """
+        linear_distance = (
+            self._linear_distance if self._estimate_distance_linear else 0.0
+        )
+        angular_distance = (
+            self._angular_distance if self._estimate_distance_angular else 0.0
+        )
+        return linear_distance, angular_distance, self._start_ts, self._last_update_ts
+
+    def discard_next_delta(self):
+        """Discard the next delta from the accumulator.
+
+        This is used to ignore the next delta in cases where the next pose doesn't
+        represent robot travel, but the final pose is not known yet, such as
+        relocalization events.
+        For updating the last pose without accumulating the delta, use
+        `accumulate(pose, discard_delta=True)`.
+        """
+        self.last_pose = None
+
+
 class RobotSession:
 
     def __init__(self, robot_id, robot_name, api_key=None, **kwargs) -> None:
@@ -198,7 +303,9 @@ class RobotSession:
         Args:
             robot_id (str): ID of the robot.
             api_key (str): API key for authenticating against InOrbit Cloud services.
-            robot_name (str): Robot name.
+            robot_name (str): Robot hostname. If provided, it will be used to identify
+                the robot in the Control dashboard UI unless a name is set from the UI
+                itself.
         Kwargs:
             robot_key(str): Robot key for authenticating against InOrbit Cloud services
                 when using InOrbit Connect (https://connect.inorbit.ai/).
@@ -209,6 +316,12 @@ class RobotSession:
             account_id (str): The account ID of the robot owner. Required for applying
                 configurations to the robot.
             keepalive_secs (int): Keepalive for MQTT connection (seconds). Default: 10.
+            estimate_distance_linear (bool): Whether to publish an estimate value for
+                linear_distance based on poses when the value is not provided on a
+                publish_odometry() call. Default: True
+            estimate_distance_angular (bool): Whether to publish an estimate value for
+                angular_distance based on poses when the value is not provided on a
+                publish_odometry() call. Default: True
         """
 
         self.api_key = api_key
@@ -224,7 +337,8 @@ class RobotSession:
         # Cast to string to support URL objects
         self.endpoint = str(kwargs.get("endpoint", INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL))
         # Track robot's current pose
-        self._last_pose = None
+        self._last_pose: Pose | None = None
+        self._last_pose_ts: int | None = None
         # Track the last path points
         self._last_path_points = None
         # Unique names of configs
@@ -311,6 +425,12 @@ class RobotSession:
 
         # Callback for determining robot online status
         self._online_status_callback = None
+
+        # Odometry accumulator for estimating odometry data when it is not available.
+        self._distance_accumulator = RobotDistanceAccumulator(
+            estimate_distance_linear=kwargs.get("estimate_distance_linear", True),
+            estimate_distance_angular=kwargs.get("estimate_distance_angular", True),
+        )
 
         self.message_handlers[MQTT_INITIAL_POSE] = self._handle_initial_pose
         self.message_handlers[MQTT_CUSTOM_COMMAND] = self._handle_custom_command
@@ -583,7 +703,14 @@ class RobotSession:
     def _handle_initial_pose(self, msg):
         """Handle incoming MQTT_INITIAL_POSE message."""
 
+        # Dispatch the message as a command to the command callbacks
         self._handle_pose_msg_helper(msg, COMMAND_INITIAL_POSE)
+
+        # An MQTT_INITIAL_POSE message may or may not imply a change in the robot's pose
+        # that doesn't represent robot travel.
+        # For this reason the next pose should not be accumulated for odometry
+        # estimation.
+        self._distance_accumulator.discard_next_delta()
 
     def _handle_custom_command(self, msg):
         """Handle incoming MQTT_CUSTOM_COMMAND message."""
@@ -636,7 +763,13 @@ class RobotSession:
             self._stop_cameras_streaming()
 
     def _handle_get_state(self):
-        """Handle get_state command from InOrbit."""
+        """Handle get_state command from InOrbit.
+
+        If the robot is offline, the next pose should not be accumulated for odometry
+        estimation.
+
+        TODO(b-Tomas): implement a proactive way to set the robot online status.
+        """
         is_online = True  # Default assumption
 
         if self._online_status_callback:
@@ -650,6 +783,10 @@ class RobotSession:
         self.logger.debug(
             f"Responded to get_state: robot {'online' if is_online else 'offline'}"
         )
+
+        # Discard the next pose for odometry estimation if the robot is offline
+        if not is_online:
+            self._distance_accumulator.discard_next_delta()
 
     def _start_cameras_streaming(self):
         """Start streaming on all registered cameras"""
@@ -1128,16 +1265,38 @@ class RobotSession:
             frame_id (str, optional): Robot map frame identifier. Defaults to "map".
             ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
         """
+
+        pose = Pose(frame_id=frame_id, x=x, y=y, theta=yaw)
+        pose_ts = ts if ts else int(time.time() * 1000)
+
+        # Accumulate the distance from the previous pose. This allows estimating linear
+        # and angular distances if odometry is not available.
+        # The delta is explicitly discarded if:
+        # - the frame_id changes, meaning the move does not represent robot travel.
+        # - the last update was more than DISTANCE_ACCUMULATION_INTERVAL_LIMIT_MS ago.
+        discard_delta = (
+            pose.frame_id != self._last_pose.frame_id if self._last_pose else False
+        ) or (
+            pose_ts - self._last_pose_ts > DISTANCE_ACCUMULATION_INTERVAL_LIMIT_MS
+            if self._last_pose_ts
+            else False
+        )
+        self._distance_accumulator.accumulate(pose, discard_delta=discard_delta)
+
+        # Store the pose before checking for throttling
+        self._last_pose = pose
+        self._last_pose_ts = pose_ts
+
         if not self._should_publish_message(method="publish_pose"):
             return None
 
         msg = LocationAndPoseMessage()
-        msg.ts = ts if ts else int(time.time() * 1000)
+        msg.ts = pose_ts
         msg.pos_x = x
         msg.pos_y = y
         msg.yaw = yaw
         msg.frame_id = frame_id
-        self._last_pose = Pose(frame_id=frame_id, x=x, y=y, theta=yaw)
+
         self.publish_protobuf(MQTT_SUBTOPIC_POSE, msg)
 
     def reached_waypoint(self, waypoint: Pose, tolerance: SpatialTolerance):
@@ -1220,34 +1379,58 @@ class RobotSession:
         self,
         ts_start=None,
         ts=None,
-        linear_distance=0,
-        angular_distance=0,
+        linear_distance=None,
+        angular_distance=None,
         linear_speed=0,
         angular_speed=0,
     ):
-        """Publish odometry data
+        """Publish odometry data. This method should be called even if the robot doesn't
+        provide any of these values, as it will use an internal accumulator based on the
+        previously published poses to calculate linear distance and angular distance.
+
+        Providing values for linear_distance and angular_distance will override the
+        internal accumulator values. In that case it is recommended to also provide
+        values for ts_start and ts.
+
+        ts_start should remain constant for the duration of the session. If it is ever
+        reset, the estimated linear and angular distances will be reset to 0.
 
         Args:
-            ts_start (int, optional): Timestamp (milliseconds) when the started to
+            ts_start (int, optional): Timestamp (milliseconds) when the robot started to
                 accumulate odometry. Defaults to int(time() * 1000).
             ts (int, optional): Timestamp (milliseconds) of the last time odometry
                 accumulator was updated. Defaults to int(time() * 1000).
-            linear_distance (int, optional): Accumulated displacement (meters).
-                Defaults to 0.
-            angular_distance (int, optional): Accumulated rotation (radians).
-                Defaults to 0.
-            linear_speed (int, optional): Linear speed (m/s). Defaults to 0.
-            angular_speed (int, optional): Angular speed (rad/s). Defaults to 0.
+            linear_distance (float, optional): Accumulated displacement (meters).
+                Defaults to None. If None, it uses the internal accumulator.
+            angular_distance (float, optional): Accumulated rotation (radians).
+                Defaults to None. If None, it uses the internal accumulator.
+            linear_speed (float, optional): Linear speed (m/s). Defaults to 0.
+            angular_speed (float, optional): Angular speed (rad/s). Defaults to 0.
         """
 
         if not self._should_publish_message(method="publish_odometry"):
             return None
 
+        # If ts_start is explicitly provided, reset accumulator to start new period
+        if ts_start is not None:
+            self._distance_accumulator._reset()
+            self._distance_accumulator._start_ts = ts_start
+            self._distance_accumulator._last_update_ts = ts_start
+
+        # Get the accumulated values
+        acc_linear_distance, acc_angular_distance, acc_start_ts, acc_last_ts = (
+            self._distance_accumulator.get_values()
+        )
+
         msg = OdometryDataMessage()
-        msg.ts_start = ts_start if ts_start else int(time.time() * 1000)
-        msg.ts = ts if ts else int(time.time() * 1000)
-        msg.linear_distance = linear_distance
-        msg.angular_distance = angular_distance
+        msg.ts_start = ts_start if ts_start else acc_start_ts
+        msg.ts = ts if ts else acc_last_ts
+        msg.linear_distance = (
+            linear_distance if linear_distance is not None else acc_linear_distance
+        )
+        msg.angular_distance = (
+            angular_distance if angular_distance is not None else acc_angular_distance
+        )
         msg.linear_speed = linear_speed
         msg.angular_speed = angular_speed
         msg.speed_available = True
