@@ -151,6 +151,52 @@ class TestRobotSessionDistanceAccumulation:
         assert odometry_msg.ts == 3000
         assert odometry_msg.ts_start == 1500
 
+    def test_throttled_odometry_preserves_accumulator(self, robot_session):
+        """Verify that throttled publish_odometry calls don't reset the accumulator."""
+
+        # Re-enable throttling for odometry
+        robot_session._publish_throttling["publish_odometry"][
+            "min_time_between_calls"
+        ] = 1
+
+        # 1. Accumulate some distance
+        robot_session.publish_pose(x=0, y=0, yaw=0)
+        robot_session.publish_pose(x=1, y=0, yaw=0)
+        assert robot_session._distance_accumulator._linear_distance == 1.0
+
+        # 2. First publish_odometry call should pass throttling and reset accumulator
+        robot_session.client.publish.reset_mock()
+        robot_session.publish_odometry(ts=1000)
+        robot_session.client.publish.assert_called_once()
+        assert robot_session._distance_accumulator._linear_distance == 0.0
+
+        # 3. Accumulate more distance
+        robot_session.publish_pose(x=2, y=0, yaw=0)
+        assert robot_session._distance_accumulator._linear_distance == 1.0
+
+        # 4. Second publish_odometry call is throttled - should NOT reset accumulator
+        robot_session.client.publish.reset_mock()
+        robot_session.publish_odometry(ts=2000)
+        robot_session.client.publish.assert_not_called()
+        assert robot_session._distance_accumulator._linear_distance == 1.0
+
+        # 5. Accumulate even more distance
+        robot_session.publish_pose(x=3, y=0, yaw=0)
+        assert robot_session._distance_accumulator._linear_distance == 2.0
+
+        # 6. Reset throttling and publish again - should publish accumulated 2.0m
+        robot_session._publish_throttling["publish_odometry"]["last_ts"] = 0
+        robot_session.client.publish.reset_mock()
+        robot_session.publish_odometry(ts=3000)
+
+        robot_session.client.publish.assert_called_once()
+        call_kwargs = robot_session.client.publish.call_args[1]
+        odometry_msg = OdometryDataMessage()
+        odometry_msg.ParseFromString(call_kwargs["payload"])
+
+        assert odometry_msg.linear_distance == 2.0
+        assert robot_session._distance_accumulator._linear_distance == 0.0
+
     def test_odometry_mixed_explicit_and_accumulated(self, robot_session):
         """Verify that it is possible to mix accumulated and explicit values."""
 
