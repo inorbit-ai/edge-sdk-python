@@ -85,10 +85,10 @@ class TestRobotSessionDistanceAccumulation:
         assert odometry_msg.ts == 2000
         assert odometry_msg.ts_start == 0
 
-        # Verify accumulators are reset
-        assert robot_session._distance_accumulator._linear_distance == 0.0
-        assert robot_session._distance_accumulator._angular_distance == 0.0
-        assert robot_session._distance_accumulator._start_ts == 2000
+        # Verify accumulators are not reset
+        assert robot_session._distance_accumulator._linear_distance == 2.0
+        assert robot_session._distance_accumulator._angular_distance == math.pi / 2
+        assert robot_session._distance_accumulator._start_ts == 0
 
         # Reset mock
         robot_session.client.publish.reset_mock()
@@ -107,11 +107,15 @@ class TestRobotSessionDistanceAccumulation:
 
         assert odometry_msg.ts == 3000
         assert odometry_msg.ts_start == 1500
+        # Accumulators are reset when ts_start is provided (new period started)
+        assert robot_session._distance_accumulator._linear_distance == 0.0
+        assert robot_session._distance_accumulator._angular_distance == 0.0
+        assert robot_session._distance_accumulator._start_ts == 1500
 
-    def test_odometry_accumulation_reset(self, robot_session):
+    def test_odometry_accumulation_cumulative(self, robot_session):
         """
-        Verify that odometry accumulation continues correctly after
-        publish_odometry() resets the accumulators.
+        Verify that odometry accumulation is cumulative across multiple
+        publish_odometry() calls.
         """
 
         # 1. Publish poses and accumulate distance
@@ -119,40 +123,51 @@ class TestRobotSessionDistanceAccumulation:
         robot_session.publish_pose(x=1, y=0, yaw=0)
         assert robot_session._distance_accumulator._linear_distance == 1.0
         assert robot_session._distance_accumulator._angular_distance == 0.0
-        assert robot_session._distance_accumulator._start_ts == 0
+        start_ts = robot_session._distance_accumulator._start_ts
 
-        # 2. Call publish_odometry() (resets accumulators)
+        # 2. Call publish_odometry() - should not reset accumulators
         robot_session.client.publish.reset_mock()
         robot_session.publish_odometry(ts=2000)
 
-        # Verify reset happened
-        assert robot_session._distance_accumulator._linear_distance == 0.0
-        assert robot_session._distance_accumulator._angular_distance == 0.0
-        assert robot_session._distance_accumulator._start_ts == 2000
-
-        # 3. Publish more poses
-        robot_session.publish_pose(x=1, y=1, yaw=0)  # +1m linear
+        # Verify accumulators are not reset
         assert robot_session._distance_accumulator._linear_distance == 1.0
         assert robot_session._distance_accumulator._angular_distance == 0.0
-        assert robot_session._distance_accumulator._start_ts == 2000
+        assert robot_session._distance_accumulator._start_ts == start_ts
 
-        # 4. Call publish_odometry() again
+        # Verify published message
+        robot_session.client.publish.assert_called_once()
+        call_kwargs = robot_session.client.publish.call_args[1]
+        odometry_msg = OdometryDataMessage()
+        odometry_msg.ParseFromString(call_kwargs["payload"])
+        assert odometry_msg.linear_distance == 1.0
+        assert odometry_msg.ts == 2000
+        assert odometry_msg.ts_start == start_ts
+
+        # 3. Publish more poses - should accumulate on top of existing
+        robot_session.publish_pose(x=1, y=1, yaw=0)  # +1m linear
+        assert robot_session._distance_accumulator._linear_distance == 2.0
+        assert robot_session._distance_accumulator._angular_distance == 0.0
+        assert robot_session._distance_accumulator._start_ts == start_ts
+
+        # 4. Call publish_odometry() again - should show cumulative total
         robot_session.client.publish.reset_mock()
-        # Reset throttling
-        robot_session.publish_odometry(ts=3000, ts_start=1500)
+        robot_session._publish_throttling["publish_odometry"]["last_ts"] = 0
+        robot_session.publish_odometry(ts=3000)
 
-        # 5. Verify that only the distance from step 3 is reported
+        # 5. Verify cumulative distance is reported
         robot_session.client.publish.assert_called_once()
         call_kwargs = robot_session.client.publish.call_args[1]
         odometry_msg = OdometryDataMessage()
         odometry_msg.ParseFromString(call_kwargs["payload"])
 
-        assert odometry_msg.linear_distance == 1.0
+        assert odometry_msg.linear_distance == 2.0
         assert odometry_msg.ts == 3000
-        assert odometry_msg.ts_start == 1500
+        assert odometry_msg.ts_start == start_ts
+        # Accumulators still not reset
+        assert robot_session._distance_accumulator._linear_distance == 2.0
 
     def test_throttled_odometry_preserves_accumulator(self, robot_session):
-        """Verify that throttled publish_odometry calls don't reset the accumulator."""
+        """Verify that throttled publish_odometry calls don't affect the accumulator."""
 
         # Re-enable throttling for odometry
         robot_session._publish_throttling["publish_odometry"][
@@ -164,27 +179,27 @@ class TestRobotSessionDistanceAccumulation:
         robot_session.publish_pose(x=1, y=0, yaw=0)
         assert robot_session._distance_accumulator._linear_distance == 1.0
 
-        # 2. First publish_odometry call should pass throttling and reset accumulator
+        # 2. First publish_odometry call should pass throttling
         robot_session.client.publish.reset_mock()
         robot_session.publish_odometry(ts=1000)
         robot_session.client.publish.assert_called_once()
-        assert robot_session._distance_accumulator._linear_distance == 0.0
+        assert robot_session._distance_accumulator._linear_distance == 1.0
 
         # 3. Accumulate more distance
         robot_session.publish_pose(x=2, y=0, yaw=0)
-        assert robot_session._distance_accumulator._linear_distance == 1.0
+        assert robot_session._distance_accumulator._linear_distance == 2.0
 
-        # 4. Second publish_odometry call is throttled - should NOT reset accumulator
+        # 4. Second publish_odometry call is throttled - accumulator unchanged
         robot_session.client.publish.reset_mock()
         robot_session.publish_odometry(ts=2000)
         robot_session.client.publish.assert_not_called()
-        assert robot_session._distance_accumulator._linear_distance == 1.0
+        assert robot_session._distance_accumulator._linear_distance == 2.0
 
         # 5. Accumulate even more distance
         robot_session.publish_pose(x=3, y=0, yaw=0)
-        assert robot_session._distance_accumulator._linear_distance == 2.0
+        assert robot_session._distance_accumulator._linear_distance == 3.0
 
-        # 6. Reset throttling and publish again - should publish accumulated 2.0m
+        # 6. Reset throttling and publish again - should publish cumulative 3.0m
         robot_session._publish_throttling["publish_odometry"]["last_ts"] = 0
         robot_session.client.publish.reset_mock()
         robot_session.publish_odometry(ts=3000)
@@ -194,8 +209,9 @@ class TestRobotSessionDistanceAccumulation:
         odometry_msg = OdometryDataMessage()
         odometry_msg.ParseFromString(call_kwargs["payload"])
 
-        assert odometry_msg.linear_distance == 2.0
-        assert robot_session._distance_accumulator._linear_distance == 0.0
+        assert odometry_msg.linear_distance == 3.0
+        # Accumulator still not reset (cumulative behavior)
+        assert robot_session._distance_accumulator._linear_distance == 3.0
 
     def test_odometry_mixed_explicit_and_accumulated(self, robot_session):
         """Verify that it is possible to mix accumulated and explicit values."""
@@ -222,10 +238,9 @@ class TestRobotSessionDistanceAccumulation:
         # Angular should be the accumulated value (pi/2)
         assert abs(odometry_msg.angular_distance - math.pi / 2) < 1e-6
 
-        # 4. Verify both accumulators are reset
-        # (Because we published an odometry report, the interval is "complete" for both)
-        assert robot_session._distance_accumulator._linear_distance == 0.0
-        assert robot_session._distance_accumulator._angular_distance == 0.0
+        # 4. Verify accumulators are not reset
+        assert robot_session._distance_accumulator._linear_distance == 1.0
+        assert robot_session._distance_accumulator._angular_distance == math.pi / 2
 
     def test_odometry_accumulation_reset_on_frame_id_change(self, robot_session):
         """Verify that the accumulator is not reset on a frame_id change."""
@@ -267,9 +282,10 @@ class TestRobotSessionDistanceAccumulation:
         assert odometry_msg.ts == 3000
         assert odometry_msg.ts_start == 0
 
-        assert robot_session._distance_accumulator._linear_distance == 0.0
-        assert robot_session._distance_accumulator._angular_distance == 0.0
-        assert robot_session._distance_accumulator._start_ts == 3000
+        # Accumulators are not reset
+        assert robot_session._distance_accumulator._linear_distance == 6.0
+        assert robot_session._distance_accumulator._angular_distance == math.pi
+        assert robot_session._distance_accumulator._start_ts == 0
 
     def test_odometry_accumulation_initial_pose_command(self, robot_session):
         """Verify that the next pose is not accumulated if the initial pose command is
@@ -532,6 +548,44 @@ class TestRobotSessionDistanceAccumulation:
         assert odometry_msg.ts == 2000
         assert odometry_msg.ts_start == 0
 
+    def test_odometry_reset_on_ts_start_provided(self, robot_session):
+        """Verify that accumulator resets when ts_start is explicitly provided."""
+
+        # 1. Accumulate some distance
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=1.0):
+            robot_session.publish_pose(x=0, y=0, yaw=0)
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=2.0):
+            robot_session.publish_pose(x=1, y=0, yaw=0)
+        assert robot_session._distance_accumulator._linear_distance == 1.0
+
+        # 2. Publish odometry with explicit ts_start - should reset accumulator
+        robot_session.client.publish.reset_mock()
+        robot_session.publish_odometry(ts_start=5000, ts=6000)
+
+        # 3. Verify accumulator was reset
+        assert robot_session._distance_accumulator._linear_distance == 0.0
+        assert robot_session._distance_accumulator._angular_distance == 0.0
+        assert robot_session._distance_accumulator._start_ts == 5000
+        assert robot_session._distance_accumulator._last_update_ts == 5000
+
+        # 4. Verify published message uses the explicit ts_start
+        robot_session.client.publish.assert_called_once()
+        call_kwargs = robot_session.client.publish.call_args[1]
+        odometry_msg = OdometryDataMessage()
+        odometry_msg.ParseFromString(call_kwargs["payload"])
+        assert odometry_msg.ts_start == 5000
+        assert odometry_msg.ts == 6000
+
+        # 5. Accumulate more distance - should start from 0
+        # First pose after reset doesn't accumulate (last_pose was None)
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=7.0):
+            robot_session.publish_pose(x=2, y=0, yaw=0)
+        assert robot_session._distance_accumulator._linear_distance == 0.0
+        # Second pose accumulates
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=8.0):
+            robot_session.publish_pose(x=3, y=0, yaw=0)
+        assert robot_session._distance_accumulator._linear_distance == 1.0
+
 
 class TestRobotDistanceAccumulator:
     """Unit tests for RobotDistanceAccumulator class."""
@@ -579,14 +633,18 @@ class TestRobotDistanceAccumulator:
             assert acc._estimate_distance_angular is False
             assert acc._start_ts == 4000
 
-    def test_reset_with_timestamp(self, accumulator):
-        """Test reset with explicit timestamp."""
+    def test_reset(self, accumulator):
+        """Test reset for error recovery."""
         accumulator._linear_distance = 5.0
         accumulator._angular_distance = 2.0
-        accumulator._reset(ts=5000)
+        accumulator.last_pose = Pose(frame_id="map", x=1.0, y=2.0, theta=0.5)
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=5.0):
+            accumulator._reset()
         assert accumulator._linear_distance == 0.0
         assert accumulator._angular_distance == 0.0
         assert accumulator._start_ts == 5000
+        assert accumulator._last_update_ts == 5000
+        assert accumulator.last_pose is None
 
     def test_reset_without_timestamp(self):
         """Test reset without timestamp uses current time."""
@@ -694,60 +752,65 @@ class TestRobotDistanceAccumulator:
         assert accumulator.last_pose.y == pose3.y
         assert accumulator.last_pose.theta == pose3.theta
 
-    def test_get_values_and_reset_returns_correct_values(self, accumulator):
-        """Test that get_values_and_reset returns accumulated values."""
+    def test_get_values_returns_correct_values(self, accumulator):
+        """Test that get_values returns accumulated values."""
         pose1 = Pose(frame_id="map", x=0.0, y=0.0, theta=0.0)
         pose2 = Pose(frame_id="map", x=3.0, y=4.0, theta=math.pi / 2)
         accumulator.accumulate(pose1)
         accumulator.accumulate(pose2)
-        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=2.0):
-            linear, angular, start_ts = accumulator.get_values_and_reset()
+        linear, angular, start_ts, last_update_ts = accumulator.get_values()
         assert linear == 5.0
         assert angular == pytest.approx(math.pi / 2)
         assert start_ts == 1000
-        assert accumulator._linear_distance == 0.0
-        assert accumulator._angular_distance == 0.0
+        assert last_update_ts >= start_ts
+        # Verify accumulator is NOT reset
+        assert accumulator._linear_distance == 5.0
+        assert accumulator._angular_distance == pytest.approx(math.pi / 2)
 
-    def test_get_values_and_reset_with_timestamp(self, accumulator):
-        """Test get_values_and_reset with explicit timestamp."""
+    def test_get_values_returns_last_update_ts(self, accumulator):
+        """Test that get_values returns last_update_ts correctly."""
         pose1 = Pose(frame_id="map", x=0.0, y=0.0, theta=0.0)
         pose2 = Pose(frame_id="map", x=1.0, y=0.0, theta=0.0)
         accumulator.accumulate(pose1)
-        accumulator.accumulate(pose2)
-        linear, angular, start_ts = accumulator.get_values_and_reset(ts=5000)
+        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=2.0):
+            accumulator.accumulate(pose2)
+        linear, angular, start_ts, last_update_ts = accumulator.get_values()
         assert linear == 1.0
         assert angular == 0.0
         assert start_ts == 1000
-        assert accumulator._start_ts == 5000
+        assert last_update_ts == 2000
+        # Verify accumulator is NOT reset
+        assert accumulator._linear_distance == 1.0
+        assert accumulator._start_ts == 1000
 
-    def test_get_values_and_reset_respects_linear_flag(self):
-        """Test that get_values_and_reset respects estimate_distance_linear flag."""
+    def test_get_values_respects_linear_flag(self):
+        """Test that get_values respects estimate_distance_linear flag."""
         with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=1.0):
             acc = RobotDistanceAccumulator(estimate_distance_linear=False)
         pose1 = Pose(frame_id="map", x=0.0, y=0.0, theta=0.0)
         pose2 = Pose(frame_id="map", x=10.0, y=0.0, theta=0.0)
         acc.accumulate(pose1)
         acc.accumulate(pose2)
-        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=2.0):
-            linear, angular, _ = acc.get_values_and_reset()
+        linear, angular, _, _ = acc.get_values()
         assert linear == 0.0
-        assert acc._linear_distance == 0.0
+        # Internal value still accumulates, but get_values returns 0.0
+        assert acc._linear_distance == 10.0
 
-    def test_get_values_and_reset_respects_angular_flag(self):
-        """Test that get_values_and_reset respects estimate_distance_angular flag."""
+    def test_get_values_respects_angular_flag(self):
+        """Test that get_values respects estimate_distance_angular flag."""
         with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=1.0):
             acc = RobotDistanceAccumulator(estimate_distance_angular=False)
         pose1 = Pose(frame_id="map", x=0.0, y=0.0, theta=0.0)
         pose2 = Pose(frame_id="map", x=0.0, y=0.0, theta=math.pi)
         acc.accumulate(pose1)
         acc.accumulate(pose2)
-        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=2.0):
-            linear, angular, _ = acc.get_values_and_reset()
+        linear, angular, _, _ = acc.get_values()
         assert angular == 0.0
-        assert acc._angular_distance == 0.0
+        # Internal value still accumulates, but get_values returns 0.0
+        assert acc._angular_distance == pytest.approx(math.pi)
 
-    def test_get_values_and_reset_respects_both_flags(self):
-        """Test that get_values_and_reset respects both flags."""
+    def test_get_values_respects_both_flags(self):
+        """Test that get_values respects both flags."""
         with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=1.0):
             acc = RobotDistanceAccumulator(
                 estimate_distance_linear=False, estimate_distance_angular=False
@@ -756,12 +819,12 @@ class TestRobotDistanceAccumulator:
         pose2 = Pose(frame_id="map", x=10.0, y=0.0, theta=math.pi)
         acc.accumulate(pose1)
         acc.accumulate(pose2)
-        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=2.0):
-            linear, angular, _ = acc.get_values_and_reset()
+        linear, angular, _, _ = acc.get_values()
         assert linear == 0.0
         assert angular == 0.0
-        assert acc._linear_distance == 0.0
-        assert acc._angular_distance == 0.0
+        # Internal values still accumulate
+        assert acc._linear_distance == 10.0
+        assert acc._angular_distance == pytest.approx(math.pi)
 
     def test_discard_next_delta(self, accumulator):
         """Test that discard_next_delta sets last_pose to None."""
@@ -808,17 +871,17 @@ class TestRobotDistanceAccumulator:
         assert accumulator.last_pose.y == pose4.y
         assert accumulator.last_pose.theta == pose4.theta
 
-    def test_get_values_and_reset_preserves_last_pose(self, accumulator):
-        """Test that get_values_and_reset doesn't reset last_pose."""
+    def test_get_values_preserves_last_pose(self, accumulator):
+        """Test that get_values doesn't reset last_pose or distances."""
         pose1 = Pose(frame_id="map", x=0.0, y=0.0, theta=0.0)
         pose2 = Pose(frame_id="map", x=1.0, y=0.0, theta=0.0)
         accumulator.accumulate(pose1)
         accumulator.accumulate(pose2)
-        with unittest.mock.patch("inorbit_edge.robot.time.time", return_value=2.0):
-            accumulator.get_values_and_reset()
+        accumulator.get_values()
         assert accumulator.last_pose.frame_id == pose2.frame_id
         assert accumulator.last_pose.x == pose2.x
         assert accumulator.last_pose.y == pose2.y
         assert accumulator.last_pose.theta == pose2.theta
-        assert accumulator._linear_distance == 0.0
+        # Verify accumulator is NOT reset
+        assert accumulator._linear_distance == 1.0
         assert accumulator._angular_distance == 0.0

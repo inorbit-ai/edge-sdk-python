@@ -204,7 +204,8 @@ class RobotDistanceAccumulator:
     an estimation of linear and angular distance based on the previously published
     poses.
     This class handles the accumulation of these values and provides a method to get the
-    accumulated values and reset the accumulator.
+    accumulated values and reset the accumulator. It accumulates values continuously
+    from session start.
 
     Args:
         estimate_distance_linear (bool, optional): If set to False, the estimated
@@ -218,22 +219,23 @@ class RobotDistanceAccumulator:
         estimate_distance_linear: bool = True,
         estimate_distance_angular: bool = True,
     ):
+        self._logger = logging.getLogger(__class__.__name__)
         self._estimate_distance_linear = estimate_distance_linear
         self._estimate_distance_angular = estimate_distance_angular
         self.last_pose: Pose | None = None
         self._reset()
 
-    def _reset(self, ts: int | None = None):
+    def _reset(self):
         """Resets the odometry accumulator.
 
-        Args:
-            ts (int, optional): Timestamp (milliseconds) of the start of the odometry
-            interval.
-                Defaults to the current time.
+        This should only be called when there's an error condition that requires
+        resetting the accumulator state by updating the period start timestamp.
         """
-        self._start_ts: int = ts if ts is not None else int(time.time() * 1000)
+        self._start_ts: int = int(time.time() * 1000)
+        self._last_update_ts: int = self._start_ts
         self._linear_distance: float = 0.0
         self._angular_distance: float = 0.0
+        self.last_pose: Pose | None = None
 
     def accumulate(self, pose: Pose, discard_delta: bool = False):
         """Updates the odometry accumulator with the new pose.
@@ -251,20 +253,27 @@ class RobotDistanceAccumulator:
         # Ignore the delta if this is the first pose or if discard_delta is True.
         if discard_delta or self.last_pose is None:
             self.last_pose = pose
+            self._last_update_ts = int(time.time() * 1000)
             return
 
         # Otherwise, accumulate the delta.
         linear_delta, angular_delta = calculate_pose_delta(self.last_pose, pose)
         self._linear_distance += linear_delta
         self._angular_distance += angular_delta
+        self._last_update_ts = int(time.time() * 1000)
         self.last_pose = pose
 
-    def get_values_and_reset(self, ts: int | None = None) -> tuple[float, float, int]:
-        """Get the accumulated values and reset the accumulator.
+    def get_values(self) -> tuple[float, float, int, int]:
+        """Get the accumulated values without resetting the accumulator.
 
-        Args:
-            ts (int, optional): Timestamp (milliseconds) to use as the start of the next
-                odometry interval after reset. Defaults to the current time.
+        Returns cumulative values from session start.
+
+        Returns:
+            tuple: (linear_distance, angular_distance, start_ts, last_update_ts)
+                - linear_distance: Cumulative linear distance in meters
+                - angular_distance: Cumulative angular distance in radians
+                - start_ts: Timestamp when accumulation started (milliseconds)
+                - last_update_ts: Timestamp of last accumulation update (milliseconds)
         """
         linear_distance = (
             self._linear_distance if self._estimate_distance_linear else 0.0
@@ -272,9 +281,7 @@ class RobotDistanceAccumulator:
         angular_distance = (
             self._angular_distance if self._estimate_distance_angular else 0.0
         )
-        last_ts = self._start_ts
-        self._reset(ts)
-        return linear_distance, angular_distance, last_ts
+        return linear_distance, angular_distance, self._start_ts, self._last_update_ts
 
     def discard_next_delta(self):
         """Discard the next delta from the accumulator.
@@ -1381,6 +1388,13 @@ class RobotSession:
         provide any of these values, as it will use an internal accumulator based on the
         previously published poses to calculate linear distance and angular distance.
 
+        Providing values for linear_distance and angular_distance will override the
+        internal accumulator values. In that case it is recommended to also provide
+        values for ts_start and ts.
+
+        ts_start should remain constant for the duration of the session. If it is ever
+        reset, the estimated linear and angular distances will be reset to 0.
+
         Args:
             ts_start (int, optional): Timestamp (milliseconds) when the robot started to
                 accumulate odometry. Defaults to int(time() * 1000).
@@ -1397,14 +1411,20 @@ class RobotSession:
         if not self._should_publish_message(method="publish_odometry"):
             return None
 
-        # Get the accumulated values and reset the accumulator.
-        acc_linear_distance, acc_angular_distance, acc_start_ts = (
-            self._distance_accumulator.get_values_and_reset(ts)
+        # If ts_start is explicitly provided, reset accumulator to start new period
+        if ts_start is not None:
+            self._distance_accumulator._reset()
+            self._distance_accumulator._start_ts = ts_start
+            self._distance_accumulator._last_update_ts = ts_start
+
+        # Get the accumulated values
+        acc_linear_distance, acc_angular_distance, acc_start_ts, acc_last_ts = (
+            self._distance_accumulator.get_values()
         )
 
         msg = OdometryDataMessage()
         msg.ts_start = ts_start if ts_start else acc_start_ts
-        msg.ts = ts if ts else int(time.time() * 1000)
+        msg.ts = ts if ts else acc_last_ts
         msg.linear_distance = (
             linear_distance if linear_distance is not None else acc_linear_distance
         )
