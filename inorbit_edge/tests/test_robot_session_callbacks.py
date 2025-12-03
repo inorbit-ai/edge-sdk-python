@@ -333,6 +333,7 @@ def test_robot_session_handles_map_requests(
         ts=123,
         is_update=False,
         force_upload=False,
+        formatVersion=2,
     )
     robot_session._send_map.assert_called_once()
     args1 = robot_session._send_map.call_args_list[0]

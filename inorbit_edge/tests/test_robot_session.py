@@ -268,6 +268,7 @@ def test_robot_session_publishes_map_data(
         ts=123,
         is_update=False,
         force_upload=False,
+        formatVersion=2,
     )
 
     expected_payload = MapMessage()
@@ -304,6 +305,7 @@ def test_robot_session_publishes_map_data(
         ts=123,
         is_update=False,
         force_upload=True,
+        formatVersion=2,
     )
 
     expected_payload = MapMessage()
