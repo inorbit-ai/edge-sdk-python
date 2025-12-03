@@ -283,6 +283,7 @@ def test_robot_session_publishes_map_data(
     expected_payload.resolution = 0.005
     expected_payload.ts = 123
     expected_payload.is_update = False
+    expected_payload.formatVersion = 2
 
     robot_session.client.publish.assert_any_call(
         topic="r/id_123/ros/loc/map2",
