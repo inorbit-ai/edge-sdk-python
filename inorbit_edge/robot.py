@@ -154,6 +154,7 @@ class RobotMap:
     origin_x: float
     origin_y: float
     resolution: float
+    formatVersion: int
     map_label: Optional[str] = None
     _last_modified_time: float = None
     _last_hash: int = None
@@ -831,6 +832,7 @@ class RobotSession:
         data.resolution = map_data.resolution
         data.ts = ts if ts else int(time.time() * 1000)
         data.is_update = is_update
+        data.formatVersion = map_data.formatVersion
         if include_pixels:
             data.pixels = pixels
 
@@ -897,6 +899,7 @@ class RobotSession:
         ts=None,
         is_update=False,
         force_upload=False,
+        formatVersion=2,
     ):
         """
         Sends the information about a map and optionally its contents. The map message
@@ -916,6 +919,7 @@ class RobotSession:
             origin_y=y,
             resolution=resolution,
             map_label=map_label if map_label is not None else map_id,
+            formatVersion=formatVersion,
         )
         # Cache map data for future requests
         with self.map_data_mutex:
