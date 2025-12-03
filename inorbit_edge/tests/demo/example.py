@@ -200,6 +200,7 @@ if __name__ == "__main__":
             x=-1.5,
             y=-1.5,
             resolution=0.05,
+            formatVersion=2,
         )
         if video_url is not None:
             robot_session.register_camera("0", OpenCVCamera(video_url))
