@@ -154,7 +154,7 @@ class RobotMap:
     origin_x: float
     origin_y: float
     resolution: float
-    formatVersion: int
+    formatVersion: int = 2
     map_label: Optional[str] = None
     _last_modified_time: float = None
     _last_hash: int = None
