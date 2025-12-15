@@ -189,7 +189,6 @@ def test_robot_map_data():
         origin_x=1,
         origin_y=2,
         resolution=0.005,
-        formatVersion=2,
     )
     pixels, hash, dimensions = robot_map.get_image_data()
     assert hash == 4565286020005755223
@@ -207,7 +206,6 @@ def test_robot_map_data():
         origin_x=1,
         origin_y=2,
         resolution=0.005,
-        formatVersion=2,
     )
     with pytest.raises(FileNotFoundError):
         robot_map.get_image_data()
@@ -220,7 +218,6 @@ def test_robot_map_data():
         origin_x=1,
         origin_y=2,
         resolution=0.005,
-        formatVersion=2,
     )
     pixels, hash, dimensions = robot_map.get_image_data()
     robot_map._refresh_data = MagicMock()
@@ -253,7 +250,6 @@ def test_robot_session_publishes_map_data(
         ts=123,
         is_update=False,
         force_upload=False,
-        formatVersion=2,
     )
     robot_session.client.publish.assert_not_called()
 
@@ -268,7 +264,6 @@ def test_robot_session_publishes_map_data(
         ts=123,
         is_update=False,
         force_upload=False,
-        formatVersion=2,
     )
 
     expected_payload = MapMessage()
@@ -306,7 +301,6 @@ def test_robot_session_publishes_map_data(
         ts=123,
         is_update=False,
         force_upload=True,
-        formatVersion=2,
     )
 
     expected_payload = MapMessage()
