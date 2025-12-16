@@ -191,6 +191,7 @@ class MissionExecutor:
 
 class FailedMissionStepExecution(Exception):
     "Raised when mission step fails to execute"
+
     pass
 
 
