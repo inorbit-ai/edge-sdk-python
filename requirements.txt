@@ -7,6 +7,6 @@ pysocks>=1.7,<2.0
 protobuf>=3.20,<4.0
 certifi>=2024.2
 deprecated>=1.2,<2.0
-rdp2==1.1.1
-opentelemetry-api==1.36.0
-opentelemetry-sdk==1.36.0
+rdp2~=1.1.2
+opentelemetry-api~=1.39.1
+opentelemetry-sdk~=1.39.1
