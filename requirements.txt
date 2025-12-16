@@ -1,6 +1,6 @@
 requests>=2.31,<3.0
 paho-mqtt>=2.1.0,<3.0
-pillow>=12.0,<13.0
+pillow>=10.3,<11.0
 pyaml>=23.12,<24.0
 pydantic>=2.6,<3.0
 pysocks>=1.7,<2.0
