@@ -952,6 +952,7 @@ class RobotSession:
             ):
                 if execution_id is not None:
                     return self.report_command_result(
+                        command_name,
                         args,
                         execution_id,
                         result_code,
@@ -972,12 +973,19 @@ class RobotSession:
             callback(command_name, args, options)
 
     def report_command_result(
-        self, args, execution_id, result_code, execution_status_details, stdout, stderr
+        self,
+        command_name,
+        args,
+        execution_id,
+        result_code,
+        execution_status_details,
+        stdout,
+        stderr,
     ):
         """Send to server the result code of a command executed by a user callback."""
 
         msg = CustomScriptStatusMessage()
-        msg.file_name = args[0]
+        msg.file_name = args[0] if isinstance(args[0], (str, bytes)) else command_name
         msg.execution_id = execution_id
         msg.execution_status = (
             CUSTOM_COMMAND_STATUS_FINISHED
