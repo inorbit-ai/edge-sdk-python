@@ -11,10 +11,15 @@ from paho.mqtt.client import MQTTMessage
 from inorbit_edge.inorbit_pb2 import (
     CustomCommandRosMessage,
     CustomScriptCommandMessage,
+    CustomScriptStatusMessage,
     Echo,
     MapRequest,
 )
-from inorbit_edge.robot import RobotSession
+from inorbit_edge.robot import (
+    CUSTOM_COMMAND_STATUS_FINISHED,
+    MQTT_SCRIPT_OUTPUT_TOPIC,
+    RobotSession,
+)
 from inorbit_edge import get_module_version
 from inorbit_edge.tests.utils.helpers import test_robot_session_connect_helper
 
@@ -346,3 +351,61 @@ def test_robot_session_handles_map_requests(
     msg.payload = MapRequest(label="map_id", data_hash=123).SerializeToString()
     robot_session._on_message(None, None, msg)
     robot_session.client._publish_map_bytes.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "command_name,args,expected_file_name",
+    [
+        # When args[0] is a string, use it as file_name
+        ("customCommand", ["my_script.sh", ["arg1"]], "my_script.sh"),
+        # When args is empty, fall back to command_name
+        ("navGoal", [], "navGoal"),
+        # When args[0] is a dict (e.g., navGoal coordinates), fall back to command_name
+        ("navGoal", [{"x": "1.23", "y": "4.56", "theta": "-0.1"}], "navGoal"),
+        # When args[0] is an int, fall back to command_name
+        ("someCommand", [123, "other"], "someCommand"),
+        # When args[0] is bytes, use it as file_name
+        ("customCommand", [b"script.sh", []], "script.sh"),
+    ],
+)
+def test_report_command_result_file_name(
+    mock_mqtt_client,
+    mock_inorbit_api,
+    mock_sleep,
+    command_name,
+    args,
+    expected_file_name,
+):
+    """Test that report_command_result sets file_name correctly based on args."""
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+    robot_session.connect()
+    robot_session._on_connect(None, None, None, 0, None)
+
+    robot_session.report_command_result(
+        command_name=command_name,
+        args=args,
+        execution_id="exec_123",
+        result_code="0",
+        execution_status_details=None,
+        stdout=None,
+        stderr=None,
+    )
+
+    # Check that publish was called with the correct file_name
+    calls = robot_session.client.publish.call_args_list
+    script_output_calls = [
+        call for call in calls if MQTT_SCRIPT_OUTPUT_TOPIC in str(call)
+    ]
+    assert len(script_output_calls) == 1
+
+    # Parse the protobuf message from the publish call
+    _, call_kwargs = script_output_calls[0]
+    payload = call_kwargs["payload"]
+    msg = CustomScriptStatusMessage()
+    msg.ParseFromString(bytes(payload))
+
+    assert msg.file_name == expected_file_name
+    assert msg.execution_id == "exec_123"
+    assert msg.execution_status == CUSTOM_COMMAND_STATUS_FINISHED
