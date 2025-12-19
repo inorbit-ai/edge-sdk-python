@@ -985,7 +985,9 @@ class RobotSession:
         """Send to server the result code of a command executed by a user callback."""
 
         msg = CustomScriptStatusMessage()
-        msg.file_name = args[0] if isinstance(args[0], (str, bytes)) else command_name
+        msg.file_name = (
+            args[0] if args and isinstance(args[0], (str, bytes)) else command_name
+        )
         msg.execution_id = execution_id
         msg.execution_status = (
             CUSTOM_COMMAND_STATUS_FINISHED
