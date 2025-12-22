@@ -8,7 +8,7 @@ import os
 from setuptools import find_packages, setup
 
 # Do not edit manually, always use bumpversion (see CONTRIBUTING.rst)
-VERSION = "2.0.0"
+VERSION = "2.0.1"
 
 GITHUB_ORG = "https://github.com/inorbit-ai"
 GITHUB_REPO = f"{GITHUB_ORG}/edge-sdk-python"
@@ -48,7 +48,7 @@ setup(
     ],
     description="InOrbit Edge SDK for Python",
     # Do not edit manually, always use bumpversion (see CONTRIBUTING.rst)
-    download_url=f"{GITHUB_REPO}/archive/refs/tags/v2.0.0.zip",
+    download_url=f"{GITHUB_REPO}/archive/refs/tags/v2.0.1.zip",
     extras_require={
         "video": requirements["video"],
         "dev": requirements["dev"],
