@@ -598,8 +598,8 @@ class RobotSession:
             return
 
         # Send robot online status (best effort)
-        # If this fails and InOrbit is getting data, it will detect discrepancy
-        # and request a status update via get_state command.
+        # If this fails and InOrbit is getting system stats data, it will detect
+        # the discrepancy and request a status update via get_state.
         self._send_robot_status(online=True)
 
         # Subscribe to interesting topics
@@ -766,10 +766,11 @@ class RobotSession:
     def _handle_get_state(self):
         """Handle get_state command from InOrbit.
 
-        If the robot is offline, the next pose should not be accumulated for odometry
-        estimation.
+        Automatically requested by InOrbit when the robot is set to offline but system
+        stats are sent.
 
-        TODO(b-Tomas): implement a proactive way to set the robot online status.
+        If the robot is offline, the next pose is not accumulated for odometry
+        estimation.
         """
         is_online = True  # Default assumption
 
@@ -1067,10 +1068,11 @@ class RobotSession:
     def set_online_status_callback(self, callback):
         """Set callback to determine robot online status.
 
+        Called on a state request from InOrbit. @see _handle_get_state.
+
         Args:
             callback: A callable that returns bool indicating if robot is online.
                 Should return True if robot is online, False otherwise.
-                Will be called when InOrbit requests status via get_state command.
         """
         if callable(callback):
             self._online_status_callback = callback
@@ -1126,14 +1128,7 @@ class RobotSession:
             )
             self.logger.debug(f"{status_str.capitalize()} status sent successfully")
         except Exception as e:
-            fallback_msg = (
-                "InOrbit will detect via data messages"
-                if online
-                else "InOrbit will detect via data absence"
-            )
-            self.logger.debug(
-                f"{status_str.capitalize()} status failed: {e} - {fallback_msg}"
-            )
+            self.logger.debug(f"{status_str.capitalize()} status failed: {e}")
 
     def _is_connected(self):
         return self.client.is_connected()
@@ -1369,6 +1364,11 @@ class RobotSession:
         ts=None,
     ):
         """Publishes system information (CPU load, RAM usage, HDD usage, network stats)
+
+        If sent while the robot is marked as offline, InOrbit will detect the
+        discrepancy and request a state update via get_state.
+        It is recommended to always send system stats to ensure the robot state is
+        consistent at all times.
 
         Args:
             cpu_load_percentage (float, value between 0.0 and 1.0): CPU usage.
