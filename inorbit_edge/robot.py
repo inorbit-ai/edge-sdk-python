@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import io
+import zlib
 from dataclasses import dataclass, field, asdict
 import json
 from typing import Tuple, Optional, List, Dict
@@ -186,7 +187,7 @@ class RobotMap:
         self._last_pixels = img_byte_arr.getvalue()
         self._last_dimensions = (img.width, img.height)
         self._last_modified_time = os.path.getmtime(self.file)
-        self._last_hash = hash(tuple(self._last_pixels))
+        self._last_hash = zlib.adler32(img.tobytes())
 
     def get_image_data(self) -> Tuple[bytes, int, Tuple[int, int]]:
         """Read a map file and return it as a byte stream. Throws an error if the file

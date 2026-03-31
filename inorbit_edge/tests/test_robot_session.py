@@ -191,7 +191,7 @@ def test_robot_map_data():
         resolution=0.005,
     )
     pixels, hash, dimensions = robot_map.get_image_data()
-    assert hash == 4565286020005755223
+    assert hash == 2480156625
     assert dimensions == (4, 4)
     assert (
         pixels
@@ -269,7 +269,7 @@ def test_robot_session_publishes_map_data(
     expected_payload = MapMessage()
     expected_payload.width = 4
     expected_payload.height = 4
-    expected_payload.data_hash = 4565286020005755223
+    expected_payload.data_hash = 2480156625
     expected_payload.label = "map_id"  # Should default to map_id when map_label is None
     expected_payload.map_id = "map_id"
     expected_payload.frame_id = "frame_id"
@@ -306,7 +306,7 @@ def test_robot_session_publishes_map_data(
     expected_payload = MapMessage()
     expected_payload.width = 4
     expected_payload.height = 4
-    expected_payload.data_hash = 4565286020005755223
+    expected_payload.data_hash = 2480156625
     expected_payload.label = "Custom Map Label"  # Should use explicit map_label
     expected_payload.map_id = "map_id"
     expected_payload.frame_id = "frame_id"
