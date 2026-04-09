@@ -319,7 +319,7 @@ def test_robot_session_handles_map_requests(
 
     msg = MQTTMessage(topic=b"r/id_123/ros/loc/mapreq")
     msg.payload = MapRequest(
-        label="Test Map Label", data_hash=4565286020005755223
+        label="Test Map Label", data_hash=2480156625
     ).SerializeToString()
 
     # test it doesn't publish if the map hasn't been published before

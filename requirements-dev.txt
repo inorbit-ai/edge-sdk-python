@@ -1,13 +1,13 @@
 bump2version~=1.0
-black>=25.1,<26.0
+black~=26.3.1
 coverage~=7.6
 flake8~=7.1
 flake8-pyproject~=1.2
-pip~=25.3
+pip~=26.0
 pytest~=8.4
 pytest-mock~=3.14
 requests-mock~=1.12
 setuptools~=80.9
 tox~=4.32
 twine~=6.2
-wheel~=0.45
+wheel~=0.46.2
