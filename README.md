@@ -105,10 +105,14 @@ which supports various exporting mechanisms.
 Connectors are responsible for configuring the exporter of their choice;
 as well as adding more metrics if they chose to do so.
 
-To do so, add these `opentelemetry-api` and `opentelemetry-sdk` packages
-to the connector project. Depending on the exporter, another package such
-as `opentelemetry-exporter-prometheus` (for Prometheus) is required.
-The following is an example initialization code that enables a
+Install the optional **telemetry** extra (see `requirements-telemetry.txt`) so
+the SDK records real OpenTelemetry metrics. Without it, built-in metrics are
+no-ops and the base package has no OpenTelemetry dependency:
+
+`pip install inorbit-edge[telemetry]`
+
+To export to Prometheus, the extra above includes `opentelemetry-exporter-prometheus`
+and `prometheus-client`. The following is an example initialization code that enables a
 [Prometheus](https://prometheus.io/) HTTP endpoint, where all SDK metrics
 (including system metrics such as CPU usage) and any metric added by the
 connector can be scraped and exported to any external system (Grafana,

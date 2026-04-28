@@ -8,7 +8,7 @@ import os
 from setuptools import find_packages, setup
 
 # Do not edit manually, always use bumpversion (see CONTRIBUTING.rst)
-VERSION = "2.0.2"
+VERSION = "2.1.0"
 
 GITHUB_ORG = "https://github.com/inorbit-ai"
 GITHUB_REPO = f"{GITHUB_ORG}/edge-sdk-python"
@@ -20,7 +20,7 @@ with open("README.md") as readme_file:
     long_description = readme_file.read()
 
 # Load from the requirements-*.txt files where '*' is anything extra
-requirements = {key: [] for key in ["dev", "install", "video"]}
+requirements = {key: [] for key in ["dev", "install", "video", "telemetry"]}
 base_path = os.path.dirname(os.path.abspath(__file__))
 for key in requirements:
     fname = os.path.join(
@@ -48,9 +48,10 @@ setup(
     ],
     description="InOrbit Edge SDK for Python",
     # Do not edit manually, always use bumpversion (see CONTRIBUTING.rst)
-    download_url=f"{GITHUB_REPO}/archive/refs/tags/v2.0.2.zip",
+    download_url=f"{GITHUB_REPO}/archive/refs/tags/v2.1.0.zip",
     extras_require={
         "video": requirements["video"],
+        "telemetry": requirements["telemetry"],
         "dev": requirements["dev"],
     },
     install_requires=requirements["install"],

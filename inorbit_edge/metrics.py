@@ -22,10 +22,31 @@
 #   start_http_server(port=prometheus_port, addr=prometheus_host)
 #
 import functools
+import inspect
+import warnings
 
-from opentelemetry import metrics
+try:
+    from opentelemetry import metrics as _otel_metrics
 
-meter = metrics.get_meter("inorbit_edge_sdk")
+    def _get_meter():
+        return _otel_metrics.get_meter("inorbit_edge_sdk")
+
+except ImportError:  # pragma: no cover
+    # Optional "telemetry" extra not installed
+
+    class _NoOpCounter:
+        def add(self, amount, attributes=None):
+            pass
+
+    class _NoOpMeter:
+        def create_counter(self, name, unit="", description=""):
+            return _NoOpCounter()
+
+    def _get_meter():
+        return _NoOpMeter()
+
+
+meter = _get_meter()
 
 publish_map_counter = meter.create_counter(
     "calls_publish_map", "1", "number of calls to publish maps"
@@ -53,33 +74,56 @@ publish_path_counter = meter.create_counter(
 )
 
 
-def with_counter_metric(metric):
+def with_counter_metric(metric, attributes=None):
+    """Decorator: increment ``metric`` by 1 on every call.
+
+    Works on sync and async functions (auto-detected).
+
+    attributes:
+      * ``None`` — no per-call attributes (identical to the original behavior)
+      * ``dict`` — static per-call attributes
+      * ``callable`` — invoked with the wrapped function's ``*args, **kwargs``;
+        must return a dict of attributes
     """
-    Decorator to count the number of calls to a function
-    """
+
+    def _resolve_attrs(args, kwargs):
+        if attributes is None:
+            return {}
+        if callable(attributes):
+            return attributes(*args, **kwargs) or {}
+        return dict(attributes)
 
     def decorator(func):
+        if inspect.iscoroutinefunction(func):
+
+            @functools.wraps(func)
+            async def async_wrapper(*args, **kwargs):
+                metric.add(1, _resolve_attrs(args, kwargs))
+                return await func(*args, **kwargs)
+
+            return async_wrapper
+
         @functools.wraps(func)
-        def wrapper_decorator(*args, **kwargs):
-            metric.add(1)
+        def sync_wrapper(*args, **kwargs):
+            metric.add(1, _resolve_attrs(args, kwargs))
             return func(*args, **kwargs)
 
-        return wrapper_decorator
+        return sync_wrapper
 
     return decorator
 
 
 def with_counter_metric_async(metric):
+    """Deprecated alias for :func:`with_counter_metric`.
+
+    Prefer ``@with_counter_metric(...)``, which now detects async functions
+    automatically.
     """
-    Decorator to count the number of calls to a function
-    """
 
-    def decorator(func):
-        @functools.wraps(func)
-        async def wrapper_decorator(*args, **kwargs):
-            metric.add(1)
-            return await func(*args, **kwargs)
-
-        return wrapper_decorator
-
-    return decorator
+    warnings.warn(
+        "with_counter_metric_async is deprecated; use with_counter_metric "
+        "which now auto-detects async functions.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return with_counter_metric(metric)
