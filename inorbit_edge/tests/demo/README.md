@@ -50,7 +50,9 @@ metrics on the host:
 ```bash
 docker run --rm -p 9464:9464 \
   -v "$PWD/inorbit_edge/tests/demo:/demo:ro" \
-  -e INORBIT_URL=... -e INORBIT_API_URL=... -e INORBIT_API_KEY=... \
+  -e INORBIT_URL=... \
+  -e INORBIT_API_URL=... \
+  -e INORBIT_API_KEY=... \
   -e INORBIT_ACCOUNT_ID=... \
   -e INORBIT_ROBOT_ID_PREFIX=$(hostname) \
   inorbit-edge-sdk-demo
