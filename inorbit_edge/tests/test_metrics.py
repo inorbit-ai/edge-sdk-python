@@ -6,6 +6,7 @@ import warnings
 
 import pytest
 
+from opentelemetry.metrics import _internal as _otel_internal
 from inorbit_edge import metrics as edge_metrics
 
 
@@ -197,8 +198,6 @@ def test_publish_methods_all_add_robot_id(
 
 
 # --- Tests for the public Prometheus-setup helpers ------------------------
-
-from opentelemetry.metrics import _internal as _otel_internal
 
 
 @pytest.fixture(autouse=False)

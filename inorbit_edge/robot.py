@@ -1325,7 +1325,10 @@ class RobotSession:
             <= tolerance.angularRadians
         )
 
-    @with_counter_metric(publish_key_values_counter, attributes=attrs_from_self("robot_id"))
+    @with_counter_metric(
+        publish_key_values_counter,
+        attributes=attrs_from_self("robot_id"),
+    )
     def publish_key_values(self, key_values, custom_field="0", is_event=False):
         """Publish key value pairs
 
@@ -1394,7 +1397,10 @@ class RobotSession:
 
         self.publish_protobuf(MQTT_SUBTOPIC_SYSTEM_STATS, msg)
 
-    @with_counter_metric(publish_odometry_counter, attributes=attrs_from_self("robot_id"))
+    @with_counter_metric(
+        publish_odometry_counter,
+        attributes=attrs_from_self("robot_id"),
+    )
     def publish_odometry(
         self,
         ts_start=None,

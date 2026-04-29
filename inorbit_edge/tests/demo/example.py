@@ -169,10 +169,13 @@ def _init_prometheus_metrics():
     service_name = os.environ.get(
         "INORBIT_METRICS_SERVICE_NAME", "inorbit-edge-sdk-demo"
     )
-    if not setup_prometheus_meter_provider(
-        service_name=service_name,
-        service_instance_id=socket.gethostname(),
-    ) or start_http_server is None:
+    if (
+        not setup_prometheus_meter_provider(
+            service_name=service_name,
+            service_instance_id=socket.gethostname(),
+        )
+        or start_http_server is None
+    ):
         logging.warning(
             "INORBIT_METRICS_PORT=%s set but telemetry packages missing. "
             "Use: pip install 'inorbit-edge[telemetry]'",
