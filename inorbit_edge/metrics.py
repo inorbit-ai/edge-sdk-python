@@ -4,22 +4,23 @@
 # can be added by connectors to monitor their own operations, following these
 # examples.
 #
-# In all cases, initialization code is necessary to export these metrics.
-# For example, to export metrics from a connector through a Prometheus HTTP
-# endpoint, add the following to your initialization code:
+# To export these metrics over a Prometheus HTTP endpoint, call
+# :func:`setup_prometheus_meter_provider` once during initialization, then
+# start the HTTP server with ``prometheus_client.start_http_server``. For
+# example:
 #
-#   from opentelemetry import metrics
-#   from opentelemetry.exporter.prometheus import PrometheusMetricReader
-#   from opentelemetry.sdk.metrics import MeterProvider
-#   from opentelemetry.sdk.resources import Resource
+#   from inorbit_edge.metrics import setup_prometheus_meter_provider
 #   from prometheus_client import start_http_server
 #
-#   resource = Resource(attributes={"service.name": "my-connector"})
-#   # Note: Do not use "-" in the MetricsReader namefor GCP envs
-#   metric_reader = PrometheusMetricReader("my_connector")
-#   meter_provider = MeterProvider(metric_readers=[metric_reader], resource=resource)
-#   metrics.set_meter_provider(meter_provider)
-#   start_http_server(port=prometheus_port, addr=prometheus_host)
+#   setup_prometheus_meter_provider(
+#       service_name="my_connector",          # No '-' for GCP compatibility
+#       service_instance_id="robot-123",
+#       service_version="1.2.3",
+#   )
+#   start_http_server(port=9090, addr="0.0.0.0")
+#
+# When the optional ``telemetry`` extra is not installed, all instruments
+# become no-ops and ``setup_prometheus_meter_provider`` returns False.
 #
 import functools
 import inspect
@@ -27,26 +28,114 @@ import warnings
 
 try:
     from opentelemetry import metrics as _otel_metrics
+    from opentelemetry.metrics import Observation
 
-    def _get_meter():
-        return _otel_metrics.get_meter("inorbit_edge_sdk")
+    OTEL_API_AVAILABLE = True
+except ImportError:  # pragma: no cover - exercised when telemetry extra is missing
+    OTEL_API_AVAILABLE = False
+    Observation = None  # type: ignore[assignment]
 
-except ImportError:  # pragma: no cover
-    # Optional "telemetry" extra not installed
-
-    class _NoOpCounter:
+    class _NoOpInstrument:
         def add(self, amount, attributes=None):
             pass
 
+        def record(self, value, attributes=None):
+            pass
+
+        def set(self, value, attributes=None):
+            pass
+
     class _NoOpMeter:
-        def create_counter(self, name, unit="", description=""):
-            return _NoOpCounter()
+        def create_counter(self, *args, **kwargs):
+            return _NoOpInstrument()
 
-    def _get_meter():
-        return _NoOpMeter()
+        def create_up_down_counter(self, *args, **kwargs):
+            return _NoOpInstrument()
+
+        def create_histogram(self, *args, **kwargs):
+            return _NoOpInstrument()
+
+        def create_gauge(self, *args, **kwargs):
+            return _NoOpInstrument()
+
+        def create_observable_gauge(self, *args, **kwargs):
+            return _NoOpInstrument()
+
+        def create_observable_counter(self, *args, **kwargs):
+            return _NoOpInstrument()
+
+        def create_observable_up_down_counter(self, *args, **kwargs):
+            return _NoOpInstrument()
 
 
-meter = _get_meter()
+try:
+    from opentelemetry.exporter.prometheus import PrometheusMetricReader
+    from opentelemetry.sdk.metrics import MeterProvider as _SdkMeterProvider
+    from opentelemetry.sdk.resources import Resource
+
+    PROMETHEUS_EXPORTER_AVAILABLE = True
+except ImportError:  # pragma: no cover
+    PROMETHEUS_EXPORTER_AVAILABLE = False
+
+
+def get_meter(name):
+    """Return an OpenTelemetry Meter for ``name``.
+
+    When the ``telemetry`` extra is not installed, returns a no-op meter
+    whose instruments accept any call without raising.
+    """
+    if OTEL_API_AVAILABLE:
+        return _otel_metrics.get_meter(name)
+    return _NoOpMeter()
+
+
+def setup_prometheus_meter_provider(
+    service_name,
+    service_instance_id,
+    service_version=None,
+    extra_resource_attributes=None,
+    exporter_namespace=None,
+):
+    """Install a global OTEL MeterProvider with a Prometheus reader.
+
+    OpenTelemetry permits only one provider per process; subsequent calls are
+    ignored with a warning by the OTEL runtime.
+
+    Returns True when a provider was built and set. Returns False when the
+    OpenTelemetry / Prometheus exporter dependencies are not installed (in
+    which case all instrument calls become no-ops).
+
+    Args:
+        service_name: OTLP ``service.name`` resource attribute. Also used as
+            the default ``exporter_namespace``.
+        service_instance_id: OTLP ``service.instance.id`` resource attribute.
+            Should be unique per process on a host.
+        service_version: optional OTLP ``service.version``.
+        extra_resource_attributes: optional dict of extra Resource attributes.
+        exporter_namespace: optional namespace for the
+            ``PrometheusMetricReader``. Defaults to ``service_name``. Must be
+            ASCII without hyphens for GCP / Prometheus compatibility.
+    """
+    if not (OTEL_API_AVAILABLE and PROMETHEUS_EXPORTER_AVAILABLE):
+        return False
+
+    attrs = {
+        "service.name": service_name,
+        "service.instance.id": service_instance_id,
+    }
+    if service_version:
+        attrs["service.version"] = service_version
+    if extra_resource_attributes:
+        attrs.update(extra_resource_attributes)
+
+    resource = Resource.create(attrs)
+    reader = PrometheusMetricReader(exporter_namespace or service_name)
+    provider = _SdkMeterProvider(metric_readers=[reader], resource=resource)
+    _otel_metrics.set_meter_provider(provider)
+    return True
+
+
+meter = get_meter("inorbit_edge_sdk")
 
 publish_map_counter = meter.create_counter(
     "calls_publish_map", "1", "number of calls to publish maps"

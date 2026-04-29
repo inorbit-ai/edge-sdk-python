@@ -194,3 +194,67 @@ def test_publish_methods_all_add_robot_id(
     amount, attrs = calls[0]
     assert amount == 1
     assert attrs.get("robot_id") == "fleet-bot-7"
+
+
+# --- Tests for the public Prometheus-setup helpers ------------------------
+
+from opentelemetry.metrics import _internal as _otel_internal
+
+
+@pytest.fixture(autouse=False)
+def reset_meter_provider():
+    """Reset OTEL global provider state before/after the test."""
+    from opentelemetry.util._once import Once
+
+    _otel_internal._METER_PROVIDER = None
+    _otel_internal._PROXY_METER_PROVIDER = _otel_internal._ProxyMeterProvider()
+    _otel_internal._METER_PROVIDER_SET_ONCE = Once()
+    yield
+    _otel_internal._METER_PROVIDER = None
+    _otel_internal._PROXY_METER_PROVIDER = _otel_internal._ProxyMeterProvider()
+    _otel_internal._METER_PROVIDER_SET_ONCE = Once()
+
+
+def test_get_meter_returns_real_meter_when_otel_available():
+    m = edge_metrics.get_meter("inorbit_test")
+    # When OTEL is available we get a Meter (likely a _ProxyMeter); not the
+    # local _NoOpMeter sentinel.
+    assert m is not None
+    counter = m.create_counter("inorbit.test.counter")
+    counter.add(1)
+
+
+def test_setup_prometheus_meter_provider_installs_resource(reset_meter_provider):
+    from opentelemetry import metrics as otel_metrics
+    from opentelemetry.sdk.metrics import MeterProvider
+
+    installed = edge_metrics.setup_prometheus_meter_provider(
+        service_name="inorbit_connector",
+        service_instance_id="r-1",
+        service_version="1.0.0",
+        extra_resource_attributes={"site": "lab"},
+    )
+    assert installed is True
+
+    provider = otel_metrics.get_meter_provider()
+    assert isinstance(provider, MeterProvider)
+    attrs = dict(provider._sdk_config.resource.attributes)
+    assert attrs["service.name"] == "inorbit_connector"
+    assert attrs["service.instance.id"] == "r-1"
+    assert attrs["service.version"] == "1.0.0"
+    assert attrs["site"] == "lab"
+
+
+def test_setup_prometheus_meter_provider_returns_false_when_disabled(monkeypatch):
+    monkeypatch.setattr(edge_metrics, "PROMETHEUS_EXPORTER_AVAILABLE", False)
+    installed = edge_metrics.setup_prometheus_meter_provider(
+        service_name="x", service_instance_id="y"
+    )
+    assert installed is False
+
+
+def test_otel_api_available_reflects_import_status():
+    # In the test environment the telemetry extra is installed, so OTEL is
+    # available. The flag is the source of truth for callers.
+    assert edge_metrics.OTEL_API_AVAILABLE is True
+    assert edge_metrics.Observation is not None
