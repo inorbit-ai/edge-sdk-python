@@ -9,6 +9,7 @@ from time import sleep
 from random import randint, uniform, random
 from math import pi, inf
 
+from inorbit_edge.metrics import setup_prometheus_meter_provider
 from inorbit_edge.robot import (
     RobotSessionFactory,
     RobotSessionPool,
@@ -16,6 +17,11 @@ from inorbit_edge.robot import (
     RobotFootprintSpec,
 )
 from inorbit_edge.video import OpenCVCamera
+
+try:
+    from prometheus_client import start_http_server
+except ImportError:
+    start_http_server = None
 
 logging.basicConfig(
     level=logging.INFO,
@@ -152,13 +158,16 @@ def _init_prometheus_metrics():
         return
     if port <= 0:
         return
-    try:
-        from opentelemetry import metrics
-        from opentelemetry.exporter.prometheus import PrometheusMetricReader
-        from opentelemetry.sdk.metrics import MeterProvider
-        from opentelemetry.sdk.resources import Resource
-        from prometheus_client import start_http_server
-    except ImportError:
+
+    service_name = os.environ.get(
+        "INORBIT_METRICS_SERVICE_NAME", "inorbit-edge-sdk-demo"
+    )
+    # Note: exporter_namespace must not contain '-' for GCP compatibility.
+    if not setup_prometheus_meter_provider(
+        service_name=service_name,
+        service_instance_id=socket.gethostname(),
+        exporter_namespace="inorbit_edge_demo",
+    ) or start_http_server is None:
         logging.warning(
             "INORBIT_METRICS_PORT=%s set but telemetry packages missing. "
             "Use: pip install 'inorbit-edge[telemetry]'",
@@ -167,12 +176,6 @@ def _init_prometheus_metrics():
         return
 
     host = os.environ.get("INORBIT_METRICS_ADDR", "0.0.0.0")
-    _svc = os.environ.get("INORBIT_METRICS_SERVICE_NAME", "inorbit-edge-sdk-demo")
-    resource = Resource(attributes={"service.name": _svc})
-    # Note: Do not use "-" in the MetricsReader name for GCP envs
-    metric_reader = PrometheusMetricReader("inorbit_edge_demo")
-    meter_provider = MeterProvider(metric_readers=[metric_reader], resource=resource)
-    metrics.set_meter_provider(meter_provider)
     start_http_server(port=port, addr=host)
     logging.info(
         "OpenTelemetry metrics (Prometheus) on http://%s:%s/metrics",
@@ -182,7 +185,6 @@ def _init_prometheus_metrics():
 
 
 def main():
-    # Must run before any inorbit_edge import so the SDK uses this MeterProvider
     _init_prometheus_metrics()
 
     robot_footprint = RobotFootprintSpec(
