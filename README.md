@@ -118,19 +118,16 @@ and `prometheus-client`. The following is an example initialization code that en
 connector can be scraped and exported to any external system (Grafana,
 StackDriver, etc.)
 
-```
-from opentelemetry import metrics
-from opentelemetry.exporter.prometheus import PrometheusMetricReader
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.resources import Resource
+```python
+from inorbit_edge.metrics import setup_prometheus_meter_provider
 from prometheus_client import start_http_server
 
 # ...
 
-resource = Resource(attributes={"service.name": "my-connector"})
-# Note: Do not use "-" in the MetricsReader namefor GCP envs
-metric_reader = PrometheusMetricReader("my_connector")
-meter_provider = MeterProvider(metric_readers=[metric_reader], resource=resource)
-metrics.set_meter_provider(meter_provider)
-start_http_server(port=9464, addr="0.0.0.0")
+if setup_prometheus_meter_provider(
+    service_name="my-connector",
+    service_instance_id="robot-123",
+    service_version="1.2.3",
+):
+    start_http_server(port=9464, addr="0.0.0.0")
 ```

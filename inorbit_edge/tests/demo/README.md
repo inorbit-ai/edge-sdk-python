@@ -17,6 +17,8 @@ cd inorbit_edge/tests/demo
 export INORBIT_URL="https://control.inorbit.ai"
 export INORBIT_API_URL="https://api.inorbit.ai"
 export INORBIT_API_KEY="foobar123"
+export INORBIT_ACCOUNT_ID="account123"
+export INORBIT_ROBOT_ID_PREFIX="$(hostname)"
 # TLS to the MQTT broker defaults to on. For a local broker without TLS: INORBIT_USE_SSL=false
 # Optionally enable video streaming as camera "0"
 export INORBIT_VIDEO_URL=/dev/video0

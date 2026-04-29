@@ -13,7 +13,7 @@
 #   from prometheus_client import start_http_server
 #
 #   setup_prometheus_meter_provider(
-#       service_name="my_connector",          # No '-' for GCP compatibility
+#       service_name="my-connector",
 #       service_instance_id="robot-123",
 #       service_version="1.2.3",
 #   )
@@ -98,23 +98,23 @@ def setup_prometheus_meter_provider(
 ):
     """Install a global OTEL MeterProvider with a Prometheus reader.
 
-    OpenTelemetry permits only one provider per process; subsequent calls are
-    ignored with a warning by the OTEL runtime.
+    OpenTelemetry permits only one provider per process; subsequent calls may
+    be ignored with a warning by the OTEL runtime.
 
-    Returns True when a provider was built and set. Returns False when the
+    Returns True when this provider became active. Returns False when the
     OpenTelemetry / Prometheus exporter dependencies are not installed (in
-    which case all instrument calls become no-ops).
+    which case all instrument calls become no-ops), or when OpenTelemetry kept
+    an existing provider instead.
 
     Args:
         service_name: OTLP ``service.name`` resource attribute. Also used as
-            the default ``exporter_namespace``.
+            the default Prometheus metric name prefix.
         service_instance_id: OTLP ``service.instance.id`` resource attribute.
             Should be unique per process on a host.
         service_version: optional OTLP ``service.version``.
         extra_resource_attributes: optional dict of extra Resource attributes.
-        exporter_namespace: optional namespace for the
-            ``PrometheusMetricReader``. Defaults to ``service_name``. Must be
-            ASCII without hyphens for GCP / Prometheus compatibility.
+        exporter_namespace: optional Prometheus metric name prefix. Defaults
+            to ``service_name``.
     """
     if not (OTEL_API_AVAILABLE and PROMETHEUS_EXPORTER_AVAILABLE):
         return False
@@ -129,10 +129,10 @@ def setup_prometheus_meter_provider(
         attrs.update(extra_resource_attributes)
 
     resource = Resource.create(attrs)
-    reader = PrometheusMetricReader(exporter_namespace or service_name)
+    reader = PrometheusMetricReader(prefix=exporter_namespace or service_name)
     provider = _SdkMeterProvider(metric_readers=[reader], resource=resource)
     _otel_metrics.set_meter_provider(provider)
-    return True
+    return _otel_metrics.get_meter_provider() is provider
 
 
 meter = get_meter("inorbit_edge_sdk")

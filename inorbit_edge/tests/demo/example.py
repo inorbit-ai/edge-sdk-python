@@ -47,6 +47,13 @@ def _mqtt_use_ssl():
     return v not in ("false", "0", "no", "off")
 
 
+def _required_env(name):
+    value = os.environ.get(name, "").strip()
+    if not value:
+        raise RuntimeError(f"Environment variable {name} is required")
+    return value
+
+
 class FakeRobot:
     """Class that simulates robot data and generates random data"""
 
@@ -162,11 +169,9 @@ def _init_prometheus_metrics():
     service_name = os.environ.get(
         "INORBIT_METRICS_SERVICE_NAME", "inorbit-edge-sdk-demo"
     )
-    # Note: exporter_namespace must not contain '-' for GCP compatibility.
     if not setup_prometheus_meter_provider(
         service_name=service_name,
         service_instance_id=socket.gethostname(),
-        exporter_namespace="inorbit_edge_demo",
     ) or start_http_server is None:
         logging.warning(
             "INORBIT_METRICS_PORT=%s set but telemetry packages missing. "
@@ -198,23 +203,16 @@ def main():
         radius=0.2,
     )
 
-    inorbit_api_endpoint = os.environ.get("INORBIT_URL")
-    inorbit_api_url = os.environ.get("INORBIT_API_URL")
-    inorbit_account_id = os.environ.get("INORBIT_ACCOUNT_ID")
-    inorbit_api_key = os.environ.get("INORBIT_API_KEY")
+    inorbit_api_endpoint = _required_env("INORBIT_URL")
+    inorbit_api_url = _required_env("INORBIT_API_URL")
+    inorbit_account_id = _required_env("INORBIT_ACCOUNT_ID")
+    inorbit_api_key = _required_env("INORBIT_API_KEY")
 
     # If configured stream video as if it was a robot camera
     video_url = os.environ.get("INORBIT_VIDEO_URL")
 
-    assert inorbit_api_endpoint, "Environment variable INORBIT_URL not specified"
-    assert inorbit_api_key, "Environment variable INORBIT_API_KEY not specified"
-    # Required for setting configurations, such as robot footprints.
-    assert inorbit_api_url, "Environment variable INORBIT_API_URL not specified"
-    assert inorbit_account_id, "Environment variable INORBIT_ACCOUNT_ID not specified"
-
-    # Robot ids are always "<prefix>_edgesdk_py_<n>". Prefix is mandatory.
-    robot_id_prefix = os.environ.get("INORBIT_ROBOT_ID_PREFIX").strip()
-    assert robot_id_prefix, "Environment variable INORBIT_ROBOT_ID_PREFIX is required"
+    # Robot ids are always "<prefix>_edgesdk_demo_<n>". Prefix is mandatory.
+    robot_id_prefix = _required_env("INORBIT_ROBOT_ID_PREFIX")
     logging.info("Robot id prefix: %r", robot_id_prefix)
 
     # Create robot session factory and session pool
