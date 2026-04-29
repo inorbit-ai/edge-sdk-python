@@ -19,6 +19,19 @@
 #   )
 #   start_http_server(port=9090, addr="0.0.0.0")
 #
+# The helper below wires the pieces as follows:
+#
+# * OpenTelemetry API (``opentelemetry.metrics``): the stable API used by SDK
+#   code to create meters and instruments such as counters.
+# * OpenTelemetry SDK (``MeterProvider``): the runtime implementation that
+#   stores metric data and feeds it to configured metric readers/exporters.
+# * ``Resource``: metadata attached to all exported metrics, for example
+#   service name, service instance, and version.
+# * ``PrometheusMetricReader``: an OTEL reader that makes collected metric data
+#   available to the Prometheus client registry when Prometheus scrapes.
+# * ``prometheus_client.start_http_server``: not called here; the connector or
+#   demo starts that HTTP server to expose the registry at ``/metrics``.
+#
 # When the optional ``telemetry`` extra is not installed, all instruments
 # become no-ops and ``setup_prometheus_meter_provider`` returns False.
 #
@@ -27,6 +40,9 @@ import inspect
 import warnings
 
 try:
+    # OTEL API package: lightweight surface used by the SDK to create meters.
+    # Importing this alone is enough for no-export metrics, but not enough to
+    # expose data to Prometheus; that needs the SDK provider and reader below.
     from opentelemetry import metrics as _otel_metrics
     from opentelemetry.metrics import Observation
 
@@ -69,6 +85,9 @@ except ImportError:  # pragma: no cover - exercised when telemetry extra is miss
 
 
 try:
+    # PrometheusMetricReader bridges OTEL SDK metrics into prometheus-client's
+    # registry. MeterProvider is the SDK runtime that owns readers. Resource
+    # carries service metadata exported as Prometheus target_info labels.
     from opentelemetry.exporter.prometheus import PrometheusMetricReader
     from opentelemetry.sdk.metrics import MeterProvider as _SdkMeterProvider
     from opentelemetry.sdk.resources import Resource
@@ -80,6 +99,10 @@ except ImportError:  # pragma: no cover
 
 def get_meter(name):
     """Return an OpenTelemetry Meter for ``name``.
+
+    A Meter is the factory for instruments (counters, gauges, histograms). SDK
+    code records through instruments; exporter setup is intentionally separate
+    so importing the package does not force telemetry dependencies.
 
     When the ``telemetry`` extra is not installed, returns a no-op meter
     whose instruments accept any call without raising.
@@ -97,6 +120,17 @@ def setup_prometheus_meter_provider(
     exporter_namespace=None,
 ):
     """Install a global OTEL MeterProvider with a Prometheus reader.
+
+    This prepares OTEL metric collection but does not open a network port.
+    Call ``prometheus_client.start_http_server`` after this to serve the
+    Prometheus scrape endpoint.
+
+    Component roles:
+      * ``Resource``: service-level labels attached to all metrics.
+      * ``PrometheusMetricReader``: reads OTEL SDK metric data on scrape and
+        registers it with prometheus-client.
+      * ``MeterProvider``: the global OTEL SDK runtime used by meters returned
+        from ``get_meter``.
 
     OpenTelemetry permits only one provider per process; subsequent calls may
     be ignored with a warning by the OTEL runtime.
@@ -128,13 +162,25 @@ def setup_prometheus_meter_provider(
     if extra_resource_attributes:
         attrs.update(extra_resource_attributes)
 
+    # Resource attributes are exported as target_info labels. They identify
+    # which process/service emitted otherwise identical metric names.
     resource = Resource.create(attrs)
+
+    # The reader translates OTEL metric data into Prometheus metric families.
+    # ``prefix`` namespaces metric names, e.g. calls_publish_pose_total becomes
+    # my_connector_calls_publish_pose_total.
     reader = PrometheusMetricReader(prefix=exporter_namespace or service_name)
+
+    # The provider owns the reader and becomes the implementation behind the
+    # global OTEL API. Meters created via get_meter() record through it.
     provider = _SdkMeterProvider(metric_readers=[reader], resource=resource)
     _otel_metrics.set_meter_provider(provider)
     return _otel_metrics.get_meter_provider() is provider
 
 
+# Module-level instruments. If telemetry is installed before this module is
+# imported, these are real OTEL counters. Otherwise they are no-op counters so
+# callers can use the SDK without installing or configuring OpenTelemetry.
 meter = get_meter("inorbit_edge_sdk")
 
 publish_map_counter = meter.create_counter(
