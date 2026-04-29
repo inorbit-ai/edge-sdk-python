@@ -163,6 +163,35 @@ publish_path_counter = meter.create_counter(
 )
 
 
+def attrs_from_self(*names):
+    """Build an attributes extractor for :func:`with_counter_metric` on methods.
+
+    The returned callable reads each named attribute from the bound instance
+    (the first positional arg) and returns them as an OTEL attributes dict.
+
+    Use this on instance methods to add per-call attributes that come from
+    the instance's own state, for example::
+
+        @with_counter_metric(
+            publish_pose_counter, attributes=attrs_from_self("robot_id")
+        )
+        def publish_pose(self, ...):
+            ...
+
+    Multiple attributes are supported::
+
+        attrs_from_self("robot_id", "session_id")
+
+    Raises ``AttributeError`` at call time if any name is not an attribute of
+    the instance.
+    """
+
+    def _extract(self, *_args, **_kwargs):
+        return {name: getattr(self, name) for name in names}
+
+    return _extract
+
+
 def with_counter_metric(metric, attributes=None):
     """Decorator: increment ``metric`` by 1 on every call.
 

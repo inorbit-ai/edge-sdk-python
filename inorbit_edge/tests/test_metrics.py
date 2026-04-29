@@ -258,3 +258,42 @@ def test_otel_api_available_reflects_import_status():
     # available. The flag is the source of truth for callers.
     assert edge_metrics.OTEL_API_AVAILABLE is True
     assert edge_metrics.Observation is not None
+
+
+# --- Tests for attrs_from_self ------------------------------------------
+
+
+def test_attrs_from_self_extracts_named_attributes():
+    extract = edge_metrics.attrs_from_self("robot_id", "site")
+
+    class _Stub:
+        robot_id = "r-7"
+        site = "lab"
+
+    assert extract(_Stub()) == {"robot_id": "r-7", "site": "lab"}
+
+
+def test_attrs_from_self_used_with_with_counter_metric():
+    counter = _RecordingCounter()
+
+    class _Thing:
+        robot_id = "r-1"
+
+        @edge_metrics.with_counter_metric(
+            counter, attributes=edge_metrics.attrs_from_self("robot_id")
+        )
+        def do_work(self, _arg):
+            return _arg
+
+    _Thing().do_work(42)
+    assert counter.calls == [(1, {"robot_id": "r-1"})]
+
+
+def test_attrs_from_self_raises_when_attribute_missing():
+    extract = edge_metrics.attrs_from_self("missing_attr")
+
+    class _Stub:
+        pass
+
+    with pytest.raises(AttributeError):
+        extract(_Stub())
