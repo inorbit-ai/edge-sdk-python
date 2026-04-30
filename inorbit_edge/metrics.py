@@ -84,6 +84,7 @@ try:
     # Importing this alone is enough for no-export metrics, but not enough to
     # expose data to Prometheus; that needs the SDK provider and reader below.
     from opentelemetry import metrics as _otel_metrics
+
     # Re-exported for connectors that define observable instruments.
     from opentelemetry.metrics import Observation  # noqa: F401
 
@@ -305,9 +306,7 @@ def with_counter_metric(metric, attributes=None):
 
 @deprecated(
     version="2.0.2",
-    reason=(
-        "use with_counter_metric(), which now auto-detects async functions"
-    ),
+    reason=("use with_counter_metric(), which now auto-detects async functions"),
 )
 def with_counter_metric_async(metric):
     """Deprecated alias for :func:`with_counter_metric`.
