@@ -244,12 +244,16 @@ def test_setup_prometheus_meter_provider_installs_resource(reset_meter_provider)
     assert attrs["site"] == "lab"
 
 
-def test_setup_prometheus_meter_provider_returns_false_when_disabled(monkeypatch):
+def test_setup_prometheus_meter_provider_returns_false_when_disabled(
+    monkeypatch, caplog
+):
     monkeypatch.setattr(edge_metrics, "PROMETHEUS_EXPORTER_AVAILABLE", False)
-    installed = edge_metrics.setup_prometheus_meter_provider(
-        service_name="x", service_instance_id="y"
-    )
+    with caplog.at_level("INFO", logger=edge_metrics.__name__):
+        installed = edge_metrics.setup_prometheus_meter_provider(
+            service_name="x", service_instance_id="y"
+        )
     assert installed is False
+    assert "telemetry dependencies are missing" in caplog.text
 
 
 def test_noop_instruments_accept_otel_kwargs(monkeypatch):

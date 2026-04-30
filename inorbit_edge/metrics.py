@@ -37,8 +37,11 @@
 #
 import functools
 import inspect
+import logging
 import re
 import warnings
+
+logger = logging.getLogger(__name__)
 
 
 class _NoOpInstrument:
@@ -167,6 +170,11 @@ def setup_prometheus_meter_provider(
     characters with ``_``.
     """
     if not (OTEL_API_AVAILABLE and PROMETHEUS_EXPORTER_AVAILABLE):
+        logger.info(
+            "Prometheus metrics provider not configured because telemetry "
+            "dependencies are missing. Install the 'telemetry' extra to "
+            "enable metrics export."
+        )
         return False
 
     attrs = {
