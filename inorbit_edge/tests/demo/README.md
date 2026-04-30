@@ -32,7 +32,7 @@ python example.py
 
 Robot ids are always `<prefix>_edgesdk_demo_0`, `<prefix>_edgesdk_demo_1`, … The prefix is `INORBIT_ROBOT_ID_PREFIX` and is mandatory.
 
-With `INORBIT_METRICS_PORT` set, the demo configures OpenTelemetry before importing the SDK, then serves metrics at
+With `INORBIT_METRICS_PORT` set, the demo configures OpenTelemetry early in startup, then serves metrics at
 `http://$INORBIT_METRICS_ADDR:$INORBIT_METRICS_PORT/metrics` (e.g. curl from the host if the port is published).
 
 ## Run in a throwaway Docker container
