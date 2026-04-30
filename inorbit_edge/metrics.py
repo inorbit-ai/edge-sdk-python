@@ -44,12 +44,13 @@ try:
     # Importing this alone is enough for no-export metrics, but not enough to
     # expose data to Prometheus; that needs the SDK provider and reader below.
     from opentelemetry import metrics as _otel_metrics
-    from opentelemetry.metrics import Observation
+    # Re-exported for connectors that define observable instruments.
+    from opentelemetry.metrics import Observation  # noqa: F401
 
     OTEL_API_AVAILABLE = True
 except ImportError:  # pragma: no cover - exercised when telemetry extra is missing
     OTEL_API_AVAILABLE = False
-    Observation = None  # type: ignore[assignment]
+    Observation = None  # type: ignore[assignment]  # noqa: F401
 
     class _NoOpInstrument:
         def add(self, amount, attributes=None):
