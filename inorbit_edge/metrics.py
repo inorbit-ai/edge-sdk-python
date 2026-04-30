@@ -37,6 +37,7 @@
 #
 import functools
 import inspect
+import re
 import warnings
 
 
@@ -116,6 +117,14 @@ def get_meter(name):
     return _NoOpMeter()
 
 
+def _sanitize_prometheus_prefix(prefix):
+    """Return a Prometheus-safe metric name prefix."""
+    sanitized = re.sub(r"[^a-zA-Z0-9_]", "_", prefix)
+    if sanitized and sanitized[0].isdigit():
+        return f"_{sanitized}"
+    return sanitized
+
+
 def setup_prometheus_meter_provider(
     service_name,
     service_instance_id,
@@ -153,6 +162,9 @@ def setup_prometheus_meter_provider(
         extra_resource_attributes: optional dict of extra Resource attributes.
         exporter_namespace: optional Prometheus metric name prefix. Defaults
             to ``service_name``.
+
+    The final Prometheus prefix is sanitized by replacing Prometheus-unsafe
+    characters with ``_``.
     """
     if not (OTEL_API_AVAILABLE and PROMETHEUS_EXPORTER_AVAILABLE):
         return False
@@ -173,7 +185,8 @@ def setup_prometheus_meter_provider(
     # The reader translates OTEL metric data into Prometheus metric families.
     # ``prefix`` namespaces metric names, e.g. calls_publish_pose_total becomes
     # my_connector_calls_publish_pose_total.
-    reader = PrometheusMetricReader(prefix=exporter_namespace or service_name)
+    prefix = _sanitize_prometheus_prefix(exporter_namespace or service_name)
+    reader = PrometheusMetricReader(prefix=prefix)
 
     # The provider owns the reader and becomes the implementation behind the
     # global OTEL API. Meters created via get_meter() record through it.

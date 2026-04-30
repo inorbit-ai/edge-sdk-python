@@ -307,7 +307,50 @@ def test_setup_prometheus_meter_provider_uses_service_name_as_prefix(monkeypatch
     )
 
     assert installed is True
-    assert captured["prefix"] == "inorbit-connector"
+    assert captured["prefix"] == "inorbit_connector"
+
+
+def test_setup_prometheus_meter_provider_sanitizes_numeric_prefix(monkeypatch):
+    captured = {}
+
+    class _Reader:
+        def __init__(self, *, prefix=""):
+            captured["prefix"] = prefix
+
+    class _Provider:
+        def __init__(self, metric_readers, resource):
+            captured["provider"] = self
+            self.metric_readers = metric_readers
+            self.resource = resource
+
+    class _Resource:
+        @staticmethod
+        def create(attrs):
+            return attrs
+
+    monkeypatch.setattr(edge_metrics, "OTEL_API_AVAILABLE", True)
+    monkeypatch.setattr(edge_metrics, "PROMETHEUS_EXPORTER_AVAILABLE", True)
+    monkeypatch.setattr(edge_metrics, "PrometheusMetricReader", _Reader)
+    monkeypatch.setattr(edge_metrics, "_SdkMeterProvider", _Provider)
+    monkeypatch.setattr(edge_metrics, "Resource", _Resource)
+    monkeypatch.setattr(
+        edge_metrics._otel_metrics,
+        "set_meter_provider",
+        lambda provider: captured.__setitem__("active_provider", provider),
+    )
+    monkeypatch.setattr(
+        edge_metrics._otel_metrics,
+        "get_meter_provider",
+        lambda: captured["active_provider"],
+    )
+
+    installed = edge_metrics.setup_prometheus_meter_provider(
+        service_name="123-connector",
+        service_instance_id="r-1",
+    )
+
+    assert installed is True
+    assert captured["prefix"] == "_123_connector"
 
 
 def test_setup_prometheus_meter_provider_accepts_prefix_override(monkeypatch):
@@ -347,11 +390,11 @@ def test_setup_prometheus_meter_provider_accepts_prefix_override(monkeypatch):
     installed = edge_metrics.setup_prometheus_meter_provider(
         service_name="inorbit-connector",
         service_instance_id="r-1",
-        exporter_namespace="inorbit_connector",
+        exporter_namespace="custom-namespace",
     )
 
     assert installed is True
-    assert captured["prefix"] == "inorbit_connector"
+    assert captured["prefix"] == "custom_namespace"
 
 
 def test_otel_api_available_reflects_import_status():
