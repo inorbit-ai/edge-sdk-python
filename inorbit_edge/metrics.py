@@ -39,7 +39,8 @@ import functools
 import inspect
 import logging
 import re
-import warnings
+
+from deprecated import deprecated
 
 logger = logging.getLogger(__name__)
 
@@ -302,6 +303,12 @@ def with_counter_metric(metric, attributes=None):
     return decorator
 
 
+@deprecated(
+    version="2.0.2",
+    reason=(
+        "use with_counter_metric(), which now auto-detects async functions"
+    ),
+)
 def with_counter_metric_async(metric):
     """Deprecated alias for :func:`with_counter_metric`.
 
@@ -309,10 +316,4 @@ def with_counter_metric_async(metric):
     automatically.
     """
 
-    warnings.warn(
-        "with_counter_metric_async is deprecated; use with_counter_metric "
-        "which now auto-detects async functions.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
     return with_counter_metric(metric)
