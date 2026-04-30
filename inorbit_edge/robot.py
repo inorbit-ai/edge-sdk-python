@@ -9,6 +9,7 @@ from typing import Tuple, Optional, List, Dict
 from inorbit_edge import __version__ as inorbit_edge_version
 from inorbit_edge.types import Pose, SpatialTolerance
 from inorbit_edge.metrics import (
+    attrs_from_self,
     with_counter_metric,
     publish_map_counter,
     publish_camera_frame_counter,
@@ -888,7 +889,7 @@ class RobotSession:
             include_pixels=True,
         )
 
-    @with_counter_metric(publish_map_counter)
+    @with_counter_metric(publish_map_counter, attributes=attrs_from_self("robot_id"))
     def publish_map(
         self,
         file,
@@ -934,7 +935,9 @@ class RobotSession:
             include_pixels=force_upload,
         )
 
-    @with_counter_metric(publish_camera_frame_counter)
+    @with_counter_metric(
+        publish_camera_frame_counter, attributes=attrs_from_self("robot_id")
+    )
     def publish_camera_frame(self, camera_id, image, width, height, ts):
         """Publishes a camera frame"""
         msg = CameraMessage()
@@ -1264,7 +1267,7 @@ class RobotSession:
         )
         self.logger.debug("Return code: {}".format(ret))
 
-    @with_counter_metric(publish_pose_counter)
+    @with_counter_metric(publish_pose_counter, attributes=attrs_from_self("robot_id"))
     def publish_pose(self, x, y, yaw, frame_id="map", ts=None):
         """Publish robot pose
 
@@ -1322,7 +1325,10 @@ class RobotSession:
             <= tolerance.angularRadians
         )
 
-    @with_counter_metric(publish_key_values_counter)
+    @with_counter_metric(
+        publish_key_values_counter,
+        attributes=attrs_from_self("robot_id"),
+    )
     def publish_key_values(self, key_values, custom_field="0", is_event=False):
         """Publish key value pairs
 
@@ -1356,7 +1362,9 @@ class RobotSession:
 
         self.publish_protobuf(MQTT_SUBTOPIC_CUSTOM_DATA, msg)
 
-    @with_counter_metric(publish_system_stats_counter)
+    @with_counter_metric(
+        publish_system_stats_counter, attributes=attrs_from_self("robot_id")
+    )
     def publish_system_stats(
         self,
         cpu_load_percentage=None,
@@ -1389,7 +1397,10 @@ class RobotSession:
 
         self.publish_protobuf(MQTT_SUBTOPIC_SYSTEM_STATS, msg)
 
-    @with_counter_metric(publish_odometry_counter)
+    @with_counter_metric(
+        publish_odometry_counter,
+        attributes=attrs_from_self("robot_id"),
+    )
     def publish_odometry(
         self,
         ts_start=None,
@@ -1451,7 +1462,7 @@ class RobotSession:
         msg.speed_available = True
         self.publish_protobuf(MQTT_SUBTOPIC_ODOMETRY, msg)
 
-    @with_counter_metric(publish_laser_counter)
+    @with_counter_metric(publish_laser_counter, attributes=attrs_from_self("robot_id"))
     def publish_lasers(self, x, y, yaw, ranges, frame_id="map", ts=None):
         """Publish an array of lasers.
 
@@ -1504,7 +1515,6 @@ class RobotSession:
         # Now publish all lasers
         self.publish_protobuf(MQTT_SUBTOPIC_POSE, msg)
 
-    @with_counter_metric(publish_laser_counter)
     def publish_laser(self, x, y, yaw, ranges, frame_id="map", ts=None):
         """Publish a single robot laser scan.
 
@@ -1558,7 +1568,7 @@ class RobotSession:
                     retain=True,
                 )
 
-    @with_counter_metric(publish_path_counter)
+    @with_counter_metric(publish_path_counter, attributes=attrs_from_self("robot_id"))
     def publish_path(
         self, path_points, path_id="0", frame_id="map", ts=None, rdp_epsilon=0.001
     ):

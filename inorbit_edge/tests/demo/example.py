@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import os
+import socket
+import sys
 from time import sleep
 from random import randint, uniform, random
-from math import pi
-import os
-import sys
-from math import inf
+from math import pi, inf
 
+from inorbit_edge.metrics import setup_prometheus_meter_provider
 from inorbit_edge.robot import (
     RobotSessionFactory,
     RobotSessionPool,
@@ -16,6 +17,11 @@ from inorbit_edge.robot import (
     RobotFootprintSpec,
 )
 from inorbit_edge.video import OpenCVCamera
+
+try:
+    from prometheus_client import start_http_server
+except ImportError:
+    start_http_server = None
 
 logging.basicConfig(
     level=logging.INFO,
@@ -34,16 +40,18 @@ LIDAR_MAX = 3.2
 NUM_ROBOTS = 2
 NUM_LASERS = 3
 
-ROBOT_FOOTPRINT = RobotFootprintSpec(
-    footprint=[
-        {"x": -0.5, "y": -0.5},
-        {"x": 0.3, "y": -0.5},
-        {"x": 0.7, "y": 0.0},
-        {"x": 0.3, "y": 0.5},
-        {"x": -0.5, "y": 0.5},
-    ],
-    radius=0.2,
-)
+
+def _mqtt_use_ssl():
+    """Use TLS for MQTT unless INORBIT_USE_SSL is false, 0, no, or off."""
+    v = os.environ.get("INORBIT_USE_SSL", "true").strip().lower()
+    return v not in ("false", "0", "no", "off")
+
+
+def _required_env(name):
+    value = os.environ.get(name, "").strip()
+    if not value:
+        raise RuntimeError(f"Environment variable {name} is required")
+    return value
 
 
 class FakeRobot:
@@ -145,46 +153,90 @@ def my_command_handler(robot_id, command_name, args, options):
         options["result_function"]("0")
 
 
-if __name__ == "__main__":
-    inorbit_api_endpoint = os.environ.get("INORBIT_URL")
-    inorbit_api_url = os.environ.get("INORBIT_API_URL")
-    inorbit_account_id = os.environ.get("INORBIT_ACCOUNT_ID")
-    inorbit_api_use_ssl = os.environ.get("INORBIT_USE_SSL")
-    inorbit_api_key = os.environ.get("INORBIT_API_KEY")
+def _init_prometheus_metrics():
+    """Serve /metrics when INORBIT_METRICS_PORT is set (pip extra telemetry)."""
+    port_s = os.environ.get("INORBIT_METRICS_PORT", "").strip()
+    if not port_s:
+        return
+    try:
+        port = int(port_s)
+    except ValueError:
+        logging.warning("INORBIT_METRICS_PORT is not a valid integer: %r", port_s)
+        return
+    if port <= 0:
+        return
 
-    # For InOrbit Connect (https://connect.inorbit.ai/) certified robots,
-    # use a yaml file to define the robot_key for each robot_id. This
-    # file stores additional params such as robot_name, etc.
-    inorbit_robots_config = os.environ.get("INORBIT_ROBOT_CONFIG_FILE")
+    service_name = os.environ.get(
+        "INORBIT_METRICS_SERVICE_NAME", "inorbit-edge-sdk-demo"
+    )
+    if (
+        not setup_prometheus_meter_provider(
+            service_name=service_name,
+            service_instance_id=socket.gethostname(),
+        )
+        or start_http_server is None
+    ):
+        logging.warning(
+            "INORBIT_METRICS_PORT=%s set but telemetry packages missing. "
+            "Use: pip install 'inorbit-edge[telemetry]'",
+            port_s,
+        )
+        return
+
+    host = os.environ.get("INORBIT_METRICS_ADDR", "0.0.0.0")
+    start_http_server(port=port, addr=host)
+    logging.info(
+        "OpenTelemetry metrics (Prometheus) on http://%s:%s/metrics",
+        host,
+        port,
+    )
+
+
+def main():
+    _init_prometheus_metrics()
+
+    robot_footprint = RobotFootprintSpec(
+        footprint=[
+            {"x": -0.5, "y": -0.5},
+            {"x": 0.3, "y": -0.5},
+            {"x": 0.7, "y": 0.0},
+            {"x": 0.3, "y": 0.5},
+            {"x": -0.5, "y": 0.5},
+        ],
+        radius=0.2,
+    )
+
+    inorbit_api_endpoint = _required_env("INORBIT_URL")
+    inorbit_api_url = _required_env("INORBIT_API_URL")
+    inorbit_account_id = _required_env("INORBIT_ACCOUNT_ID")
+    inorbit_api_key = _required_env("INORBIT_API_KEY")
 
     # If configured stream video as if it was a robot camera
     video_url = os.environ.get("INORBIT_VIDEO_URL")
 
-    assert inorbit_api_endpoint, "Environment variable INORBIT_URL not specified"
-    assert inorbit_api_key, "Environment variable INORBIT_API_KEY not specified"
-    # Required for setting configurations, such as robot footprints.
-    assert inorbit_api_url, "Environment variable INORBIT_API_URL not specified"
-    assert inorbit_account_id, "Environment variable INORBIT_ACCOUNT_ID not specified"
+    # Robot ids are always "<prefix>_edgesdk_demo_<n>". Prefix is mandatory.
+    robot_id_prefix = _required_env("INORBIT_ROBOT_ID_PREFIX")
+    logging.info("Robot id prefix: %r", robot_id_prefix)
 
     # Create robot session factory and session pool
     robot_session_factory = RobotSessionFactory(
         endpoint=inorbit_api_endpoint,
         rest_api_endpoint=inorbit_api_url,
         api_key=inorbit_api_key,
-        use_ssl=inorbit_api_use_ssl == "true",
+        use_ssl=_mqtt_use_ssl(),
         account_id=inorbit_account_id,
     )
     robot_session_factory.register_command_callback(log_command)
     robot_session_factory.register_command_callback(my_command_handler)
     robot_session_factory.register_commands_path("./user_scripts", r".*\.sh")
 
-    robot_session_pool = RobotSessionPool(robot_session_factory, inorbit_robots_config)
+    robot_session_pool = RobotSessionPool(robot_session_factory)
     # Dictionary mapping robot ID and fake robot object
     fake_robot_pool = dict()
 
     # Create fake robots and populate `fake_robot_pool` dictionary
     for i in range(NUM_ROBOTS):
-        cur_robot_id = "edgesdk_py_{}".format(i)
+        cur_robot_id = "{}_edgesdk_demo_{}".format(robot_id_prefix, i)
         robot_session = robot_session_pool.get_session(
             robot_id=cur_robot_id, robot_name=cur_robot_id
         )
@@ -220,8 +272,8 @@ if __name__ == "__main__":
         robot_session.register_lasers(configs)
 
         # Configure robot footprint
-        if ROBOT_FOOTPRINT:
-            robot_session.apply_footprint(ROBOT_FOOTPRINT)
+        if robot_footprint:
+            robot_session.apply_footprint(robot_footprint)
 
     # Go through every fake robot and simulate robot movement
     while True:
@@ -265,7 +317,7 @@ if __name__ == "__main__":
                 )
 
                 # Publish multiple lasers
-                ranges, angles = [], []
+                ranges = []
                 for i in range(NUM_LASERS):
                     # Generate random lidar ranges within arbitrary limits
                     lidar = [max(LIDAR_MIN, random() * LIDAR_MAX) for _ in range(700)]
@@ -285,3 +337,7 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             robot_session_pool.tear_down()
             sys.exit()
+
+
+if __name__ == "__main__":
+    main()

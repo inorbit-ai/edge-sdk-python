@@ -105,28 +105,85 @@ which supports various exporting mechanisms.
 Connectors are responsible for configuring the exporter of their choice;
 as well as adding more metrics if they chose to do so.
 
-To do so, add these `opentelemetry-api` and `opentelemetry-sdk` packages
-to the connector project. Depending on the exporter, another package such
-as `opentelemetry-exporter-prometheus` (for Prometheus) is required.
-The following is an example initialization code that enables a
+Install the optional **telemetry** extra (see `requirements-telemetry.txt`) so
+the SDK records real OpenTelemetry metrics. Without it, built-in metrics are
+no-ops and the base package has no OpenTelemetry dependency:
+
+`pip install inorbit-edge[telemetry]`
+
+To export to Prometheus, the extra above includes `opentelemetry-exporter-prometheus`
+and `prometheus-client`. The following is an example initialization code that enables a
 [Prometheus](https://prometheus.io/) HTTP endpoint, where all SDK metrics
 (including system metrics such as CPU usage) and any metric added by the
 connector can be scraped and exported to any external system (Grafana,
 StackDriver, etc.)
 
-```
-from opentelemetry import metrics
-from opentelemetry.exporter.prometheus import PrometheusMetricReader
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.resources import Resource
+```python
+from inorbit_edge.metrics import setup_prometheus_meter_provider
 from prometheus_client import start_http_server
 
 # ...
 
-resource = Resource(attributes={"service.name": "my-connector"})
-# Note: Do not use "-" in the MetricsReader namefor GCP envs
-metric_reader = PrometheusMetricReader("my_connector")
-meter_provider = MeterProvider(metric_readers=[metric_reader], resource=resource)
-metrics.set_meter_provider(meter_provider)
-start_http_server(port=9464, addr="0.0.0.0")
+if setup_prometheus_meter_provider(
+    service_name="my-connector",
+    service_instance_id="robot-123",
+    service_version="1.2.3",
+):
+    start_http_server(port=9464, addr="0.0.0.0")
+```
+
+Custom metrics can use the same meter provider. Define instruments once during
+module initialization, then record values where the connector does the work:
+
+```python
+from inorbit_edge.metrics import get_meter
+
+meter = get_meter("my_connector")
+messages_processed_counter = meter.create_counter(
+    "messages_processed",
+    unit="1",
+    description="Number of input messages processed by the connector",
+)
+
+
+def process_message(robot_id, message):
+    # ... connector-specific processing ...
+    messages_processed_counter.add(1, {"robot_id": robot_id})
+```
+
+When exported to Prometheus with `service_name="my-connector"`, this appears as
+`my_connector_messages_processed_total` with a `robot_id` label. Without the
+`telemetry` extra installed, the same code is safe to run but records no data.
+
+For call-count metrics, the SDK also provides a decorator. This keeps the
+increment close to the function being counted:
+
+```python
+from inorbit_edge.metrics import get_meter, with_counter_metric
+
+meter = get_meter("my_connector")
+command_handler_counter = meter.create_counter(
+    "command_handler_calls",
+    unit="1",
+    description="Number of command handler invocations",
+)
+
+
+@with_counter_metric(command_handler_counter, attributes={"command": "dock"})
+def handle_dock_command(command_payload):
+    # ... handle the command ...
+    return "accepted"
+```
+
+If attributes depend on the function arguments, pass a callable instead of a
+static dictionary:
+
+```python
+@with_counter_metric(
+    command_handler_counter,
+    attributes=lambda robot_id, command_payload: {"robot_id": robot_id},
+)
+def handle_command(robot_id, command_payload):
+    # ... handle the command ...
+    return "accepted"
 ```

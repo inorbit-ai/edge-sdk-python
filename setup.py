@@ -20,7 +20,7 @@ with open("README.md") as readme_file:
     long_description = readme_file.read()
 
 # Load from the requirements-*.txt files where '*' is anything extra
-requirements = {key: [] for key in ["dev", "install", "video"]}
+requirements = {key: [] for key in ["dev", "install", "video", "telemetry"]}
 base_path = os.path.dirname(os.path.abspath(__file__))
 for key in requirements:
     fname = os.path.join(
@@ -51,6 +51,7 @@ setup(
     download_url=f"{GITHUB_REPO}/archive/refs/tags/v2.0.2.zip",
     extras_require={
         "video": requirements["video"],
+        "telemetry": requirements["telemetry"],
         "dev": requirements["dev"],
     },
     install_requires=requirements["install"],
