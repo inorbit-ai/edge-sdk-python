@@ -39,6 +39,41 @@ import functools
 import inspect
 import warnings
 
+
+class _NoOpInstrument:
+    def add(self, *_args, **_kwargs):
+        pass
+
+    def record(self, *_args, **_kwargs):
+        pass
+
+    def set(self, *_args, **_kwargs):
+        pass
+
+
+class _NoOpMeter:
+    def create_counter(self, *_args, **_kwargs):
+        return _NoOpInstrument()
+
+    def create_up_down_counter(self, *_args, **_kwargs):
+        return _NoOpInstrument()
+
+    def create_histogram(self, *_args, **_kwargs):
+        return _NoOpInstrument()
+
+    def create_gauge(self, *_args, **_kwargs):
+        return _NoOpInstrument()
+
+    def create_observable_gauge(self, *_args, **_kwargs):
+        return _NoOpInstrument()
+
+    def create_observable_counter(self, *_args, **_kwargs):
+        return _NoOpInstrument()
+
+    def create_observable_up_down_counter(self, *_args, **_kwargs):
+        return _NoOpInstrument()
+
+
 try:
     # OTEL API package: lightweight surface used by the SDK to create meters.
     # Importing this alone is enough for no-export metrics, but not enough to
@@ -51,38 +86,6 @@ try:
 except ImportError:  # pragma: no cover - exercised when telemetry extra is missing
     OTEL_API_AVAILABLE = False
     Observation = None  # type: ignore[assignment]  # noqa: F401
-
-    class _NoOpInstrument:
-        def add(self, amount, attributes=None):
-            pass
-
-        def record(self, value, attributes=None):
-            pass
-
-        def set(self, value, attributes=None):
-            pass
-
-    class _NoOpMeter:
-        def create_counter(self, *args, **kwargs):
-            return _NoOpInstrument()
-
-        def create_up_down_counter(self, *args, **kwargs):
-            return _NoOpInstrument()
-
-        def create_histogram(self, *args, **kwargs):
-            return _NoOpInstrument()
-
-        def create_gauge(self, *args, **kwargs):
-            return _NoOpInstrument()
-
-        def create_observable_gauge(self, *args, **kwargs):
-            return _NoOpInstrument()
-
-        def create_observable_counter(self, *args, **kwargs):
-            return _NoOpInstrument()
-
-        def create_observable_up_down_counter(self, *args, **kwargs):
-            return _NoOpInstrument()
 
 
 try:

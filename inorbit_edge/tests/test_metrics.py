@@ -252,6 +252,21 @@ def test_setup_prometheus_meter_provider_returns_false_when_disabled(monkeypatch
     assert installed is False
 
 
+def test_noop_instruments_accept_otel_kwargs(monkeypatch):
+    monkeypatch.setattr(edge_metrics, "OTEL_API_AVAILABLE", False)
+    meter = edge_metrics.get_meter("inorbit_test")
+    context = object()
+
+    counter = meter.create_counter("counter")
+    counter.add(1, attributes={"robot_id": "r-1"}, context=context, extra=True)
+
+    histogram = meter.create_histogram("histogram")
+    histogram.record(1.5, attributes={"robot_id": "r-1"}, context=context)
+
+    gauge = meter.create_gauge("gauge")
+    gauge.set(2, attributes={"robot_id": "r-1"}, context=context)
+
+
 def test_setup_prometheus_meter_provider_uses_service_name_as_prefix(monkeypatch):
     captured = {}
 
