@@ -14,7 +14,7 @@ cd /path/to/edge-sdk-python
 pip install -e '.[video,telemetry]'
 cd inorbit_edge/tests/demo
 
-export INORBIT_URL="https://control.inorbit.ai"
+export INORBIT_CONNECTION_CONFIG_URL="https://control.inorbit.ai"
 export INORBIT_API_URL="https://api.inorbit.ai"
 export INORBIT_API_KEY="foobar123"
 export INORBIT_ROBOT_ID_PREFIX="$(hostname)"
@@ -51,7 +51,7 @@ metrics on the host:
 ```bash
 docker run --rm -p 9464:9464 \
   -v "$PWD/inorbit_edge/tests/demo:/demo:ro" \
-  -e INORBIT_URL=... \
+  -e INORBIT_CONNECTION_CONFIG_URL=... \
   -e INORBIT_API_URL=... \
   -e INORBIT_API_KEY=... \
   -e INORBIT_ROBOT_ID_PREFIX=$(hostname) \

@@ -206,7 +206,7 @@ def main():
         radius=0.2,
     )
 
-    inorbit_api_endpoint = _required_env("INORBIT_URL")
+    inorbit_api_endpoint = _required_env("INORBIT_CONNECTION_CONFIG_URL")
     inorbit_api_url = _required_env("INORBIT_API_URL")
     inorbit_api_key = _required_env("INORBIT_API_KEY")
 
