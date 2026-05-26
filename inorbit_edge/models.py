@@ -100,8 +100,6 @@ class RobotSessionModel(BaseModel):
                                       INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL by default
         rest_api_endpoint (HttpUrl, optional): The URL of the InOrbit REST API.
                                                INORBIT_REST_API_URL by default.
-        account_id (str, optional): The account ID of the robot owner. Required for
-                                    applying configurations to the robot.
     """
 
     robot_id: str
@@ -115,10 +113,8 @@ class RobotSessionModel(BaseModel):
     rest_api_endpoint: Optional[HttpUrl] = os.environ.get(
         "INORBIT_REST_API_URL", INORBIT_REST_API_URL
     )
-    account_id: Optional[str] = None
-
     # noinspection PyMethodParameters
-    @field_validator("robot_id", "robot_name", "robot_key", "api_key", "account_id")
+    @field_validator("robot_id", "robot_name", "robot_key", "api_key")
     def check_whitespace(cls, value: str) -> str:
         """Check if the field contains whitespace.
 

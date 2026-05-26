@@ -208,7 +208,6 @@ def main():
 
     inorbit_api_endpoint = _required_env("INORBIT_URL")
     inorbit_api_url = _required_env("INORBIT_API_URL")
-    inorbit_account_id = _required_env("INORBIT_ACCOUNT_ID")
     inorbit_api_key = _required_env("INORBIT_API_KEY")
 
     # If configured stream video as if it was a robot camera
@@ -224,7 +223,6 @@ def main():
         rest_api_endpoint=inorbit_api_url,
         api_key=inorbit_api_key,
         use_ssl=_mqtt_use_ssl(),
-        account_id=inorbit_account_id,
     )
     robot_session_factory.register_command_callback(log_command)
     robot_session_factory.register_command_callback(my_command_handler)
