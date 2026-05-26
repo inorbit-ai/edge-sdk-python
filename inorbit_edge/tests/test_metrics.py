@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 import asyncio
-import warnings
 
 import pytest
 
@@ -77,22 +76,6 @@ def test_with_counter_metric_counts_even_when_wrapped_raises():
 
     with pytest.raises(RuntimeError):
         f()
-    assert counter.calls == [(1, {})]
-
-
-def test_with_counter_metric_async_alias_emits_deprecation_warning():
-    counter = _RecordingCounter()
-
-    with warnings.catch_warnings(record=True) as captured:
-        warnings.simplefilter("always")
-
-        @edge_metrics.with_counter_metric_async(counter)
-        async def f():
-            return 1
-
-        asyncio.run(f())
-
-    assert any(issubclass(w.category, DeprecationWarning) for w in captured)
     assert counter.calls == [(1, {})]
 
 

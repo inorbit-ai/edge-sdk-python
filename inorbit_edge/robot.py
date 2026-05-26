@@ -67,7 +67,6 @@ from inorbit_edge.utils import (
 import certifi
 import subprocess
 import re
-from deprecated import deprecated
 
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
 INORBIT_REST_API_URL = "https://api.inorbit.ai"
@@ -1848,11 +1847,3 @@ class RobotSessionPool:
         sess = self.get_session(robot_id)
         sess.disconnect()
         del self.robot_sessions[robot_id]
-
-    @deprecated(
-        version="1.7.2",
-        reason="use RobotSessionFactory.register_command_callback() instead",
-    )
-    def register_command_callback(self, callback):
-        """Registers a callback to be called when a command is received"""
-        self.robot_session_factory.register_command_callback(callback)
