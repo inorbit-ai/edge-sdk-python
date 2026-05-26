@@ -316,8 +316,6 @@ class RobotSession:
             use_ssl (bool): Configures MQTT client to use SSL. Defaults: True.
             rest_api_endpoint (str): The URL of the InOrbit REST API.
                 Defaults: INORBIT_REST_API_URL.
-            account_id (str): The account ID of the robot owner. Required for applying
-                configurations to the robot.
             keepalive_secs (int): Keepalive for MQTT connection (seconds). Default: 10.
             estimate_distance_linear (bool): Whether to publish an estimate value for
                 linear_distance based on poses when the value is not provided on a
@@ -352,8 +350,8 @@ class RobotSession:
         self.inorbit_rest_api_endpoint = kwargs.get(
             "rest_api_endpoint", INORBIT_REST_API_URL
         )
-        # Account the robot belongs to. Used for REST API calls.
-        self.account_id = kwargs.get("account_id")
+        # Account ID, lazily fetched from REST API via get_account_id()
+        self._account_id: str | None = None
 
         # Use TCP transport by default. The client will use websockets
         # transport if the environment variable HTTP_PROXY is set.
@@ -1639,36 +1637,81 @@ class RobotSession:
 
         self.publish_protobuf(MQTT_SUBTOPIC_PATH, msg)
 
+    def get_account_id(self) -> str:
+        """Fetch and cache the account ID from the InOrbit REST API.
+
+        Calls ``GET /user`` using the configured API key. The result is
+        cached so subsequent calls do not make additional HTTP requests.
+
+        Returns:
+            str: The account ID associated with the API key.
+
+        Raises:
+            ValueError: If no ``api_key`` is configured.
+            ValueError: If the API key is associated with zero or multiple accounts.
+            requests.HTTPError: If the REST API request fails.
+        """
+        if self._account_id is not None:
+            return self._account_id
+
+        api_key = self.api_key
+        if not api_key:
+            raise ValueError(
+                "An api_key is required to fetch account info from the REST API"
+            )
+
+        response = requests.get(
+            f"{self.inorbit_rest_api_endpoint}/user",
+            headers={"x-auth-inorbit-app-key": api_key},
+        )
+        response.raise_for_status()
+
+        account_ids = response.json().get("accountIds") or []
+        if not isinstance(account_ids, list):
+            raise ValueError(
+                "Unexpected response from the REST API: " "accountIds is not a list"
+            )
+        if len(account_ids) == 0:
+            raise ValueError("No account IDs found for the authenticated API key")
+        if len(account_ids) > 1:
+            raise ValueError(
+                "Multiple account IDs found for the authenticated API key. "
+                "This is not supported by the Edge SDK"
+            )
+
+        account_id: str = account_ids[0]
+        self._account_id = account_id
+        self.logger.debug(f"Fetched account ID: {account_id}")
+        return account_id
+
     def apply_footprint(self, spec: RobotFootprintSpec):
         """Creates and applies a RobotFootprint configuration at the robot level scope.
-        Calling this method one time applies a persistent footprint configuration.
-        Note that configurations can be applied at other scopes as well.
-        Refer to the REST APIs documentation for more information.
+
+        Calling this method once applies a persistent footprint configuration.
+        The account ID is fetched automatically from the REST API.
 
         Args:
             spec (RobotFootprintSpec): Robot footprint configuration spec.
-                Will be added to the `spec` field of the RobotFootprint configuration.
 
         Raises:
-            ValueError: If the account ID is not set.
+            ValueError: If no api_key is configured or account cannot be resolved.
             HTTPError: If the request to the InOrbit REST API fails.
-
-        Returns:
-            None
 
         References:
             https://api.inorbit.ai/docs/index.html
         """
+        api_key = self.api_key
+        if not api_key:
+            raise ValueError("An api_key is required to apply footprint configuration")
 
-        if not self.account_id:
-            raise ValueError("Account ID is required to set robot footprint")
+        account_id = self.get_account_id()
 
         body = {
             "apiVersion": "v0.1",
             "kind": "RobotFootprint",
             "metadata": {
                 "id": "all",
-                "scope": f"robot/{self.account_id}/{self.robot_id}",
+                "scope": f"robot/{account_id}/{self.robot_id}",
             },
             "spec": asdict(spec),
         }
@@ -1676,7 +1719,7 @@ class RobotSession:
         res = requests.post(
             f"{self.inorbit_rest_api_endpoint}/configuration/apply",
             json=body,
-            headers={"x-auth-inorbit-app-key": f"{self.api_key}"},
+            headers={"x-auth-inorbit-app-key": api_key},
         )
         res.raise_for_status()
 
