@@ -70,7 +70,7 @@ import re
 from deprecated import deprecated
 
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
-INORBIT_REST_API_URL = "https://api.inorbit.ai"
+INORBIT_DEFAULT_REST_API_URL = "https://api.inorbit.ai"
 
 MQTT_SUBTOPIC_POSE = "ros/loc/data2"
 MQTT_SUBTOPIC_PATH = "ros/loc/path"
@@ -315,7 +315,7 @@ class RobotSession:
             endpoint (str): InOrbit URL. Defaults: INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL.
             use_ssl (bool): Configures MQTT client to use SSL. Defaults: True.
             rest_api_endpoint (str): The URL of the InOrbit REST API.
-                Defaults: INORBIT_REST_API_URL.
+                Defaults: INORBIT_DEFAULT_REST_API_URL.
             account_id (str): The account ID of the robot owner. Required for applying
                 configurations to the robot.
             keepalive_secs (int): Keepalive for MQTT connection (seconds). Default: 10.
@@ -350,7 +350,7 @@ class RobotSession:
         self.use_ssl = kwargs.get("use_ssl", True)
         # InOrbit REST API endpoint
         self.inorbit_rest_api_endpoint = kwargs.get(
-            "rest_api_endpoint", INORBIT_REST_API_URL
+            "rest_api_endpoint", INORBIT_DEFAULT_REST_API_URL
         )
         # Account the robot belongs to. Used for REST API calls.
         self.account_id = kwargs.get("account_id")

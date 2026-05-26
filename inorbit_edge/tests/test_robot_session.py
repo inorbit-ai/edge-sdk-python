@@ -8,7 +8,7 @@ import pytest
 from requests import HTTPError
 
 from inorbit_edge.robot import RobotSession, RobotFootprintSpec, RobotMap
-from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, INORBIT_REST_API_URL
+from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, INORBIT_DEFAULT_REST_API_URL
 from inorbit_edge import get_module_version
 from inorbit_edge.inorbit_pb2 import MapMessage, RobotPath, PathDataMessage, PathPoint
 
@@ -125,7 +125,7 @@ def test_method_throttling(mock_sleep):
 
 def test_apply_footprint(requests_mock, mock_sleep):
     adapter = requests_mock.post(
-        f"{INORBIT_REST_API_URL}/configuration/apply",
+        f"{INORBIT_DEFAULT_REST_API_URL}/configuration/apply",
         json={"operationStatus": "SUCCESS"},
     )
     footprint = RobotFootprintSpec(
@@ -175,7 +175,7 @@ def test_apply_footprint(requests_mock, mock_sleep):
     }
 
     # HTTP error
-    requests_mock.post(f"{INORBIT_REST_API_URL}/configuration/apply", status_code=400)
+    requests_mock.post(f"{INORBIT_DEFAULT_REST_API_URL}/configuration/apply", status_code=400)
     with pytest.raises(HTTPError):
         robot_session.apply_footprint(footprint)
 
