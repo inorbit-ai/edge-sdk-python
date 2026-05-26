@@ -4,13 +4,19 @@
 import math
 import os
 from unittest.mock import MagicMock
+
 import pytest
 from requests import HTTPError
 
-from inorbit_edge.robot import RobotSession, RobotFootprintSpec, RobotMap
-from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, INORBIT_REST_API_URL
 from inorbit_edge import get_module_version
-from inorbit_edge.inorbit_pb2 import MapMessage, RobotPath, PathDataMessage, PathPoint
+from inorbit_edge.inorbit_pb2 import MapMessage, PathDataMessage, PathPoint, RobotPath
+from inorbit_edge.robot import (
+    INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL,
+    INORBIT_DEFAULT_API_URL,
+    RobotFootprintSpec,
+    RobotMap,
+    RobotSession,
+)
 
 
 def test_robot_session_init(monkeypatch, mock_sleep):
@@ -125,11 +131,11 @@ def test_method_throttling(mock_sleep):
 
 def test_apply_footprint(requests_mock, mock_sleep):
     requests_mock.get(
-        f"{INORBIT_REST_API_URL}/user",
+        f"{INORBIT_DEFAULT_API_URL}/user",
         json={"userId": "user_abc", "name": "Test User", "accountIds": ["account_123"]},
     )
     adapter = requests_mock.post(
-        f"{INORBIT_REST_API_URL}/configuration/apply",
+        f"{INORBIT_DEFAULT_API_URL}/configuration/apply",
         json={"operationStatus": "SUCCESS"},
     )
     footprint = RobotFootprintSpec(
@@ -168,14 +174,16 @@ def test_apply_footprint(requests_mock, mock_sleep):
     }
 
     # HTTP error on apply
-    requests_mock.post(f"{INORBIT_REST_API_URL}/configuration/apply", status_code=400)
+    requests_mock.post(
+        f"{INORBIT_DEFAULT_API_URL}/configuration/apply", status_code=400
+    )
     with pytest.raises(HTTPError):
         robot_session.apply_footprint(footprint)
 
 
 def test_get_account_id(requests_mock, mock_sleep):
     requests_mock.get(
-        f"{INORBIT_REST_API_URL}/user",
+        f"{INORBIT_DEFAULT_API_URL}/user",
         json={"userId": "user_abc", "name": "Test User", "accountIds": ["account_123"]},
     )
     robot_session = RobotSession(
@@ -202,7 +210,7 @@ def test_get_account_id_no_api_key(mock_sleep):
 
 def test_get_account_id_empty_accounts(requests_mock, mock_sleep):
     requests_mock.get(
-        f"{INORBIT_REST_API_URL}/user",
+        f"{INORBIT_DEFAULT_API_URL}/user",
         json={"userId": "user_abc", "name": "Test User", "accountIds": []},
     )
     robot_session = RobotSession(
@@ -216,7 +224,7 @@ def test_get_account_id_empty_accounts(requests_mock, mock_sleep):
 
 def test_get_account_id_multiple_accounts(requests_mock, mock_sleep):
     requests_mock.get(
-        f"{INORBIT_REST_API_URL}/user",
+        f"{INORBIT_DEFAULT_API_URL}/user",
         json={"userId": "user_abc", "name": "Test", "accountIds": ["a1", "a2"]},
     )
     robot_session = RobotSession(
@@ -229,7 +237,7 @@ def test_get_account_id_multiple_accounts(requests_mock, mock_sleep):
 
 
 def test_get_account_id_api_error(requests_mock, mock_sleep):
-    requests_mock.get(f"{INORBIT_REST_API_URL}/user", status_code=401)
+    requests_mock.get(f"{INORBIT_DEFAULT_API_URL}/user", status_code=401)
     robot_session = RobotSession(
         robot_id="id_123",
         robot_name="name_123",

@@ -8,10 +8,13 @@ import os
 from typing import Optional
 
 # Third-party
-from pydantic import BaseModel, AnyUrl, field_validator, HttpUrl
+from pydantic import AnyUrl, BaseModel, HttpUrl, field_validator
 
 # InOrbit
-from inorbit_edge.robot import INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL, INORBIT_REST_API_URL
+from inorbit_edge.robot import (
+    INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL,
+    INORBIT_DEFAULT_API_URL,
+)
 
 
 class CameraConfig(BaseModel):
@@ -85,10 +88,10 @@ class RobotSessionModel(BaseModel):
 
     * INORBIT_API_KEY (required): The InOrbit API key
     * INORBIT_USE_SSL: If SSL should be used (default is true)
-    * INORBIT_API_URL: The URL of the API (default is
-        inorbit_edge.robot.INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL)
-    * INORBIT_REST_API_URL: The URL of the InOrbit REST API (default is
-        inorbit_edge.robot.INORBIT_REST_API_URL)
+    * INORBIT_CONNECTION_CONFIG_URL: The URL of the MQTT configuration API
+       (default is inorbit_edge.robot.INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL)
+    * INORBIT_API_URL: The URL of the InOrbit REST API (default is
+        inorbit_edge.robot.INORBIT_DEFAULT_API_URL)
 
     Attributes:
         robot_id (str): The unique ID of the robot
@@ -99,7 +102,7 @@ class RobotSessionModel(BaseModel):
         endpoint (HttpUrl, optional): The URL of the API or inorbit_edge's
                                       INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL by default
         rest_api_endpoint (HttpUrl, optional): The URL of the InOrbit REST API.
-                                               INORBIT_REST_API_URL by default.
+                                               INORBIT_DEFAULT_API_URL by default.
     """
 
     robot_id: str
@@ -108,10 +111,10 @@ class RobotSessionModel(BaseModel):
     api_key: Optional[str] = os.getenv("INORBIT_API_KEY")
     use_ssl: bool = os.environ.get("INORBIT_USE_SSL", "true").lower() == "true"
     endpoint: HttpUrl = os.environ.get(
-        "INORBIT_API_URL", INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL
+        "INORBIT_CONNECTION_CONFIG_URL", INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL
     )
     rest_api_endpoint: Optional[HttpUrl] = os.environ.get(
-        "INORBIT_REST_API_URL", INORBIT_REST_API_URL
+        "INORBIT_API_URL", INORBIT_DEFAULT_API_URL
     )
 
     # noinspection PyMethodParameters
