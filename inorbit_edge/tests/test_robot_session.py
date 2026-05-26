@@ -184,8 +184,10 @@ def test_get_account_id(requests_mock, mock_sleep):
         api_key="apikey_123",
     )
     assert robot_session.get_account_id() == "account_123"
-    # Second call uses cache (no extra HTTP request)
+    # Second call uses cache -- no extra HTTP request
     assert robot_session.get_account_id() == "account_123"
+    user_requests = [h for h in requests_mock.request_history if "/user" in h.path]
+    assert len(user_requests) == 1
 
 
 def test_get_account_id_no_api_key(mock_sleep):

@@ -1666,7 +1666,12 @@ class RobotSession:
         )
         response.raise_for_status()
 
-        account_ids = response.json().get("accountIds", [])
+        account_ids = response.json().get("accountIds") or []
+        if not isinstance(account_ids, list):
+            raise ValueError(
+                "Unexpected response from the REST API: "
+                "accountIds is not a list"
+            )
         if len(account_ids) == 0:
             raise ValueError("No account IDs found for the authenticated API key")
         if len(account_ids) > 1:
@@ -1677,7 +1682,7 @@ class RobotSession:
 
         account_id: str = account_ids[0]
         self._account_id = account_id
-        self.logger.info(f"Fetched account ID: {account_id}")
+        self.logger.debug(f"Fetched account ID: {account_id}")
         return account_id
 
     def apply_footprint(self, spec: RobotFootprintSpec):
