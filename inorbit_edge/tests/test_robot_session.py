@@ -4,16 +4,19 @@
 import math
 import os
 from unittest.mock import MagicMock
+
 import pytest
 from requests import HTTPError
 
-from inorbit_edge.robot import RobotSession, RobotFootprintSpec, RobotMap
+from inorbit_edge import get_module_version
+from inorbit_edge.inorbit_pb2 import MapMessage, PathDataMessage, PathPoint, RobotPath
 from inorbit_edge.robot import (
     INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL,
-    INORBIT_DEFAULT_REST_API_URL,
+    INORBIT_DEFAULT_API_URL,
+    RobotFootprintSpec,
+    RobotMap,
+    RobotSession,
 )
-from inorbit_edge import get_module_version
-from inorbit_edge.inorbit_pb2 import MapMessage, RobotPath, PathDataMessage, PathPoint
 
 
 def test_robot_session_init(monkeypatch, mock_sleep):
@@ -127,8 +130,12 @@ def test_method_throttling(mock_sleep):
 
 
 def test_apply_footprint(requests_mock, mock_sleep):
+    requests_mock.get(
+        f"{INORBIT_DEFAULT_API_URL}/user",
+        json={"userId": "user_abc", "name": "Test User", "accountIds": ["account_123"]},
+    )
     adapter = requests_mock.post(
-        f"{INORBIT_DEFAULT_REST_API_URL}/configuration/apply",
+        f"{INORBIT_DEFAULT_API_URL}/configuration/apply",
         json={"operationStatus": "SUCCESS"},
     )
     footprint = RobotFootprintSpec(
@@ -141,21 +148,10 @@ def test_apply_footprint(requests_mock, mock_sleep):
         radius=0.2,
     )
 
-    # Missing account_id
     robot_session = RobotSession(
         robot_id="id_123",
         robot_name="name_123",
         api_key="apikey_123",
-    )
-    with pytest.raises(ValueError):
-        robot_session.apply_footprint(footprint)
-
-    # Successful request
-    robot_session = RobotSession(
-        robot_id="id_123",
-        robot_name="name_123",
-        api_key="apikey_123",
-        account_id="account_123",
     )
     robot_session.apply_footprint(footprint)
     assert adapter.called_once
@@ -177,12 +173,78 @@ def test_apply_footprint(requests_mock, mock_sleep):
         },
     }
 
-    # HTTP error
+    # HTTP error on apply
     requests_mock.post(
-        f"{INORBIT_DEFAULT_REST_API_URL}/configuration/apply", status_code=400
+        f"{INORBIT_DEFAULT_API_URL}/configuration/apply", status_code=400
     )
     with pytest.raises(HTTPError):
         robot_session.apply_footprint(footprint)
+
+
+def test_get_account_id(requests_mock, mock_sleep):
+    requests_mock.get(
+        f"{INORBIT_DEFAULT_API_URL}/user",
+        json={"userId": "user_abc", "name": "Test User", "accountIds": ["account_123"]},
+    )
+    robot_session = RobotSession(
+        robot_id="id_123",
+        robot_name="name_123",
+        api_key="apikey_123",
+    )
+    assert robot_session.get_account_id() == "account_123"
+    # Second call uses cache -- no extra HTTP request
+    assert robot_session.get_account_id() == "account_123"
+    user_requests = [h for h in requests_mock.request_history if "/user" in h.path]
+    assert len(user_requests) == 1
+
+
+def test_get_account_id_no_api_key(mock_sleep):
+    robot_session = RobotSession(
+        robot_id="id_123",
+        robot_name="name_123",
+        robot_key="robotkey_123",
+    )
+    with pytest.raises(ValueError, match="api_key is required"):
+        robot_session.get_account_id()
+
+
+def test_get_account_id_empty_accounts(requests_mock, mock_sleep):
+    requests_mock.get(
+        f"{INORBIT_DEFAULT_API_URL}/user",
+        json={"userId": "user_abc", "name": "Test User", "accountIds": []},
+    )
+    robot_session = RobotSession(
+        robot_id="id_123",
+        robot_name="name_123",
+        api_key="apikey_123",
+    )
+    with pytest.raises(ValueError, match="No account IDs found"):
+        robot_session.get_account_id()
+
+
+def test_get_account_id_multiple_accounts(requests_mock, mock_sleep):
+    requests_mock.get(
+        f"{INORBIT_DEFAULT_API_URL}/user",
+        json={"userId": "user_abc", "name": "Test", "accountIds": ["a1", "a2"]},
+    )
+    robot_session = RobotSession(
+        robot_id="id_123",
+        robot_name="name_123",
+        api_key="apikey_123",
+    )
+    with pytest.raises(ValueError, match="Multiple account IDs"):
+        robot_session.get_account_id()
+
+
+def test_get_account_id_api_error(requests_mock, mock_sleep):
+    requests_mock.get(f"{INORBIT_DEFAULT_API_URL}/user", status_code=401)
+    robot_session = RobotSession(
+        robot_id="id_123",
+        robot_name="name_123",
+        api_key="apikey_123",
+    )
+    with pytest.raises(HTTPError):
+        robot_session.get_account_id()
 
 
 def test_robot_map_data():

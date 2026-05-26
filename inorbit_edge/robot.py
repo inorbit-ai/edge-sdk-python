@@ -1,76 +1,76 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import io
-import zlib
-from dataclasses import dataclass, field, asdict
 import json
-from typing import Tuple, Optional, List, Dict
+import logging
+import math
+import os
+import re
+import ssl
+import subprocess
+import threading
+import time
+import zlib
+from dataclasses import asdict, dataclass, field
+from typing import Dict, List, Optional, Tuple
+from urllib.parse import urlsplit
+
+import certifi
+import paho.mqtt.client as mqtt
+import requests
+import socks
+import yaml
+from deprecated import deprecated
+from PIL import Image
 
 from inorbit_edge import __version__ as inorbit_edge_version
-from inorbit_edge.types import Pose, SpatialTolerance
-from inorbit_edge.metrics import (
-    attrs_from_self,
-    with_counter_metric,
-    publish_map_counter,
-    publish_camera_frame_counter,
-    publish_pose_counter,
-    publish_key_values_counter,
-    publish_system_stats_counter,
-    publish_odometry_counter,
-    publish_laser_counter,
-    publish_path_counter,
+from inorbit_edge.commands import (
+    COMMAND_CUSTOM_COMMAND,
+    COMMAND_INITIAL_POSE,
+    COMMAND_MESSAGE,
+    COMMAND_NAV_GOAL,
 )
-import os
-import logging
-import paho.mqtt.client as mqtt
-from PIL import Image
-from urllib.parse import urlsplit
-import socks
-import ssl
-import threading
-import yaml
-
 from inorbit_edge.inorbit_pb2 import (
+    CameraMessage,
+    CustomCommandRosMessage,
     CustomDataMessage,
-    KeyValueCustomElement,
-    LocationAndPoseMessage,
-    OdometryDataMessage,
-    LaserMessage,
-    PathPoint,
-    RobotPath,
-    PathDataMessage,
-    Echo,
     CustomScriptCommandMessage,
     CustomScriptStatusMessage,
-    CustomCommandRosMessage,
-    CameraMessage,
-    SystemStatsMessage,
+    Echo,
+    KeyValueCustomElement,
+    LaserMessage,
+    LocationAndPoseMessage,
     MapMessage,
     MapRequest,
+    OdometryDataMessage,
+    PathDataMessage,
+    PathPoint,
+    RobotPath,
+    SystemStatsMessage,
 )
-from inorbit_edge.video import CameraStreamer, Camera
+from inorbit_edge.metrics import (
+    attrs_from_self,
+    publish_camera_frame_counter,
+    publish_key_values_counter,
+    publish_laser_counter,
+    publish_map_counter,
+    publish_odometry_counter,
+    publish_path_counter,
+    publish_pose_counter,
+    publish_system_stats_counter,
+    with_counter_metric,
+)
 from inorbit_edge.missions import MissionsModule
-from inorbit_edge.commands import (
-    COMMAND_INITIAL_POSE,
-    COMMAND_NAV_GOAL,
-    COMMAND_CUSTOM_COMMAND,
-    COMMAND_MESSAGE,
-)
-import time
-import requests
-import math
+from inorbit_edge.types import Pose, SpatialTolerance
 from inorbit_edge.utils import (
+    calculate_pose_delta,
     encode_floating_point_list,
     reduce_path,
-    calculate_pose_delta,
 )
-import certifi
-import subprocess
-import re
-from deprecated import deprecated
+from inorbit_edge.video import Camera, CameraStreamer
 
 INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot_config"
-INORBIT_DEFAULT_REST_API_URL = "https://api.inorbit.ai"
+INORBIT_DEFAULT_API_URL = "https://api.inorbit.ai"
 
 MQTT_SUBTOPIC_POSE = "ros/loc/data2"
 MQTT_SUBTOPIC_PATH = "ros/loc/path"
@@ -299,7 +299,6 @@ class RobotDistanceAccumulator:
 
 
 class RobotSession:
-
     def __init__(self, robot_id, robot_name, api_key=None, **kwargs) -> None:
         """Initialize a robot session.
 
@@ -315,9 +314,7 @@ class RobotSession:
             endpoint (str): InOrbit URL. Defaults: INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL.
             use_ssl (bool): Configures MQTT client to use SSL. Defaults: True.
             rest_api_endpoint (str): The URL of the InOrbit REST API.
-                Defaults: INORBIT_DEFAULT_REST_API_URL.
-            account_id (str): The account ID of the robot owner. Required for applying
-                configurations to the robot.
+                Defaults: INORBIT_DEFAULT_API_URL.
             keepalive_secs (int): Keepalive for MQTT connection (seconds). Default: 10.
             estimate_distance_linear (bool): Whether to publish an estimate value for
                 linear_distance based on poses when the value is not provided on a
@@ -350,10 +347,10 @@ class RobotSession:
         self.use_ssl = kwargs.get("use_ssl", True)
         # InOrbit REST API endpoint
         self.inorbit_rest_api_endpoint = kwargs.get(
-            "rest_api_endpoint", INORBIT_DEFAULT_REST_API_URL
+            "rest_api_endpoint", INORBIT_DEFAULT_API_URL
         )
-        # Account the robot belongs to. Used for REST API calls.
-        self.account_id = kwargs.get("account_id")
+        # Account ID, lazily fetched from REST API via get_account_id()
+        self._account_id: str | None = None
 
         # Use TCP transport by default. The client will use websockets
         # transport if the environment variable HTTP_PROXY is set.
@@ -1639,36 +1636,81 @@ class RobotSession:
 
         self.publish_protobuf(MQTT_SUBTOPIC_PATH, msg)
 
+    def get_account_id(self) -> str:
+        """Fetch and cache the account ID from the InOrbit REST API.
+
+        Calls ``GET /user`` using the configured API key. The result is
+        cached so subsequent calls do not make additional HTTP requests.
+
+        Returns:
+            str: The account ID associated with the API key.
+
+        Raises:
+            ValueError: If no ``api_key`` is configured.
+            ValueError: If the API key is associated with zero or multiple accounts.
+            requests.HTTPError: If the REST API request fails.
+        """
+        if self._account_id is not None:
+            return self._account_id
+
+        api_key = self.api_key
+        if not api_key:
+            raise ValueError(
+                "An api_key is required to fetch account info from the REST API"
+            )
+
+        response = requests.get(
+            f"{self.inorbit_rest_api_endpoint}/user",
+            headers={"x-auth-inorbit-app-key": api_key},
+        )
+        response.raise_for_status()
+
+        account_ids = response.json().get("accountIds") or []
+        if not isinstance(account_ids, list):
+            raise ValueError(
+                "Unexpected response from the REST API: accountIds is not a list"
+            )
+        if len(account_ids) == 0:
+            raise ValueError("No account IDs found for the authenticated API key")
+        if len(account_ids) > 1:
+            raise ValueError(
+                "Multiple account IDs found for the authenticated API key. "
+                "This is not supported by the Edge SDK"
+            )
+
+        account_id: str = account_ids[0]
+        self._account_id = account_id
+        self.logger.debug(f"Fetched account ID: {account_id}")
+        return account_id
+
     def apply_footprint(self, spec: RobotFootprintSpec):
         """Creates and applies a RobotFootprint configuration at the robot level scope.
-        Calling this method one time applies a persistent footprint configuration.
-        Note that configurations can be applied at other scopes as well.
-        Refer to the REST APIs documentation for more information.
+
+        Calling this method once applies a persistent footprint configuration.
+        The account ID is fetched automatically from the REST API.
 
         Args:
             spec (RobotFootprintSpec): Robot footprint configuration spec.
-                Will be added to the `spec` field of the RobotFootprint configuration.
 
         Raises:
-            ValueError: If the account ID is not set.
+            ValueError: If no api_key is configured or account cannot be resolved.
             HTTPError: If the request to the InOrbit REST API fails.
-
-        Returns:
-            None
 
         References:
             https://api.inorbit.ai/docs/index.html
         """
+        api_key = self.api_key
+        if not api_key:
+            raise ValueError("An api_key is required to apply footprint configuration")
 
-        if not self.account_id:
-            raise ValueError("Account ID is required to set robot footprint")
+        account_id = self.get_account_id()
 
         body = {
             "apiVersion": "v0.1",
             "kind": "RobotFootprint",
             "metadata": {
                 "id": "all",
-                "scope": f"robot/{self.account_id}/{self.robot_id}",
+                "scope": f"robot/{account_id}/{self.robot_id}",
             },
             "spec": asdict(spec),
         }
@@ -1676,7 +1718,7 @@ class RobotSession:
         res = requests.post(
             f"{self.inorbit_rest_api_endpoint}/configuration/apply",
             json=body,
-            headers={"x-auth-inorbit-app-key": f"{self.api_key}"},
+            headers={"x-auth-inorbit-app-key": api_key},
         )
         res.raise_for_status()
 

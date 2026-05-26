@@ -8,12 +8,12 @@ import os
 from typing import Optional
 
 # Third-party
-from pydantic import BaseModel, AnyUrl, field_validator, HttpUrl
+from pydantic import AnyUrl, BaseModel, HttpUrl, field_validator
 
 # InOrbit
 from inorbit_edge.robot import (
     INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL,
-    INORBIT_DEFAULT_REST_API_URL,
+    INORBIT_DEFAULT_API_URL,
 )
 
 
@@ -88,10 +88,10 @@ class RobotSessionModel(BaseModel):
 
     * INORBIT_API_KEY (required): The InOrbit API key
     * INORBIT_USE_SSL: If SSL should be used (default is true)
-    * INORBIT_CONNECTION_CONFIG_URL: The URL of the config/control plane endpoint
-        (default is inorbit_edge.robot.INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL)
+    * INORBIT_CONNECTION_CONFIG_URL: The URL of the MQTT configuration API
+       (default is inorbit_edge.robot.INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL)
     * INORBIT_API_URL: The URL of the InOrbit REST API (default is
-        inorbit_edge.robot.INORBIT_DEFAULT_REST_API_URL)
+        inorbit_edge.robot.INORBIT_DEFAULT_API_URL)
 
     Attributes:
         robot_id (str): The unique ID of the robot
@@ -102,9 +102,7 @@ class RobotSessionModel(BaseModel):
         endpoint (HttpUrl, optional): The URL of the API or inorbit_edge's
                                       INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL by default
         rest_api_endpoint (HttpUrl, optional): The URL of the InOrbit REST API.
-                                               INORBIT_DEFAULT_REST_API_URL by default.
-        account_id (str, optional): The account ID of the robot owner. Required for
-                                    applying configurations to the robot.
+                                               INORBIT_DEFAULT_API_URL by default.
     """
 
     robot_id: str
@@ -116,12 +114,11 @@ class RobotSessionModel(BaseModel):
         "INORBIT_CONNECTION_CONFIG_URL", INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL
     )
     rest_api_endpoint: Optional[HttpUrl] = os.environ.get(
-        "INORBIT_API_URL", INORBIT_DEFAULT_REST_API_URL
+        "INORBIT_API_URL", INORBIT_DEFAULT_API_URL
     )
-    account_id: Optional[str] = None
 
     # noinspection PyMethodParameters
-    @field_validator("robot_id", "robot_name", "robot_key", "api_key", "account_id")
+    @field_validator("robot_id", "robot_name", "robot_key", "api_key")
     def check_whitespace(cls, value: str) -> str:
         """Check if the field contains whitespace.
 

@@ -7,7 +7,6 @@
 #     -e INORBIT_URL=... \
 #     -e INORBIT_API_URL=... \
 #     -e INORBIT_API_KEY=... \
-#     -e INORBIT_ACCOUNT_ID=... \
 #     -e INORBIT_USE_SSL=true \
 #     -e INORBIT_ROBOT_ID_PREFIX=$(hostname) \
 #     inorbit-edge-sdk-demo
