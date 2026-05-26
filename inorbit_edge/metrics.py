@@ -40,8 +40,6 @@ import inspect
 import logging
 import re
 
-from deprecated import deprecated
-
 logger = logging.getLogger(__name__)
 
 
@@ -302,17 +300,3 @@ def with_counter_metric(metric, attributes=None):
         return sync_wrapper
 
     return decorator
-
-
-@deprecated(
-    version="2.0.2",
-    reason=("use with_counter_metric(), which now auto-detects async functions"),
-)
-def with_counter_metric_async(metric):
-    """Deprecated alias for :func:`with_counter_metric`.
-
-    Prefer ``@with_counter_metric(...)``, which now detects async functions
-    automatically.
-    """
-
-    return with_counter_metric(metric)

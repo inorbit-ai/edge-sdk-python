@@ -20,7 +20,6 @@ import paho.mqtt.client as mqtt
 import requests
 import socks
 import yaml
-from deprecated import deprecated
 from PIL import Image
 
 from inorbit_edge import __version__ as inorbit_edge_version
@@ -1847,11 +1846,3 @@ class RobotSessionPool:
         sess = self.get_session(robot_id)
         sess.disconnect()
         del self.robot_sessions[robot_id]
-
-    @deprecated(
-        version="1.7.2",
-        reason="use RobotSessionFactory.register_command_callback() instead",
-    )
-    def register_command_callback(self, callback):
-        """Registers a callback to be called when a command is received"""
-        self.robot_session_factory.register_command_callback(callback)
