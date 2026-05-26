@@ -1669,8 +1669,7 @@ class RobotSession:
         account_ids = response.json().get("accountIds") or []
         if not isinstance(account_ids, list):
             raise ValueError(
-                "Unexpected response from the REST API: "
-                "accountIds is not a list"
+                "Unexpected response from the REST API: " "accountIds is not a list"
             )
         if len(account_ids) == 0:
             raise ValueError("No account IDs found for the authenticated API key")

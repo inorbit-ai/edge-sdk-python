@@ -113,6 +113,7 @@ class RobotSessionModel(BaseModel):
     rest_api_endpoint: Optional[HttpUrl] = os.environ.get(
         "INORBIT_REST_API_URL", INORBIT_REST_API_URL
     )
+
     # noinspection PyMethodParameters
     @field_validator("robot_id", "robot_name", "robot_key", "api_key")
     def check_whitespace(cls, value: str) -> str:
