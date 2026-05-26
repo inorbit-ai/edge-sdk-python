@@ -88,7 +88,7 @@ class RobotSessionModel(BaseModel):
 
     * INORBIT_API_KEY (required): The InOrbit API key
     * INORBIT_USE_SSL: If SSL should be used (default is true)
-    * INORBIT_CONFIG_URL: The URL of the config/control plane endpoint (default is
+    * INORBIT_CONNECTION_CONFIG_URL: The URL of the config/control plane endpoint (default is
         inorbit_edge.robot.INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL)
     * INORBIT_API_URL: The URL of the InOrbit REST API (default is
         inorbit_edge.robot.INORBIT_DEFAULT_REST_API_URL)
@@ -113,7 +113,7 @@ class RobotSessionModel(BaseModel):
     api_key: Optional[str] = os.getenv("INORBIT_API_KEY")
     use_ssl: bool = os.environ.get("INORBIT_USE_SSL", "true").lower() == "true"
     endpoint: HttpUrl = os.environ.get(
-        "INORBIT_CONFIG_URL", INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL
+        "INORBIT_CONNECTION_CONFIG_URL", INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL
     )
     rest_api_endpoint: Optional[HttpUrl] = os.environ.get(
         "INORBIT_API_URL", INORBIT_DEFAULT_REST_API_URL
