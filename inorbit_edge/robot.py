@@ -1093,6 +1093,12 @@ class RobotSession:
                 camera_id, image, int(width), int(height), int(ts)
             )
 
+        # Tear down any streamer previously registered under this id so its
+        # worker thread is not leaked.
+        existing_streamer = self.camera_streamers.get(camera_id)
+        if existing_streamer is not None:
+            existing_streamer.shutdown()
+
         self.camera_streamers[camera_id] = CameraStreamer(camera, publish)
         with self.camera_streaming_mutex:
             if self.camera_streaming_on:
@@ -1201,6 +1207,23 @@ class RobotSession:
         """Ends session, disconnecting from cloud services"""
         self.logger.info("Ending robot session")
         self._stop_cameras_streaming()
+
+        # Permanently terminate the camera worker threads. Signal all first,
+        # then join, so the total wait is the slowest single teardown rather
+        # than the sum. The join is capped because a worker can be mid-open on
+        # an unreachable stream; daemon threads guarantee process exit even if
+        # a worker overruns the cap.
+        camera_teardown_timeout = 12
+        streamers = list(self.camera_streamers.values())
+        for streamer in streamers:
+            streamer.shutdown()
+        for streamer in streamers:
+            streamer.join(timeout=camera_teardown_timeout)
+            if streamer.is_alive():
+                self.logger.warning(
+                    "Camera streamer worker did not exit within "
+                    f"{camera_teardown_timeout}s"
+                )
 
         # Send offline status (best effort, non-blocking)
         # InOrbit will detect offline via data absence if this fails

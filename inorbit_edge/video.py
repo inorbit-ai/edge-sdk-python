@@ -76,14 +76,17 @@ class OpenCVCamera(Camera):
                 self.capture = cv2.VideoCapture(self.video_url)
             if not self.running:
                 self.running = True
-                self.capture_thread = threading.Thread(target=self._run)
+                self.capture_thread = threading.Thread(target=self._run, daemon=True)
                 self.capture_thread.start()
 
     def close(self):
         """Closes the capturing device / stream"""
         self.running = False
-        self.logger.info("Waiting for the capture thread to finish")
-        self.capture_thread.join()
+
+        if self.capture_thread is not None:
+            self.logger.info("Waiting for the capture thread to finish")
+            self.capture_thread.join()
+            self.capture_thread = None
         with self.capture_mutex:
             if self.capture is not None:
                 self.capture.release()
@@ -114,43 +117,91 @@ class OpenCVCamera(Camera):
 
 
 class CameraStreamer:
-    """Streams video from a camera to InOrbit"""
+    """Streams video from a camera to InOrbit.
+
+    A single long-lived worker thread owns the camera lifecycle. ``start``,
+    ``stop`` and ``shutdown`` only toggle threading Events, so they never block
+    the caller -- in particular the MQTT callback thread that dispatches module
+    load/unload, where a blocking call would starve the keepalive and drop the
+    connection. Opening/closing the camera (which can block while a stream is
+    unreachable) happens entirely on the worker thread.
+
+    Because there is exactly one worker, ``camera.open()`` and ``camera.close()``
+    are always serialized -- the device is never opened and closed concurrently,
+    which removes the start/stop races of a spawn-per-start model.
+    """
+
+    # Backoff after a failed streaming session so a permanently-broken URL does
+    # not hot-loop open->fail->open. A pending stop/shutdown short-circuits it.
+    BACKOFF_SECONDS = 1.0
 
     def __init__(self, camera, publish_frame_callback):
         self.logger = logging.getLogger(__class__.__name__)
         self.camera = camera
-        self.running = False
-        self.mutex = threading.Lock()
-        self.thread = None
         self.publish_frame = publish_frame_callback
-        self.must_stop = False
+        # Set => the worker should be streaming. Cleared => paused.
+        self._streaming = threading.Event()
+        # Set => the worker should exit permanently.
+        self._shutdown = threading.Event()
+        self._worker = threading.Thread(target=self._run, daemon=True)
+        self._worker.start()
 
     def start(self):
-        """Streams video to the platform"""
-        with self.mutex:
-            self.must_stop = False
-            if not self.running:
-                self.running = True
-                self.thread = threading.Thread(target=self._run)
-                self.thread.start()
+        """Request streaming. Non-blocking; safe to call repeatedly."""
+        self._streaming.set()
 
     def stop(self):
-        """Stops streaming video to the platform"""
-        self.must_stop = True
-        self.logger.info("Waiting for the streaming thread to finish")
-        self.thread.join()
+        """Pause streaming. Non-blocking; safe to call repeatedly.
+
+        The worker thread stays alive and idle, ready for a later ``start()``.
+        Use ``shutdown()`` to terminate the worker permanently.
+        """
+        self._streaming.clear()
+
+    def shutdown(self):
+        """Permanently stop the worker. Non-blocking.
+
+        ``_shutdown`` is set before ``_streaming`` so a worker waking from the
+        idle wait observes the shutdown rather than starting a doomed session.
+        """
+        self._shutdown.set()
+        self._streaming.set()
+
+    def join(self, timeout=None):
+        """Wait for the worker thread to exit (after ``shutdown()``)."""
+        self._worker.join(timeout)
+
+    def is_alive(self):
+        """Return True while the worker thread is running."""
+        return self._worker.is_alive()
 
     def _run(self):
-        """This thread takes care of getting video from a camera at the desired rate,
-        converting it to the right format and publishing the video frames"""
-        self.camera.open()
-        while True:
-            jpg, width, height, ts = self.camera.get_frame_jpg()
-            if jpg is not None:
-                self.publish_frame(jpg, width, height, ts)
-            time.sleep(1.0 / self.camera.rate)
-            with self.mutex:
-                if self.must_stop:
-                    break
-        self.camera.close()
-        self.running = False
+        """Worker loop: idle until streaming is requested, then grab frames from
+        the camera at the desired rate and publish them until paused or shut down.
+
+        The per-session body is wrapped so a failed ``open()``/``get_frame_jpg()``
+        cannot kill the long-lived worker -- it logs, backs off, and waits for the
+        next ``start()``.
+        """
+        while not self._shutdown.is_set():
+            # Idle until streaming or shutdown is requested.
+            self._streaming.wait()
+            if self._shutdown.is_set():
+                break
+            try:
+                self.camera.open()
+                while self._streaming.is_set() and not self._shutdown.is_set():
+                    jpg, width, height, ts = self.camera.get_frame_jpg()
+                    if jpg is not None:
+                        self.publish_frame(jpg, width, height, ts)
+                    time.sleep(1.0 / self.camera.rate)
+            except Exception:
+                self.logger.exception("Camera streaming session failed")
+                # Back off so a permanently-failing open does not hot-loop while
+                # streaming is still requested.
+                self._shutdown.wait(timeout=self.BACKOFF_SECONDS)
+            finally:
+                try:
+                    self.camera.close()
+                except Exception:
+                    self.logger.exception("Error closing camera")
