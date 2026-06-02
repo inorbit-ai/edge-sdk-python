@@ -1095,9 +1095,9 @@ class RobotSession:
 
         # Tear down any streamer previously registered under this id so its
         # worker thread is not leaked.
-        existing = self.camera_streamers.get(camera_id)
-        if existing is not None:
-            existing.shutdown()
+        existing_streamer = self.camera_streamers.get(camera_id)
+        if existing_streamer is not None:
+            existing_streamer.shutdown()
 
         self.camera_streamers[camera_id] = CameraStreamer(camera, publish)
         with self.camera_streaming_mutex:
