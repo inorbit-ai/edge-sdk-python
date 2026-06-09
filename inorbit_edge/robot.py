@@ -314,7 +314,7 @@ class RobotSession:
             use_ssl (bool): Configures MQTT client to use SSL. Defaults: True.
             rest_api_endpoint (str): The URL of the InOrbit REST API.
                 Defaults: INORBIT_DEFAULT_API_URL.
-            keepalive_secs (int): Keepalive for MQTT connection (seconds). Default: 10.
+            keepalive_secs (int): Keepalive for MQTT connection (seconds). Default: 60.
             estimate_distance_linear (bool): Whether to publish an estimate value for
                 linear_distance based on poses when the value is not provided on a
                 publish_odometry() call. Default: True
@@ -355,8 +355,10 @@ class RobotSession:
         # transport if the environment variable HTTP_PROXY is set.
         self.use_websockets = kwargs.get("use_websockets", False)
 
-        # Keepalive for MQTT connection (seconds)
-        self.keepalive_secs = kwargs.get("keepalive_secs", 10)
+        # Keepalive for MQTT connection (seconds). 60s is a non-aggressive
+        # default; a very short keepalive trips spurious "keep alive timeout"
+        # disconnects whenever the network loop thread is briefly busy.
+        self.keepalive_secs = kwargs.get("keepalive_secs", 60)
 
         # Read optional proxy configuration from environment variables
         # We use ``self.http_proxy`` to indicate if proxy configuration should be used.
@@ -408,6 +410,11 @@ class RobotSession:
         self.client.on_connect = self._on_connect
         self.client.on_message = self._on_message
         self.client.on_disconnect = self._on_disconnect
+
+        # Belt-and-suspenders: make paho swallow (not re-raise) any exception
+        # escaping a user callback, so a callback bug can never kill the network
+        # loop thread and silently wedge the session.
+        self.client.suppress_exceptions = True
 
         # Functions to handle incoming MQTT messages.
         # They are mapped by MQTT subtopic e.g.
@@ -638,9 +645,14 @@ class RobotSession:
                 f"Failed to decode message, ignoring. Payload: '{msg.payload}'. {ex}"
             )
         except Exception:
-            # Re-raise any other error
-            self.logger.error("Unexpected error while processing message.")
-            raise
+            # Never re-raise: this callback runs on paho's network loop thread,
+            # and an exception escaping it kills that thread permanently (it is
+            # never restarted, while is_connected() can keep reporting True),
+            # silently wedging the session. Log with traceback and swallow.
+            self.logger.exception(
+                f"Unexpected error while processing message on topic "
+                f"'{getattr(msg, 'topic', None)}', ignoring."
+            )
 
     def _on_disconnect(
         self, client, userdata, disconnect_flags, reason_code, properties
