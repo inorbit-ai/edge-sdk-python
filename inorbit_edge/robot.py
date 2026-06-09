@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import functools
 import io
 import json
 import logging
@@ -406,14 +407,24 @@ class RobotSession:
                 proxy_type=socks.HTTP, proxy_addr=proxy_hostname, proxy_port=proxy_port
             )
 
-        # Register MQTT client callbacks
-        self.client.on_connect = self._on_connect
-        self.client.on_message = self._on_message
-        self.client.on_disconnect = self._on_disconnect
+        # Surface paho's internal logs (including the messages it emits when it
+        # swallows a callback exception under suppress_exceptions) through this
+        # session's logger, so they are not lost.
+        self.client.enable_logger(self.logger)
 
-        # Belt-and-suspenders: make paho swallow (not re-raise) any exception
-        # escaping a user callback, so a callback bug can never kill the network
-        # loop thread and silently wedge the session.
+        # Register MQTT client callbacks, each wrapped so an exception is logged
+        # (with traceback) and swallowed rather than propagating onto the paho
+        # network loop thread -- where, by default, it would be re-raised and
+        # kill the thread, silently wedging the session. See _guard_callback.
+        self.client.on_connect = self._guard_callback("on_connect")(self._on_connect)
+        self.client.on_message = self._guard_callback("on_message")(self._on_message)
+        self.client.on_disconnect = self._guard_callback("on_disconnect")(
+            self._on_disconnect
+        )
+
+        # Belt-and-suspenders for any callback path not wrapped above (and future
+        # ones): make paho swallow (not re-raise) any exception escaping a
+        # callback, so a callback bug can never kill the network loop thread.
         self.client.suppress_exceptions = True
 
         # Functions to handle incoming MQTT messages.
@@ -624,6 +635,39 @@ class RobotSession:
         self.client.subscribe(topic=self._get_robot_subtopic(subtopic=MQTT_MAP_REQ))
         # ask server to resend modules, so our state is consistent with the server side
         self._resend_modules()
+
+    def _guard_callback(self, name):
+        """Wrap a paho MQTT callback so an exception is logged (with traceback)
+        and swallowed instead of propagating onto paho's network loop thread.
+
+        paho invokes callbacks on the loop thread and, with
+        ``suppress_exceptions`` False (its default), re-raises anything that
+        escapes them -- which unwinds ``loop_forever`` and kills the thread
+        permanently (it is never restarted, while ``is_connected()`` can keep
+        reporting True), silently wedging the session. This logs through the
+        session's own logger with the callback name and a traceback, so the
+        error is visible rather than merely suppressed.
+
+        Args:
+            name (str): Callback name, used in the log message.
+
+        Returns:
+            A decorator that wraps the callback.
+        """
+
+        def decorate(fn):
+            @functools.wraps(fn)
+            def wrapper(*args, **kwargs):
+                try:
+                    return fn(*args, **kwargs)
+                except Exception:
+                    self.logger.exception(
+                        "Unhandled error in MQTT callback '%s', ignoring.", name
+                    )
+
+            return wrapper
+
+        return decorate
 
     def _on_message(self, client, userdata, msg):
         """MQTT client message callback.

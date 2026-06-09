@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import logging
 import os
 import time
 from unittest.mock import ANY, MagicMock
@@ -241,6 +242,34 @@ def test_keepalive_default_is_60_seconds(
         robot_id="id_123", robot_name="name_123", api_key="apikey_123"
     )
     assert robot_session.keepalive_secs == 60
+
+
+def test_callback_guard_logs_and_swallows(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep, caplog
+):
+    """_guard_callback must log (with traceback) and swallow any exception so
+    a callback error never propagates onto paho's network loop thread."""
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+
+    @robot_session._guard_callback("on_connect")
+    def boom(*_args, **_kwargs):
+        raise RuntimeError("callback blew up")
+
+    caplog.set_level(logging.ERROR)
+    boom("client", "userdata")  # must not raise
+
+    assert any("on_connect" in r.getMessage() for r in caplog.records)
+
+
+def test_paho_internal_logging_is_wired(mock_mqtt_client, mock_inorbit_api, mock_sleep):
+    """enable_logger must be called so paho's own callback-exception logs
+    (emitted when suppress_exceptions swallows) are surfaced, not lost."""
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+    robot_session.client.enable_logger.assert_called_once()
 
 
 @pytest.mark.parametrize(
