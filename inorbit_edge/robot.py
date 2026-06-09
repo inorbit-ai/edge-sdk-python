@@ -422,9 +422,12 @@ class RobotSession:
             self._on_disconnect
         )
 
-        # Belt-and-suspenders for any callback path not wrapped above (and future
-        # ones): make paho swallow (not re-raise) any exception escaping a
-        # callback, so a callback bug can never kill the network loop thread.
+        # Belt-and-suspenders: make paho swallow (not re-raise) any exception
+        # escaping a callback, so a callback bug can never kill the network loop
+        # thread. This is the only thing covering callback paths the wrappers
+        # above do NOT -- e.g. QoS>0 publish acks invoking on_publish, callbacks
+        # a consumer sets directly on this client (which is a public attribute),
+        # or any callback added in the future without a guard.
         self.client.suppress_exceptions = True
 
         # Functions to handle incoming MQTT messages.
