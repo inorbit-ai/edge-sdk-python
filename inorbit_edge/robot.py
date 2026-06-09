@@ -692,12 +692,14 @@ class RobotSession:
                 f"Failed to decode message, ignoring. Payload: '{msg.payload}'. {ex}"
             )
         except Exception:
-            # Never re-raise: this callback runs on paho's network loop thread,
-            # and an exception escaping it kills that thread permanently (it is
-            # never restarted, while is_connected() can keep reporting True),
-            # silently wedging the session. Log with traceback and swallow.
+            # A handler (or echo) raised while processing this message. Log it
+            # with the topic for context and keep going. Re-raising is not
+            # needed for loop-thread safety here -- _guard_callback (and, behind
+            # it, suppress_exceptions) already stops a callback exception from
+            # unwinding paho's loop thread. This clause just adds a
+            # message-scoped log and keeps _on_message safe if called unwrapped.
             self.logger.exception(
-                f"Unexpected error while processing message on topic "
+                f"Error processing message on topic "
                 f"'{getattr(msg, 'topic', None)}', ignoring."
             )
 
