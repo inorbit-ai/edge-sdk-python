@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import functools
 import io
 import json
 import logging
@@ -314,7 +315,7 @@ class RobotSession:
             use_ssl (bool): Configures MQTT client to use SSL. Defaults: True.
             rest_api_endpoint (str): The URL of the InOrbit REST API.
                 Defaults: INORBIT_DEFAULT_API_URL.
-            keepalive_secs (int): Keepalive for MQTT connection (seconds). Default: 10.
+            keepalive_secs (int): Keepalive for MQTT connection (seconds). Default: 60.
             estimate_distance_linear (bool): Whether to publish an estimate value for
                 linear_distance based on poses when the value is not provided on a
                 publish_odometry() call. Default: True
@@ -355,8 +356,10 @@ class RobotSession:
         # transport if the environment variable HTTP_PROXY is set.
         self.use_websockets = kwargs.get("use_websockets", False)
 
-        # Keepalive for MQTT connection (seconds)
-        self.keepalive_secs = kwargs.get("keepalive_secs", 10)
+        # Keepalive for MQTT connection (seconds). 60s is a non-aggressive
+        # default; a very short keepalive trips spurious "keep alive timeout"
+        # disconnects whenever the network loop thread is briefly busy.
+        self.keepalive_secs = kwargs.get("keepalive_secs", 60)
 
         # Read optional proxy configuration from environment variables
         # We use ``self.http_proxy`` to indicate if proxy configuration should be used.
@@ -404,10 +407,28 @@ class RobotSession:
                 proxy_type=socks.HTTP, proxy_addr=proxy_hostname, proxy_port=proxy_port
             )
 
-        # Register MQTT client callbacks
-        self.client.on_connect = self._on_connect
-        self.client.on_message = self._on_message
-        self.client.on_disconnect = self._on_disconnect
+        # Surface paho's internal logs (including the messages it emits when it
+        # swallows a callback exception under suppress_exceptions) through this
+        # session's logger, so they are not lost.
+        self.client.enable_logger(self.logger)
+
+        # Register MQTT client callbacks, each wrapped so an exception is logged
+        # (with traceback) and swallowed rather than propagating onto the paho
+        # network loop thread -- where, by default, it would be re-raised and
+        # kill the thread, silently wedging the session. See _guard_callback.
+        self.client.on_connect = self._guard_callback("on_connect")(self._on_connect)
+        self.client.on_message = self._guard_callback("on_message")(self._on_message)
+        self.client.on_disconnect = self._guard_callback("on_disconnect")(
+            self._on_disconnect
+        )
+
+        # Belt-and-suspenders: make paho swallow (not re-raise) any exception
+        # escaping a callback, so a callback bug can never kill the network loop
+        # thread. This is the only thing covering callback paths the wrappers
+        # above do NOT -- e.g. QoS>0 publish acks invoking on_publish, callbacks
+        # a consumer sets directly on this client (which is a public attribute),
+        # or any callback added in the future without a guard.
+        self.client.suppress_exceptions = True
 
         # Functions to handle incoming MQTT messages.
         # They are mapped by MQTT subtopic e.g.
@@ -618,6 +639,39 @@ class RobotSession:
         # ask server to resend modules, so our state is consistent with the server side
         self._resend_modules()
 
+    def _guard_callback(self, name):
+        """Wrap a paho MQTT callback so an exception is logged (with traceback)
+        and swallowed instead of propagating onto paho's network loop thread.
+
+        paho invokes callbacks on the loop thread and, with
+        ``suppress_exceptions`` False (its default), re-raises anything that
+        escapes them -- which unwinds ``loop_forever`` and kills the thread
+        permanently (it is never restarted, while ``is_connected()`` can keep
+        reporting True), silently wedging the session. This logs through the
+        session's own logger with the callback name and a traceback, so the
+        error is visible rather than merely suppressed.
+
+        Args:
+            name (str): Callback name, used in the log message.
+
+        Returns:
+            A decorator that wraps the callback.
+        """
+
+        def decorate(fn):
+            @functools.wraps(fn)
+            def wrapper(*args, **kwargs):
+                try:
+                    return fn(*args, **kwargs)
+                except Exception:
+                    self.logger.exception(
+                        "Unhandled error in MQTT callback '%s', ignoring.", name
+                    )
+
+            return wrapper
+
+        return decorate
+
     def _on_message(self, client, userdata, msg):
         """MQTT client message callback.
 
@@ -638,9 +692,16 @@ class RobotSession:
                 f"Failed to decode message, ignoring. Payload: '{msg.payload}'. {ex}"
             )
         except Exception:
-            # Re-raise any other error
-            self.logger.error("Unexpected error while processing message.")
-            raise
+            # A handler (or echo) raised while processing this message. Log it
+            # with the topic for context and keep going. Re-raising is not
+            # needed for loop-thread safety here -- _guard_callback (and, behind
+            # it, suppress_exceptions) already stops a callback exception from
+            # unwinding paho's loop thread. This clause just adds a
+            # message-scoped log and keeps _on_message safe if called unwrapped.
+            self.logger.exception(
+                f"Error processing message on topic "
+                f"'{getattr(msg, 'topic', None)}', ignoring."
+            )
 
     def _on_disconnect(
         self, client, userdata, disconnect_flags, reason_code, properties

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import logging
 import os
 import time
 from unittest.mock import ANY, MagicMock
@@ -205,6 +206,70 @@ def test_robot_session_echo(mocker, mock_mqtt_client, mock_inorbit_api, mock_sle
         qos=0,
         retain=False,
     )
+
+
+def test_on_message_handler_error_does_not_propagate(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
+    """A message handler that raises must NOT propagate out of _on_message.
+
+    _on_message runs on paho's network loop thread; an exception escaping it
+    kills that thread, which is never restarted, so the session silently wedges
+    (is_connected() can keep reporting True). The error must be logged and
+    swallowed instead of re-raised.
+    """
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+
+    def boom(_payload):
+        raise RuntimeError("handler blew up")
+
+    robot_session.message_handlers["my/sub"] = boom
+
+    msg = MQTTMessage(topic=b"r/id_123/my/sub")
+    msg.payload = b"payload"
+
+    # Must not raise.
+    robot_session._on_message(None, None, msg)
+
+
+def test_keepalive_default_is_60_seconds(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
+    """Default MQTT keepalive should be a non-aggressive 60s, not 10s."""
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+    assert robot_session.keepalive_secs == 60
+
+
+def test_callback_guard_logs_and_swallows(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep, caplog
+):
+    """_guard_callback must log (with traceback) and swallow any exception so
+    a callback error never propagates onto paho's network loop thread."""
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+
+    @robot_session._guard_callback("on_connect")
+    def boom(*_args, **_kwargs):
+        raise RuntimeError("callback blew up")
+
+    caplog.set_level(logging.ERROR)
+    boom("client", "userdata")  # must not raise
+
+    assert any("on_connect" in r.getMessage() for r in caplog.records)
+
+
+def test_paho_internal_logging_is_wired(mock_mqtt_client, mock_inorbit_api, mock_sleep):
+    """enable_logger must be called so paho's own callback-exception logs
+    (emitted when suppress_exceptions swallows) are surfaced, not lost."""
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+    robot_session.client.enable_logger.assert_called_once()
 
 
 @pytest.mark.parametrize(
