@@ -5,6 +5,7 @@ import threading
 import time
 
 import cv2
+import numpy
 
 from inorbit_edge.robot import RobotSession
 from inorbit_edge.video import CameraStreamer, OpenCVCamera
@@ -44,19 +45,25 @@ class FakeCamera:
 
 
 class FakeCapture:
-    """Minimal cv2.VideoCapture double that counts grabs."""
+    """Minimal cv2.VideoCapture double that counts grabs and retrieves."""
 
-    def __init__(self, grab_ok=False):
+    def __init__(self, grab_ok=False, frame=None, delay=0.0):
         self.grab_ok = grab_ok
+        self.frame = frame
+        self.delay = delay
         self.grabs = 0
+        self.retrieves = 0
         self.released = False
 
     def grab(self):
         self.grabs += 1
+        if self.delay:
+            time.sleep(self.delay)  # a real grab is paced by the stream
         return self.grab_ok
 
     def retrieve(self):
-        return False, None
+        self.retrieves += 1
+        return self.frame is not None, self.frame
 
     def release(self):
         self.released = True
@@ -85,6 +92,28 @@ def test_failed_grab_reopens_the_capture_without_spinning(mocker):
     assert sum(capture.grabs for capture in captures) < 25
     assert len(captures) > 1, "capture was never reopened"
     assert captures[0].released
+
+
+def test_frames_are_decoded_at_the_publish_rate_not_the_stream_rate(mocker):
+    """Every frame is drained with grab(); only published ones are decoded."""
+    frame = numpy.zeros((16, 16, 3), dtype=numpy.uint8)
+    capture = FakeCapture(grab_ok=True, frame=frame, delay=0.002)
+    camera = OpenCVCamera("rtsp://camera.invalid/stream", rate=1, scaling=0.5)
+    mocker.patch.object(camera, "_open_capture", return_value=capture)
+
+    camera.open()
+    try:
+        time.sleep(0.6)
+        jpg, _w, _h, _ts = camera.get_frame_jpg()
+        retrieves_after_publishing = capture.retrieves
+    finally:
+        camera.close()
+
+    assert capture.grabs > 20
+    assert retrieves_after_publishing <= 3, "decoding every grabbed frame"
+    assert jpg is not None
+    # Publishing reads the buffered frame; it never touches the capture.
+    assert capture.retrieves == retrieves_after_publishing
 
 
 def test_get_frame_jpg_returns_no_frame_while_the_capture_is_reopening():
