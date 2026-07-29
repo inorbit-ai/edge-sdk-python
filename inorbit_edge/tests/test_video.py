@@ -155,10 +155,14 @@ def test_health_log_separates_capture_from_publishing(mocker):
     try:
         assert _wait_until(lambda: camera._grabbed > 0)
         camera.get_frame_jpg()
-        camera.stale_frame_seconds = 0.0
-        camera.get_frame_jpg()
     finally:
+        # Stop the capture thread before ageing the buffered frame, so it cannot
+        # refresh the timestamp underneath the staleness check.
         camera.close()
+
+    frame_data, _ts = camera._frame
+    camera._frame = (frame_data, time.monotonic() - camera.stale_frame_seconds - 1)
+    camera.get_frame_jpg()
 
     assert camera._served == 1
     assert camera._stale == 1
