@@ -19,6 +19,7 @@ that handles robot data.
 - Publish robot laser.
 - Execute callbacks on Custom Action execution.
 - Execute scripts (or any program) in response to Custom Action execution.
+- Stream camera frames from RTSP (or anything OpenCV opens).
 
 ## Quick Start
 
@@ -96,6 +97,64 @@ the code.
 
    This will clean up various Python and build generated files so that you can
    ensure that you are working in a clean environment.
+
+## Camera streaming
+
+Install the optional **video** extra (see `requirements-video.txt`), which pulls
+in OpenCV:
+
+`pip install inorbit-edge[video]`
+
+Register a camera on a session. Frames are streamed only while the platform asks
+for video -- for example when a user opens a camera view -- and the camera id is
+the topic id the InOrbit camera must be configured with (`"0"` for the first
+one):
+
+```python
+from inorbit_edge.video import OpenCVCamera
+
+session.register_camera(
+    "0", OpenCVCamera("rtsp://user:pass@192.0.2.10:554/stream1", rate=5)
+)
+```
+
+For RTSP, set OpenCV's FFmpeg options **before** the first capture is opened
+(they are read by OpenCV when it opens the stream, so export them or set them in
+`os.environ` at import time):
+
+```bash
+export OPENCV_FFMPEG_CAPTURE_OPTIONS="rtsp_transport;tcp|timeout;3000000"
+```
+
+`rtsp_transport;tcp` because some cameras reject UDP, and `timeout`
+(microseconds) bounds socket reads: without it, a camera that stops answering
+mid-stream is only noticed after OpenCV's 30s watchdog, which delays both the
+reopen and shutdown.
+
+`OpenCVCamera` settings, all optional:
+
+| Setting | Default | Meaning |
+|---------|---------|---------|
+| `rate` | `10` | Frames per second published |
+| `scaling` | `0.3` | Downscale factor applied before JPEG encoding |
+| `quality` | `35` | JPEG quality, 1-100 |
+| `stale_frame_seconds` | `3.0` | Stop serving the buffered frame once it is older than this, so a stream that died shows no video instead of a frozen picture. `None` keeps serving the last frame |
+| `api_preference` | auto | OpenCV backend to open with; URL sources default to `cv2.CAP_FFMPEG` |
+| `REOPEN_BACKOFF_SECONDS` | `0.5s` to `10s` | Class attribute: delay before each attempt to rebuild a capture whose grabs are failing |
+| `HEALTH_LOG_SECONDS` | `60.0` | Class attribute: how often the capture health line below is logged |
+
+Each camera logs one health line per window, which is usually enough to tell
+where video stopped:
+
+```
+Capture health: grabbed=1800 served=60 stale=0 reopens=0 in the last 60s
+```
+
+No line at all means the platform never requested video; `grabbed=0` means the
+stream is unreachable; frames grabbed but not served means nothing is consuming
+them; frames served with nothing visible in the platform points at the MQTT
+side. The same signals are exported as the `video_frames_grabbed`,
+`video_frames_stale` and `video_capture_reopens` counters (see Metrics below).
 
 ## Metrics
 
