@@ -116,6 +116,19 @@ def test_frames_are_decoded_at_the_publish_rate_not_the_stream_rate(mocker):
     assert capture.retrieves == retrieves_after_publishing
 
 
+def test_frame_older_than_the_staleness_window_is_not_served():
+    """A frozen frame must not be published as if the stream were live."""
+    frame = numpy.zeros((16, 16, 3), dtype=numpy.uint8)
+    camera = OpenCVCamera("rtsp://camera.invalid/stream", rate=1, scaling=0.5)
+    camera._frame = (frame, time.monotonic() - camera.stale_frame_seconds - 1)
+
+    assert camera.get_frame_jpg()[0] is None
+
+    # Opting out keeps the old behaviour of always serving the last frame.
+    camera.stale_frame_seconds = None
+    assert camera.get_frame_jpg()[0] is not None
+
+
 def test_get_frame_jpg_returns_no_frame_while_the_capture_is_reopening():
     camera = OpenCVCamera("rtsp://camera.invalid/stream", rate=1)
 

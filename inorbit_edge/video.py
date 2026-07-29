@@ -59,7 +59,10 @@ class OpenCVCamera(Camera):
 
     A stream that goes away (camera reboot, network blip, RTSP session timeout)
     is reopened with backoff, so video comes back without restarting the
-    connector.
+    connector. While it is down, frames older than ``stale_frame_seconds`` are
+    not served -- the platform shows no video rather than a frozen frame that
+    looks live. Pass ``stale_frame_seconds=None`` to always serve the last
+    decoded frame.
 
     For URL sources the FFmpeg backend is requested explicitly, because
     automatic backend selection may pick another one and silently ignore
@@ -73,7 +76,13 @@ class OpenCVCamera(Camera):
     REOPEN_BACKOFF_SECONDS = (0.5, 1.0, 2.0, 5.0, 10.0)
 
     def __init__(
-        self, video_url, rate=10, scaling=0.3, quality=35, api_preference=None
+        self,
+        video_url,
+        rate=10,
+        scaling=0.3,
+        quality=35,
+        api_preference=None,
+        stale_frame_seconds=3.0,
     ):
         # Cast to string to support URL objects
         self.video_url = str(video_url)
@@ -86,6 +95,7 @@ class OpenCVCamera(Camera):
         self.scaling = scaling
         self.quality = quality
         self.api_preference = api_preference
+        self.stale_frame_seconds = stale_frame_seconds
         # Set by close() so a capture thread waiting out a reopen backoff wakes
         # up immediately instead of holding up teardown.
         self._closing = threading.Event()
@@ -137,6 +147,13 @@ class OpenCVCamera(Camera):
         ts = time.time() * 1000
         frame = self._frame
         if frame is None:
+            return None, 0, 0, ts
+        if (
+            self.stale_frame_seconds is not None
+            and time.monotonic() - frame[1] > self.stale_frame_seconds
+        ):
+            # The stream stopped delivering. Publishing this again would show a
+            # frozen image as if it were live -- report no frame instead.
             return None, 0, 0, ts
         height, width = frame[0].shape[:2]
         jpg, w, h = convert_frame(frame[0], width, height, self.scaling, self.quality)
