@@ -164,9 +164,11 @@ class OpenCVCamera(Camera):
         frame = self._frame
         if frame is None:
             return None, 0, 0, ts
-        if time.monotonic() - frame[1] > self.stale_frame_seconds:
+        age = time.monotonic() - frame[1]
+        if age > self.stale_frame_seconds:
             # The stream stopped delivering. Publishing this again would show a
             # frozen image as if it were live -- report no frame instead.
+            self.logger.debug(f"Withholding a video frame {age:.1f}s old")
             return None, 0, 0, ts
         height, width = frame[0].shape[:2]
         jpg, w, h = convert_frame(frame[0], width, height, self.scaling, self.quality)
