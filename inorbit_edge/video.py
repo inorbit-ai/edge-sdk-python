@@ -7,7 +7,16 @@
 # * CameraStreamer: Consumes frames from a camera and send them to the platform.
 #
 # Future improvements / TODOs:
-#   * Honor module states camera settings, like rate, size and quality.
+#   * Honor module states camera settings, like rate, size and quality. The
+#     platform already sends them (`modules/set_state` carries a per-camera
+#     rate/quality/is_on in `cameras_config`); with those honored, a frame
+#     should be decoded when one is published rather than on a fixed interval.
+#   * Support non-live sources (video files, VOD). The capture loop drains the
+#     source continuously, which a live stream paces by itself because grab()
+#     blocks on the socket; a file does not block, so the loop races through it
+#     as fast as the decoder manages (3.7k frames/s over ~9 cores for a 1080p30
+#     clip). Those should be grabbed only when a frame is wanted, once callers
+#     can say which kind a URL is.
 #   * Decouple CameraStreamer from image processing and move it to robot.py
 #   * Complete type annotations
 
