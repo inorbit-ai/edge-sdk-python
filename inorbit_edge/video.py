@@ -59,7 +59,12 @@ class OpenCVCamera(Camera):
 
     A stream that goes away (camera reboot, network blip, RTSP session timeout)
     is reopened with backoff, so video comes back without restarting the
-    connector.
+    connector. While it is down, frames older than ``stale_frame_seconds`` are
+    not served -- the platform shows no video rather than a frozen frame that
+    looks live. That window defaults to three publish periods (never under
+    ``MIN_STALE_FRAME_SECONDS``), so it scales with ``rate``: 1s at 10 fps, 3s
+    at 1 fps, 30s at one frame every 10s. Pass a number to set it explicitly, or
+    ``float("inf")`` to always serve the last decoded frame.
 
     For URL sources the FFmpeg backend is requested explicitly, because
     automatic backend selection may pick another one and silently ignore
@@ -71,9 +76,22 @@ class OpenCVCamera(Camera):
 
     #: Delay before each reopen attempt, indexed by consecutive failed grabs.
     REOPEN_BACKOFF_SECONDS = (0.5, 1.0, 2.0, 5.0, 10.0)
+    #: Default staleness window, in publish periods: a frame is expected every
+    #: ``1 / rate`` seconds, so three periods without a fresh one means the
+    #: stream stopped rather than lagged.
+    STALE_FRAME_PERIODS = 3
+    #: Floor for the derived window: without it a fast publish rate would
+    #: withhold frames on ordinary jitter (rate=30 alone gives 0.1s).
+    MIN_STALE_FRAME_SECONDS = 1.0
 
     def __init__(
-        self, video_url, rate=10, scaling=0.3, quality=35, api_preference=None
+        self,
+        video_url,
+        rate=10,
+        scaling=0.3,
+        quality=35,
+        api_preference=None,
+        stale_frame_seconds=None,
     ):
         # Cast to string to support URL objects
         self.video_url = str(video_url)
@@ -86,6 +104,14 @@ class OpenCVCamera(Camera):
         self.scaling = scaling
         self.quality = quality
         self.api_preference = api_preference
+        self.stale_frame_seconds = (
+            stale_frame_seconds
+            if stale_frame_seconds is not None
+            else max(
+                self.MIN_STALE_FRAME_SECONDS,
+                self.STALE_FRAME_PERIODS / max(rate, 0.01),
+            )
+        )
         # Set by close() so a capture thread waiting out a reopen backoff wakes
         # up immediately instead of holding up teardown.
         self._closing = threading.Event()
@@ -137,6 +163,12 @@ class OpenCVCamera(Camera):
         ts = time.time() * 1000
         frame = self._frame
         if frame is None:
+            return None, 0, 0, ts
+        age = time.monotonic() - frame[1]
+        if age > self.stale_frame_seconds:
+            # The stream stopped delivering. Publishing this again would show a
+            # frozen image as if it were live -- report no frame instead.
+            self.logger.debug(f"Withholding a video frame {age:.1f}s old")
             return None, 0, 0, ts
         height, width = frame[0].shape[:2]
         jpg, w, h = convert_frame(frame[0], width, height, self.scaling, self.quality)

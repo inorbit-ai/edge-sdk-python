@@ -116,6 +116,33 @@ def test_frames_are_decoded_at_the_publish_rate_not_the_stream_rate(mocker):
     assert capture.retrieves == retrieves_after_publishing
 
 
+def test_frame_older_than_the_staleness_window_is_not_served():
+    """A frozen frame must not be published as if the stream were live."""
+    frame = numpy.zeros((16, 16, 3), dtype=numpy.uint8)
+    camera = OpenCVCamera("rtsp://camera.invalid/stream", rate=1, scaling=0.5)
+    camera._frame = (frame, time.monotonic() - camera.stale_frame_seconds - 1)
+
+    assert camera.get_frame_jpg()[0] is None
+
+    # Opting out keeps the old behaviour of always serving the last frame.
+    camera.stale_frame_seconds = float("inf")
+    assert camera.get_frame_jpg()[0] is not None
+
+
+def test_the_staleness_window_follows_the_publish_rate():
+    """A slow rate must not have every frame withheld as stale."""
+    # One frame every 10s: 3s after the last one nothing is wrong yet.
+    assert OpenCVCamera("rtsp://x/y", rate=0.1).stale_frame_seconds == 30.0
+    assert OpenCVCamera("rtsp://x/y", rate=1).stale_frame_seconds == 3.0
+    # Fast rates are floored, so jitter alone does not withhold frames.
+    assert OpenCVCamera("rtsp://x/y", rate=30).stale_frame_seconds == 1.0
+    # An explicit window always wins.
+    assert (
+        OpenCVCamera("rtsp://x/y", rate=1, stale_frame_seconds=0.5).stale_frame_seconds
+        == 0.5
+    )
+
+
 def test_get_frame_jpg_returns_no_frame_while_the_capture_is_reopening():
     camera = OpenCVCamera("rtsp://camera.invalid/stream", rate=1)
 
