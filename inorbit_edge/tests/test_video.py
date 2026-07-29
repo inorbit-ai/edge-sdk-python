@@ -4,6 +4,8 @@
 import threading
 import time
 
+import cv2
+
 from inorbit_edge.robot import RobotSession
 from inorbit_edge.video import CameraStreamer, OpenCVCamera
 from inorbit_edge.robot import INORBIT_MODULE_CAMERAS
@@ -39,6 +41,74 @@ class FakeCamera:
 
     def get_frame_jpg(self):
         return None, 0, 0, 0
+
+
+class FakeCapture:
+    """Minimal cv2.VideoCapture double that counts grabs."""
+
+    def __init__(self, grab_ok=False):
+        self.grab_ok = grab_ok
+        self.grabs = 0
+        self.released = False
+
+    def grab(self):
+        self.grabs += 1
+        return self.grab_ok
+
+    def retrieve(self):
+        return False, None
+
+    def release(self):
+        self.released = True
+
+
+def test_failed_grab_reopens_the_capture_without_spinning(mocker):
+    """A dead stream must be backed off and rebuilt, not spun on."""
+    camera = OpenCVCamera("rtsp://camera.invalid/stream", rate=1)
+    camera.REOPEN_BACKOFF_SECONDS = (0.05,)
+    captures = []
+
+    def fake_open_capture():
+        captures.append(FakeCapture(grab_ok=False))
+        return captures[-1]
+
+    mocker.patch.object(camera, "_open_capture", side_effect=fake_open_capture)
+
+    camera.open()
+    try:
+        time.sleep(0.3)
+    finally:
+        camera.close()
+
+    # Unpaced, a failing grab() runs hundreds of thousands of times in 0.3s and
+    # pegs a core; with the backoff it stays in the single digits per capture.
+    assert sum(capture.grabs for capture in captures) < 25
+    assert len(captures) > 1, "capture was never reopened"
+    assert captures[0].released
+
+
+def test_get_frame_jpg_returns_no_frame_while_the_capture_is_reopening():
+    camera = OpenCVCamera("rtsp://camera.invalid/stream", rate=1)
+
+    jpg, width, height, _ts = camera.get_frame_jpg()
+
+    assert jpg is None and (width, height) == (0, 0)
+
+
+def test_url_sources_request_the_ffmpeg_backend(mocker):
+    """OPENCV_FFMPEG_CAPTURE_OPTIONS only applies to the FFmpeg backend."""
+    video_capture = mocker.patch("cv2.VideoCapture")
+
+    OpenCVCamera("rtsp://camera.invalid/stream")._open_capture()
+    assert video_capture.call_args.args[1] == cv2.CAP_FFMPEG
+
+    OpenCVCamera("/dev/video0")._open_capture()
+    assert video_capture.call_args.args[1] == cv2.CAP_ANY
+
+    OpenCVCamera(
+        "rtsp://camera.invalid/stream", api_preference=cv2.CAP_GSTREAMER
+    )._open_capture()
+    assert video_capture.call_args.args[1] == cv2.CAP_GSTREAMER
 
 
 def test_robot_session_register_camera(
