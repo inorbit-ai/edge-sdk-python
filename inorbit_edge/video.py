@@ -55,9 +55,26 @@ def convert_frame(frame, width, height, scaling, quality=25):
 
 
 class OpenCVCamera(Camera):
-    """Camera implementation backed up by OpenCV"""
+    """Camera implementation backed up by OpenCV
 
-    def __init__(self, video_url, rate=10, scaling=0.3, quality=35):
+    A stream that goes away (camera reboot, network blip, RTSP session timeout)
+    is reopened with backoff, so video comes back without restarting the
+    connector.
+
+    For URL sources the FFmpeg backend is requested explicitly, because
+    automatic backend selection may pick another one and silently ignore
+    ``OPENCV_FFMPEG_CAPTURE_OPTIONS`` -- where deployments set the RTSP
+    transport and, importantly, the socket timeout that bounds a stalled read
+    (``rtsp_transport;tcp|timeout;3000000``). Without a timeout OpenCV waits on
+    its 30s watchdog before a dead stream is even noticed.
+    """
+
+    #: Delay before each reopen attempt, indexed by consecutive failed grabs.
+    REOPEN_BACKOFF_SECONDS = (0.5, 1.0, 2.0, 5.0, 10.0)
+
+    def __init__(
+        self, video_url, rate=10, scaling=0.3, quality=35, api_preference=None
+    ):
         # Cast to string to support URL objects
         self.video_url = str(video_url)
         self.capture = None
@@ -68,12 +85,24 @@ class OpenCVCamera(Camera):
         self.rate = rate
         self.scaling = scaling
         self.quality = quality
+        self.api_preference = api_preference
+        # Set by close() so a capture thread waiting out a reopen backoff wakes
+        # up immediately instead of holding up teardown.
+        self._closing = threading.Event()
+
+    def _open_capture(self):
+        """Return a new ``cv2.VideoCapture`` for this camera's source."""
+        preference = self.api_preference
+        if preference is None:
+            preference = cv2.CAP_FFMPEG if "://" in self.video_url else cv2.CAP_ANY
+        return cv2.VideoCapture(self.video_url, preference)
 
     def open(self):
         """Opens the capturing device / stream"""
+        self._closing.clear()
         with self.capture_mutex:
             if self.capture is None:
-                self.capture = cv2.VideoCapture(self.video_url)
+                self.capture = self._open_capture()
             if not self.running:
                 self.running = True
                 self.capture_thread = threading.Thread(target=self._run, daemon=True)
@@ -82,6 +111,7 @@ class OpenCVCamera(Camera):
     def close(self):
         """Closes the capturing device / stream"""
         self.running = False
+        self._closing.set()
 
         if self.capture_thread is not None:
             self.logger.info("Waiting for the capture thread to finish")
@@ -96,6 +126,9 @@ class OpenCVCamera(Camera):
         """Returns the latest frame captured by the camera as JPG"""
         ts = time.time() * 1000
         with self.capture_mutex:
+            if self.capture is None:
+                # No capture between a failed grab and its reopen
+                return None, 0, 0, ts
             # decode the latest grabbed frame
             ret, frame = self.capture.retrieve()
             if not ret:
@@ -107,13 +140,50 @@ class OpenCVCamera(Camera):
 
     def _run(self):
         """Thread to grab always the most recent frame"""
+        failures = 0
         while self.running:
-            with self.capture_mutex:
-                try:
+            try:
+                with self.capture_mutex:
                     # Try to grab always the latest frame
-                    self.capture.grab()
-                except Exception as e:
-                    self.logger.error(f"Failed to grab video frame {e}")
+                    grabbed = self.capture is not None and self.capture.grab()
+            except Exception as e:
+                self.logger.error(f"Failed to grab video frame {e}")
+                grabbed = False
+            if grabbed:
+                if failures:
+                    self.logger.info(
+                        f"Video stream recovered after {failures} failed grabs"
+                    )
+                    failures = 0
+                continue
+            # A grab against a dead stream fails immediately, so without a
+            # reopen this loop spins at 100% of a core for as long as the stream
+            # stays down -- and video never comes back, because nothing rebuilds
+            # the capture.
+            failures += 1
+            self._reopen(failures)
+
+    def _reopen(self, failures):
+        """Release and rebuild the capture, backing off first"""
+        if failures == 1:
+            self.logger.warning(
+                "Video stream unavailable; reopening with backoff up to "
+                f"{self.REOPEN_BACKOFF_SECONDS[-1]:.0f}s"
+            )
+        with self.capture_mutex:
+            if self.capture is not None:
+                self.capture.release()
+                self.capture = None
+        index = min(failures, len(self.REOPEN_BACKOFF_SECONDS)) - 1
+        if self._closing.wait(self.REOPEN_BACKOFF_SECONDS[index]) or not self.running:
+            return
+        try:
+            capture = self._open_capture()
+        except Exception as e:
+            self.logger.error(f"Failed to reopen video stream {e}")
+            return
+        with self.capture_mutex:
+            self.capture = capture
 
 
 class CameraStreamer:
