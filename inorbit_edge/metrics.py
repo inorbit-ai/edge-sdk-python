@@ -214,6 +214,15 @@ publish_map_counter = meter.create_counter(
 publish_camera_frame_counter = meter.create_counter(
     "calls_publish_camera_frame", "1", "number of calls to publish camera frames"
 )
+video_frames_grabbed_counter = meter.create_counter(
+    "video_frames_grabbed", "1", "number of video frames read off a camera"
+)
+video_frames_stale_counter = meter.create_counter(
+    "video_frames_stale", "1", "number of video frames withheld for being too old"
+)
+video_capture_reopens_counter = meter.create_counter(
+    "video_capture_reopens", "1", "number of times a video capture was rebuilt"
+)
 publish_pose_counter = meter.create_counter(
     "calls_publish_pose", "1", "number of calls to publish poses"
 )
