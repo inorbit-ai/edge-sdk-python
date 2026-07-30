@@ -7,7 +7,16 @@
 # * CameraStreamer: Consumes frames from a camera and send them to the platform.
 #
 # Future improvements / TODOs:
-#   * Honor module states camera settings, like rate, size and quality.
+#   * Honor module states camera settings, like rate, size and quality. The
+#     platform already sends them (`modules/set_state` carries a per-camera
+#     rate/quality/is_on in `cameras_config`); with those honored, a frame
+#     should be decoded when one is published rather than on a fixed interval.
+#   * Support non-live sources (video files, VOD). The capture loop drains the
+#     source continuously, which a live stream paces by itself because grab()
+#     blocks on the socket; a file does not block, so the loop races through it
+#     as fast as the decoder manages (3.7k frames/s over ~9 cores for a 1080p30
+#     clip). Those should be grabbed only when a frame is wanted, once callers
+#     can say which kind a URL is.
 #   * Decouple CameraStreamer from image processing and move it to robot.py
 #   * Complete type annotations
 
@@ -15,6 +24,12 @@ import logging
 import threading
 import time
 from abc import ABC, abstractmethod
+
+from inorbit_edge.metrics import (
+    video_capture_reopens_counter,
+    video_frames_grabbed_counter,
+    video_frames_stale_counter,
+)
 
 try:
     import cv2
@@ -83,6 +98,8 @@ class OpenCVCamera(Camera):
     #: Floor for the derived window: without it a fast publish rate would
     #: withhold frames on ordinary jitter (rate=30 alone gives 0.1s).
     MIN_STALE_FRAME_SECONDS = 1.0
+    #: How often the capture thread logs a one-line capture health summary.
+    HEALTH_LOG_SECONDS = 60.0
 
     def __init__(
         self,
@@ -124,6 +141,12 @@ class OpenCVCamera(Camera):
         # publish is ever used, so convert at twice the publish rate and let the
         # rest of the stream drain through grab() alone.
         self._retrieve_interval = 0.5 / max(rate, 1)
+        # Counters for the health log, reset each window. Written by the capture
+        # thread and by get_frame_jpg(); a lost increment doesn't matter.
+        self._grabbed = 0
+        self._served = 0
+        self._stale = 0
+        self._reopens = 0
 
     def _open_capture(self):
         """Return a new ``cv2.VideoCapture`` for this camera's source."""
@@ -169,9 +192,12 @@ class OpenCVCamera(Camera):
             # The stream stopped delivering. Publishing this again would show a
             # frozen image as if it were live -- report no frame instead.
             self.logger.debug(f"Withholding a video frame {age:.1f}s old")
+            self._stale += 1
+            video_frames_stale_counter.add(1)
             return None, 0, 0, ts
         height, width = frame[0].shape[:2]
         jpg, w, h = convert_frame(frame[0], width, height, self.scaling, self.quality)
+        self._served += 1
         return jpg, w, h, ts
 
     def _run(self):
@@ -184,6 +210,7 @@ class OpenCVCamera(Camera):
         """
         failures = 0
         next_retrieve = 0.0
+        next_health_log = time.monotonic() + self.HEALTH_LOG_SECONDS
         while self.running:
             try:
                 # Try to grab always the latest frame
@@ -197,7 +224,12 @@ class OpenCVCamera(Camera):
                         f"Video stream recovered after {failures} failed grabs"
                     )
                     failures = 0
+                self._grabbed += 1
+                video_frames_grabbed_counter.add(1)
                 now = time.monotonic()
+                if now >= next_health_log:
+                    next_health_log = now + self.HEALTH_LOG_SECONDS
+                    self._log_health()
                 if now < next_retrieve:
                     continue
                 try:
@@ -215,6 +247,22 @@ class OpenCVCamera(Camera):
             # the capture.
             failures += 1
             self._reopen(failures)
+
+    def _log_health(self):
+        """Log one line summarizing the last window, and start a new one
+
+        Reading it tells which layer stopped without attaching a debugger: no
+        line at all means the platform never asked for video (no camera module
+        loaded); ``grabbed=0`` means the stream is unreachable; frames grabbed
+        but not served means the streamer is not consuming them; frames served
+        with nothing visible in the platform points at the MQTT side.
+        """
+        self.logger.info(
+            f"Capture health: grabbed={self._grabbed} served={self._served} "
+            f"stale={self._stale} reopens={self._reopens} in the last "
+            f"{self.HEALTH_LOG_SECONDS:.0f}s"
+        )
+        self._grabbed = self._served = self._stale = self._reopens = 0
 
     def _reopen(self, failures):
         """Release and rebuild the capture, backing off first"""
@@ -235,6 +283,8 @@ class OpenCVCamera(Camera):
         except Exception as e:
             self.logger.error(f"Failed to reopen video stream {e}")
             return
+        self._reopens += 1
+        video_capture_reopens_counter.add(1)
         with self.capture_mutex:
             self.capture = capture
 

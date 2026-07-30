@@ -143,6 +143,35 @@ def test_the_staleness_window_follows_the_publish_rate():
     )
 
 
+def test_health_log_separates_capture_from_publishing(mocker):
+    """The counters say which layer stopped: capture, publishing or neither."""
+    frame = numpy.zeros((16, 16, 3), dtype=numpy.uint8)
+    capture = FakeCapture(grab_ok=True, frame=frame, delay=0.002)
+    camera = OpenCVCamera("rtsp://camera.invalid/stream", rate=1, scaling=0.5)
+    camera.HEALTH_LOG_SECONDS = 60.0  # no window rollover during the test
+    mocker.patch.object(camera, "_open_capture", return_value=capture)
+
+    camera.open()
+    try:
+        assert _wait_until(lambda: camera._grabbed > 0)
+        camera.get_frame_jpg()
+    finally:
+        # Stop the capture thread before ageing the buffered frame, so it cannot
+        # refresh the timestamp underneath the staleness check.
+        camera.close()
+
+    frame_data, _ts = camera._frame
+    camera._frame = (frame_data, time.monotonic() - camera.stale_frame_seconds - 1)
+    camera.get_frame_jpg()
+
+    assert camera._served == 1
+    assert camera._stale == 1
+
+    grabbed = camera._grabbed
+    camera._log_health()
+    assert grabbed > 0 and camera._grabbed == 0, "window was not reset"
+
+
 def test_get_frame_jpg_returns_no_frame_while_the_capture_is_reopening():
     camera = OpenCVCamera("rtsp://camera.invalid/stream", rate=1)
 
