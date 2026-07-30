@@ -64,12 +64,29 @@ virtualenv venv
 pip install -e .[dev]
 ```
 
-Then run `bump2version` and choose the part of the version to be bumped, and don't forget to push changes and tags:
+Then run `bump2version` on a branch and choose the part of the version to be
+bumped. Pass `--no-tag`: CI tags the release itself, on the commit that actually
+publishes (see below).
 
 ```bash
-bump2version patch # possible: major / minor / patch
-git push
-git push --tags
+git checkout -b bump-version-x.y.z
+bump2version --no-tag patch # possible: major / minor / patch
+git push -u origin bump-version-x.y.z
 ```
 
-This will release a new package version on Git + GitHub and publish to PyPI.
+Open a pull request for it and **keep `Bump version` in the merge commit
+message**: the publish job triggers on
+`contains(github.event.head_commit.message, 'Bump version')`, and a squash merge
+takes the PR title, so leave the title as `bump2version` wrote it (`Bump version:
+x.y.z → a.b.c`).
+
+Merging publishes the package to PyPI, then creates the `vA.B.C` tag and a
+GitHub release from the published version.
+
+Why `--no-tag`: `bump2version` tags the commit it creates, which is only correct
+when the bump goes straight to `main`. Merge commits are disabled on this repo,
+so a bump arriving through a PR is squashed or rebased into a *different* commit
+and that tag would point at something never reachable from `main` — which is how
+`v3.0.0` came to dangle and `v3.1.0` was never tagged at all. Bumping directly on
+`main` still works if you prefer it (`bump2version patch`, then `git push && git
+push --tags`); the CI step skips tagging when the release already exists.
