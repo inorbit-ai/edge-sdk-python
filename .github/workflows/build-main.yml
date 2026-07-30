@@ -38,6 +38,8 @@ jobs:
     if: "contains(github.event.head_commit.message, 'Bump version')"
     needs: [lint-and-test]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # needed to create the release tag
 
     steps:
     - uses: actions/checkout@v1
@@ -58,3 +60,26 @@ jobs:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
         repository_url: https://upload.pypi.org/legacy/
+    # bump2version tags the commit it creates, but a bump that arrives through a
+    # PR is squashed or rebased, so that tag would point at a commit which never
+    # reaches main -- v3.0.0 dangles that way and v3.1.0 was never tagged at all.
+    # Tag here instead, on the commit that actually published.
+    - name: Read the published version
+      id: version
+      run: |
+        version=$(grep -Po '(?<=^__version__ = ")[^"]+' inorbit_edge/__init__.py)
+        echo "value=$version" >> "$GITHUB_OUTPUT"
+    - name: Tag the release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VERSION: ${{ steps.version.outputs.value }}
+      run: |
+        if gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+          echo "v$VERSION is already released; nothing to tag."
+          exit 0
+        fi
+        gh release create "v$VERSION" \
+          --repo "$GITHUB_REPOSITORY" \
+          --target "$GITHUB_SHA" \
+          --title "v$VERSION" \
+          --generate-notes
