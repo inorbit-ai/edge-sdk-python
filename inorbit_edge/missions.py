@@ -31,9 +31,11 @@ MISSION_STATE_ABORTED = "Aborted"
 MISSION_STATE_COMPLETED = "Completed"
 MISSION_STATE_CANCELED = "Canceled"
 
-# Mission status
+# Mission status. The platform matches these exactly, including case:
+# "OK" | "warning" | "error".
 MISSION_STATUS_OK = "OK"
-MISSION_STATUS_ERROR = "Error"
+MISSION_STATUS_WARNING = "warning"
+MISSION_STATUS_ERROR = "error"
 
 
 class MissionsModule:
