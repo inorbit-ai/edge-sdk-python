@@ -3,6 +3,7 @@
 
 from unittest.mock import MagicMock
 from paho.mqtt.client import MQTTMessage
+from inorbit_edge import get_module_version
 from inorbit_edge.robot import RobotSessionFactory
 from inorbit_edge.inorbit_pb2 import CustomScriptCommandMessage
 from inorbit_edge.tests.utils.helpers import test_robot_session_connect_helper
@@ -93,6 +94,46 @@ def test_built_robot_session_executes_command_callback_on_message(
 
     _test_command_handler_helper(my_command_handler)
     _test_command_handler_helper(another_command_handler)
+
+
+def test_built_robot_session_reports_online_status_on_first_connect(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
+    """Test that a factory-level online status callback applies on connect.
+
+    Sessions built by a RobotSessionPool are connected as soon as they are
+    created, so a callback registered on the session afterwards would be too late
+    for the status published on the first connection.
+    """
+    robot_session_factory = RobotSessionFactory(api_key="apikey_123")
+    robot_session_factory.set_online_status_callback(
+        lambda robot_id: robot_id != "id_123"
+    )
+
+    robot_session = robot_session_factory.build("id_123", "name_123")
+    robot_session.connect()
+    robot_session._on_connect(None, None, None, 0, None)
+
+    # The callback is called with the robot id, and reports "id_123" offline, so
+    # that is the status published on connect
+    assert robot_session._online_status_callback() is False
+    robot_session.client.publish.assert_any_call(
+        "r/id_123/state",
+        "0|robot_apikey_123|{}.edgesdk_py|name_123".format(get_module_version()),
+        qos=1,
+        retain=True,
+    )
+
+
+def test_factory_online_status_callback_ignores_non_callable(mock_mqtt_client):
+    """Test that set_online_status_callback ignores non-callable values."""
+    robot_session_factory = RobotSessionFactory(api_key="apikey_123")
+
+    robot_session_factory.set_online_status_callback("not_callable")
+
+    assert robot_session_factory.online_status_callback is None
+    robot_session = robot_session_factory.build("id_123", "name_123")
+    assert robot_session._online_status_callback is None
 
 
 def _test_command_handler_helper(command_handler):

@@ -446,6 +446,9 @@ class RobotSession:
         # Callback for determining robot online status
         self._online_status_callback = None
 
+        # Last online status reported to InOrbit, None until one is sent
+        self._last_published_online_status = None
+
         # Odometry accumulator for estimating odometry data when it is not available.
         self._distance_accumulator = RobotDistanceAccumulator(
             estimate_distance_linear=kwargs.get("estimate_distance_linear", True),
@@ -616,10 +619,14 @@ class RobotSession:
             )
             return
 
-        # Send robot online status (best effort)
+        # Send robot status (best effort)
         # If this fails and InOrbit is getting system stats data, it will detect
         # the discrepancy and request a status update via get_state.
-        self._send_robot_status(online=True)
+        # A connected session means the connector is up, not that the robot is, so
+        # the status comes from the online status callback. Sent directly rather
+        # than through publish_status(): the will may have been published while
+        # this session was down, so InOrbit's view is unknown at this point.
+        self._send_robot_status(online=self._get_online_status())
 
         # Subscribe to interesting topics
         self.client.subscribe(
@@ -831,14 +838,7 @@ class RobotSession:
         If the robot is offline, the next pose is not accumulated for odometry
         estimation.
         """
-        is_online = True  # Default assumption
-
-        if self._online_status_callback:
-            try:
-                is_online = self._online_status_callback()
-            except Exception as e:
-                self.logger.error(f"Online status callback failed: {e}")
-                # Fall back to default (True) on callback error
+        is_online = self._get_online_status()
 
         self._send_robot_status(online=is_online)
         self.logger.debug(
@@ -848,6 +848,23 @@ class RobotSession:
         # Discard the next pose for odometry estimation if the robot is offline
         if not is_online:
             self._distance_accumulator.discard_next_delta()
+
+    def _get_online_status(self) -> bool:
+        """Return the robot's online status, as reported by the online status
+        callback.
+
+        Defaults to True when no callback was registered or the callback fails, so
+        a robot is never reported offline because of a missing or broken health
+        check. @see set_online_status_callback.
+        """
+        if not self._online_status_callback:
+            return True  # Default assumption
+
+        try:
+            return bool(self._online_status_callback())
+        except Exception as e:
+            self.logger.error(f"Online status callback failed: {e}")
+            return True  # Fall back to default (True) on callback error
 
     def _start_cameras_streaming(self):
         """Start streaming on all registered cameras"""
@@ -1129,7 +1146,12 @@ class RobotSession:
     def set_online_status_callback(self, callback):
         """Set callback to determine robot online status.
 
-        Called on a state request from InOrbit. @see _handle_get_state.
+        Called on a state request from InOrbit (@see _handle_get_state) and
+        whenever the MQTT session connects (@see _on_connect). Because a
+        RobotSessionPool connects a session as soon as it builds it, setting the
+        callback here only affects later reconnections; use
+        RobotSessionFactory.set_online_status_callback() to have it registered
+        before the first connection.
 
         Args:
             callback: A callable that returns bool indicating if robot is online.
@@ -1173,6 +1195,26 @@ class RobotSession:
             qos=1,
         )
 
+    def publish_status(self, online: bool) -> None:
+        """Publish the robot's online status to InOrbit, if it changed.
+
+        A status equal to the last one published is skipped, so a caller that
+        evaluates the robot's health on a loop can hand the result over on every
+        iteration and produce one message per transition.
+
+        This is the only way to report a robot offline while its session stays
+        connected: InOrbit asks for state (@see _handle_get_state) only when it
+        already has the robot offline, and the session answers InOrbit's pings for
+        as long as the process is alive.
+
+        Args:
+            online (bool): True if the robot is online, False otherwise.
+        """
+        if online == self._last_published_online_status:
+            return
+
+        self._send_robot_status(online=online)
+
     def _send_robot_status(self, online=True):
         """Send robot online/offline status (best effort, non-blocking).
 
@@ -1193,6 +1235,7 @@ class RobotSession:
                 qos=1,
                 retain=True,
             )
+            self._last_published_online_status = online
             self.logger.debug(f"{status_str.capitalize()} status sent successfully")
         except Exception as e:
             self.logger.debug(f"{status_str.capitalize()} status failed: {e}")
@@ -1287,8 +1330,9 @@ class RobotSession:
                 )
 
         # Send offline status (best effort, non-blocking)
-        # InOrbit will detect offline via data absence if this fails
-        self._send_robot_status(online=False)
+        # InOrbit will detect offline via data absence if this fails. Skipped when
+        # the robot was already reported offline.
+        self.publish_status(online=False)
 
         # TODO: Unsubscribe from topics
 
@@ -1818,6 +1862,7 @@ class RobotSessionFactory:
         self.robot_session_kw_args = robot_session_kw_args
         self.command_callbacks = []
         self.commands_paths_rules = []
+        self.online_status_callback = None
 
     def build(self, robot_id, robot_name="", **robot_config):
         """Builds a RobotSession object using the provided id and name.
@@ -1838,6 +1883,13 @@ class RobotSessionFactory:
         for command_callback in self.command_callbacks:
             session.register_command_callback(build_callback(command_callback))
 
+        if self.online_status_callback:
+            # Not build_callback(): that wrapper discards the return value, and
+            # the online status callback is read for its result.
+            session.set_online_status_callback(
+                lambda: self.online_status_callback(robot_id)
+            )
+
         for path, exec_name_regex in self.commands_paths_rules:
             session.register_commands_path(path, exec_name_regex)
         return session
@@ -1850,6 +1902,26 @@ class RobotSessionFactory:
             return
 
         self.command_callbacks.append(callback)
+
+    def set_online_status_callback(self, callback):
+        """Set the callback used to determine online status on all robot sessions
+        created by this factory.
+
+        Unlike RobotSession.set_online_status_callback(), the callback registered
+        here is set on each session before it is connected, so it is also used for
+        the status published on the first connection. It receives the robot id:
+
+            factory.set_online_status_callback(lambda robot_id: ...)
+
+        Args:
+            callback: A callable taking the robot id and returning a bool, True if
+                the robot is online.
+        """
+        if not callable(callback):
+            # Don't do anything if callback is not a valid function
+            return
+
+        self.online_status_callback = callback
 
     def register_commands_path(self, path="./user_scripts", exec_name_regex=r".*"):
         """Registers executable commands that handle InOrbit custom command actions.

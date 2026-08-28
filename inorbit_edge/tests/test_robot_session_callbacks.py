@@ -92,6 +92,175 @@ def test_responds_to_get_state_with_callback_online_status(
     )
 
 
+def test_sends_online_status_on_connect_without_callback(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
+    """Test that connecting reports the robot online when no callback is set."""
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+    robot_session.connect()
+    robot_session._on_connect(None, None, None, 0, None)
+
+    robot_session.client.publish.assert_any_call(
+        "r/id_123/state",
+        "1|robot_apikey_123|{}.edgesdk_py|name_123".format(get_module_version()),
+        qos=1,
+        retain=True,
+    )
+
+
+def _state_publishes(robot_session):
+    """Return the status messages published on the robot's state topic."""
+    return [
+        call.args[1]
+        for call in robot_session.client.publish.call_args_list
+        if call.args and call.args[0] == "r/id_123/state"
+    ]
+
+
+def _status(online):
+    """Return the status message the session publishes for the given status."""
+    return "{}|robot_apikey_123|{}.edgesdk_py|name_123".format(
+        "1" if online else "0", get_module_version()
+    )
+
+
+def test_sends_offline_status_on_connect_when_callback_reports_offline(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
+    """Test that connecting reports offline when the callback says so.
+
+    A connected session means the connector is up, not the robot. This is sent
+    without de-duplication: the will may have been published while the session was
+    down, so InOrbit's view of the robot is unknown on connect.
+    """
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+    robot_session.connect()
+    robot_session.set_online_status_callback(lambda: False)
+
+    robot_session._on_connect(None, None, None, 0, None)
+
+    assert _state_publishes(robot_session) == [_status(online=False)]
+
+
+def test_publish_status_skips_unchanged_status(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
+    """Test that publish_status only publishes on a change."""
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+    robot_session.connect()
+    robot_session.set_online_status_callback(lambda: False)
+    robot_session._on_connect(None, None, None, 0, None)
+
+    # Already reported offline on connect: nothing to add
+    robot_session.publish_status(online=False)
+    assert _state_publishes(robot_session) == [_status(online=False)]
+
+    # The robot came back: report it, once
+    robot_session.publish_status(online=True)
+    robot_session.publish_status(online=True)
+    assert _state_publishes(robot_session) == [
+        _status(online=False),
+        _status(online=True),
+    ]
+
+
+def test_disconnect_skips_offline_status_when_already_offline(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
+    """Test that ending a session does not re-report an offline robot.
+
+    Otherwise stopping the agent would move the offline timestamp of a robot that
+    has been offline all along.
+    """
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+    robot_session.connect()
+    robot_session.set_online_status_callback(lambda: False)
+    robot_session._on_connect(None, None, None, 0, None)
+
+    # The mocked client stays "connected" unless told otherwise
+    robot_session.client.is_connected.return_value = False
+    robot_session.disconnect()
+
+    # Only the status reported on connect
+    assert _state_publishes(robot_session) == [_status(online=False)]
+
+
+def test_disconnect_reports_offline_status_when_online(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
+    """Test that ending a session reports an online robot as offline."""
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+    robot_session.connect()
+    robot_session._on_connect(None, None, None, 0, None)
+
+    # The mocked client stays "connected" unless told otherwise
+    robot_session.client.is_connected.return_value = False
+    robot_session.disconnect()
+
+    assert _state_publishes(robot_session) == [
+        _status(online=True),
+        _status(online=False),
+    ]
+
+
+def test_responds_to_get_state_even_when_status_is_unchanged(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
+    """Test that a get_state request is always answered.
+
+    InOrbit asked, so it gets an answer even if that status was already published:
+    the de-duplication only covers statuses the robot volunteers.
+    """
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+    robot_session.connect()
+    robot_session.set_online_status_callback(lambda: False)
+    robot_session._on_connect(None, None, None, 0, None)
+
+    robot_session._handle_in_cmd(b"get_state")
+
+    # The one reported on connect, and the answer to the request
+    assert _state_publishes(robot_session) == [
+        _status(online=False),
+        _status(online=False),
+    ]
+
+
+def test_connect_status_handles_callback_exception(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
+    """Test that a failing callback falls back to online on connect."""
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+    robot_session.connect()
+
+    def failing_callback():
+        raise RuntimeError("Test error")
+
+    robot_session.set_online_status_callback(failing_callback)
+
+    robot_session._on_connect(None, None, None, 0, None)
+
+    robot_session.client.publish.assert_any_call(
+        "r/id_123/state",
+        "1|robot_apikey_123|{}.edgesdk_py|name_123".format(get_module_version()),
+        qos=1,
+        retain=True,
+    )
+
+
 def test_get_state_handles_callback_exception(
     mock_mqtt_client, mock_inorbit_api, mock_sleep
 ):
