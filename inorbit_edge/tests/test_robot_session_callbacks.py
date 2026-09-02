@@ -18,6 +18,7 @@ from inorbit_edge.inorbit_pb2 import (
 )
 from inorbit_edge.robot import (
     CUSTOM_COMMAND_STATUS_FINISHED,
+    CUSTOM_COMMAND_STATUS_RUNNING,
     MQTT_SCRIPT_OUTPUT_TOPIC,
     RobotSession,
 )
@@ -474,3 +475,110 @@ def test_report_command_result_file_name(
     assert msg.file_name == expected_file_name
     assert msg.execution_id == "exec_123"
     assert msg.execution_status == CUSTOM_COMMAND_STATUS_FINISHED
+
+
+def _script_status_messages(robot_session):
+    """Parse every CustomScriptStatusMessage published by a session."""
+    messages = []
+    for call in robot_session.client.publish.call_args_list:
+        if MQTT_SCRIPT_OUTPUT_TOPIC not in str(call):
+            continue
+        msg = CustomScriptStatusMessage()
+        msg.ParseFromString(bytes(call[1]["payload"]))
+        messages.append(msg)
+    return messages
+
+
+def test_report_command_progress_publishes_running(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
+    """A command that takes a while is otherwise silent until it finishes."""
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+    robot_session.connect()
+    robot_session._on_connect(None, None, None, 0, None)
+
+    robot_session.report_command_progress(
+        command_name="customCommand",
+        args=["my_script.sh", ["arg1"]],
+        execution_id="exec_123",
+        stdout="still working",
+    )
+
+    (msg,) = _script_status_messages(robot_session)
+    assert msg.execution_status == CUSTOM_COMMAND_STATUS_RUNNING
+    assert msg.file_name == "my_script.sh"
+    assert msg.execution_id == "exec_123"
+    assert msg.stdout == "still working"
+    # No outcome yet, so no return code to report.
+    assert msg.return_code == ""
+
+
+def test_progress_function_reports_running_then_result(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
+    """The pair a slow handler emits: still running, then the real outcome."""
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+    robot_session.connect()
+    robot_session._on_connect(None, None, None, 0, None)
+
+    def handler(command_name, args, options):
+        options["progress_function"]()
+        options["result_function"]("0")
+
+    robot_session.register_command_callback(handler)
+    robot_session.dispatch_command(
+        command_name="customCommand",
+        args=["my_script.sh", []],
+        execution_id="exec_123",
+    )
+
+    running, finished = _script_status_messages(robot_session)
+    assert running.execution_status == CUSTOM_COMMAND_STATUS_RUNNING
+    assert finished.execution_status == CUSTOM_COMMAND_STATUS_FINISHED
+    assert finished.return_code == "0"
+    assert running.execution_id == finished.execution_id == "exec_123"
+
+
+def test_progress_is_opt_in(mock_mqtt_client, mock_inorbit_api, mock_sleep):
+    """A handler that does not opt in keeps reporting a single final status.
+
+    Some consumers act on the first status update they see, so progress must
+    never be emitted on a handler's behalf.
+    """
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+    robot_session.connect()
+    robot_session._on_connect(None, None, None, 0, None)
+
+    robot_session.register_command_callback(
+        lambda command_name, args, options: options["result_function"]("0")
+    )
+    robot_session.dispatch_command(
+        command_name="customCommand", args=["my_script.sh", []], execution_id="exec_123"
+    )
+
+    (only,) = _script_status_messages(robot_session)
+    assert only.execution_status == CUSTOM_COMMAND_STATUS_FINISHED
+
+
+def test_progress_function_without_execution_id_publishes_nothing(
+    mock_mqtt_client, mock_inorbit_api, mock_sleep
+):
+    """Nothing can correlate the update, so there is nothing worth sending."""
+    robot_session = RobotSession(
+        robot_id="id_123", robot_name="name_123", api_key="apikey_123"
+    )
+    robot_session.connect()
+    robot_session._on_connect(None, None, None, 0, None)
+
+    robot_session.register_command_callback(
+        lambda command_name, args, options: options["progress_function"]()
+    )
+    robot_session.dispatch_command(command_name="customCommand", args=["s.sh", []])
+
+    assert _script_status_messages(robot_session) == []
