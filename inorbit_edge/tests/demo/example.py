@@ -5,6 +5,7 @@ import logging
 import os
 import socket
 import sys
+import threading
 from time import sleep
 from random import randint, uniform, random
 from math import pi, inf
@@ -39,6 +40,16 @@ LIDAR_MAX = 3.2
 
 NUM_ROBOTS = 2
 NUM_LASERS = 3
+
+# Custom command script names handled by `long_running_command_handler`, for
+# exercising commands that take longer than a caller may be willing to wait.
+CMD_SLOW_SUCCESS = "slow_success"
+CMD_SLOW_FAILURE = "slow_failure"
+LONG_RUNNING_COMMANDS = (CMD_SLOW_SUCCESS, CMD_SLOW_FAILURE)
+# Long enough that the command is still going after a caller would have given
+# up on a silent one.
+SLOW_COMMAND_DEFAULT_SECS = 20
+SLOW_COMMAND_PROGRESS_INTERVAL_SECS = 5
 
 
 def _mqtt_use_ssl():
@@ -148,9 +159,83 @@ def my_command_handler(robot_id, command_name, args, options):
             information about the received command request.
     """
     if command_name == "customCommand":
+        # The long-running commands answer for themselves, on their own thread.
+        if args and args[0] in LONG_RUNNING_COMMANDS:
+            return
         print(f"Received '{command_name}' for robot '{robot_id}'!. {args}")
         # Return '0' for success
         options["result_function"]("0")
+
+
+def _slow_command_seconds(script_args):
+    """Read an optional `seconds` argument from a custom command's arguments."""
+    args = dict(zip(script_args[::2], script_args[1::2])) if script_args else {}
+    try:
+        return max(1, int(args.get("seconds", SLOW_COMMAND_DEFAULT_SECS)))
+    except (TypeError, ValueError):
+        return SLOW_COMMAND_DEFAULT_SECS
+
+
+def long_running_command_handler(robot_id, command_name, args, options):
+    """Handler for commands that take a while, reporting progress as they go.
+
+    A command that says nothing until it finishes cannot be told apart from one
+    that has stalled, and a caller waiting on it may give up before the real
+    result arrives. `progress_function` reports that the command is still
+    running; `result_function` still reports the outcome once it is known.
+
+    Try it from a custom command with a filename of `slow_success` or
+    `slow_failure`, optionally with a `seconds` argument:
+
+        slow_success seconds 30
+
+    Runs on its own thread so the session keeps publishing while it works.
+
+    Args:
+        robot_id (str): InOrbit robot ID
+        command_name (str): InOrbit command e.g. 'customCommand'
+        args (list): Command arguments
+        options (dict): see `my_command_handler`
+    """
+    if command_name != "customCommand" or not args:
+        return
+    script_name = args[0]
+    if script_name not in LONG_RUNNING_COMMANDS:
+        return
+
+    seconds = _slow_command_seconds(args[1] if len(args) > 1 else [])
+
+    def run():
+        logging.info(
+            "%s: starting %r, reporting progress for %ss",
+            robot_id,
+            script_name,
+            seconds,
+        )
+        elapsed = 0
+        # Report before doing any work, so the command is known to be running
+        # rather than merely silent.
+        options["progress_function"](f"{script_name} started, {seconds}s to go")
+        while elapsed < seconds:
+            sleep(min(SLOW_COMMAND_PROGRESS_INTERVAL_SECS, seconds - elapsed))
+            elapsed += SLOW_COMMAND_PROGRESS_INTERVAL_SECS
+            remaining = max(0, seconds - elapsed)
+            options["progress_function"](
+                f"{script_name} still running, {remaining}s to go"
+            )
+
+        if script_name == CMD_SLOW_SUCCESS:
+            logging.info("%s: %r finished", robot_id, script_name)
+            options["result_function"]("0", stdout=f"{script_name} finished")
+        else:
+            logging.info("%s: %r failed", robot_id, script_name)
+            options["result_function"](
+                "1",
+                execution_status_details="Demo failure after a long run",
+                stderr=f"{script_name} was asked to fail",
+            )
+
+    threading.Thread(target=run, name=f"slow_command_{robot_id}", daemon=True).start()
 
 
 def _init_prometheus_metrics():
@@ -226,6 +311,7 @@ def main():
     )
     robot_session_factory.register_command_callback(log_command)
     robot_session_factory.register_command_callback(my_command_handler)
+    robot_session_factory.register_command_callback(long_running_command_handler)
     robot_session_factory.register_commands_path("./user_scripts", r".*\.sh")
 
     robot_session_pool = RobotSessionPool(robot_session_factory)
