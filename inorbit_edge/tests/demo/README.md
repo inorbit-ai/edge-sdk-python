@@ -14,7 +14,7 @@ cd /path/to/edge-sdk-python
 pip install -e '.[video,telemetry]'
 cd inorbit_edge/tests/demo
 
-export INORBIT_CONNECTION_CONFIG_URL="https://control.inorbit.ai"
+export INORBIT_CONNECTION_CONFIG_URL="https://control.inorbit.ai/cloud_sdk_robot_config"
 export INORBIT_API_URL="https://api.inorbit.ai"
 export INORBIT_API_KEY="foobar123"
 export INORBIT_ROBOT_ID_PREFIX="$(hostname)"
@@ -63,3 +63,32 @@ docker run --rm -p 9464:9464 \
 
 The image sets `INORBIT_METRICS_PORT=9464` and `INORBIT_METRICS_ADDR=0.0.0.0` by default; override or unset
 `INORBIT_METRICS_PORT` to disable the metrics HTTP server.
+
+## Long-running commands
+
+The demo handles two custom commands that take a while and report progress
+while they work, for exercising commands that outlive however long a caller is
+willing to wait for a result:
+
+| Filename | Outcome |
+| --- | --- |
+| `slow_success` | reports progress, then succeeds |
+| `slow_failure` | reports progress, then fails with details |
+
+`cac.yaml` in this directory defines the `slow_success` action; set its scope
+and apply it to try the commands from the UI.
+
+Both take an optional `seconds` argument (default 20):
+
+```
+slow_success seconds 30
+```
+
+Each reports once before starting, then every 5 seconds, then the real result.
+A command that says nothing until it finishes cannot be told apart from one
+that has stalled, so `progress_function` is what makes a slow command
+distinguishable from a stuck one.
+
+They run on their own thread, so the session keeps publishing while they work —
+worth copying if a handler of yours does anything slow, since blocking the
+callback holds up everything else on that session.

@@ -99,6 +99,7 @@ INORBIT_MODULE_CAMERAS = "RosImageAgentlet"
 # CustomCommand execution status
 CUSTOM_COMMAND_STATUS_FINISHED = "finished"
 CUSTOM_COMMAND_STATUS_ABORTED = "aborted"
+CUSTOM_COMMAND_STATUS_RUNNING = "running"
 
 ROBOT_PATH_POINTS_LIMIT = 1000
 
@@ -1040,9 +1041,23 @@ class RobotSession:
                         stderr,
                     )
 
-            # TODO: Implement progress reporting function
-            def progress_function(output, error):
-                return 1
+            def progress_function(output=None, error=None):
+                """Report that a command is still running.
+
+                A command that takes a while is otherwise silent until it
+                finishes, leaving no way to tell slow progress apart from a
+                stalled command.
+
+                Call it only when a handler wants progress observed: some
+                consumers act on the first status update they see, so a
+                handler that does not opt in keeps reporting a single final
+                status.
+                """
+                if execution_id is None:
+                    return
+                return self.report_command_progress(
+                    command_name, args, execution_id, output, error
+                )
 
             options = {
                 "result_function": result_function,
@@ -1076,6 +1091,28 @@ class RobotSession:
         msg.return_code = result_code
         if execution_status_details:
             msg.execution_status_details = execution_status_details
+        if stdout:
+            msg.stdout = stdout
+        if stderr:
+            msg.stderr = stderr
+        msg.ts = int(time.time() * 1000)
+        self.publish_protobuf(MQTT_SCRIPT_OUTPUT_TOPIC, msg)
+
+    def report_command_progress(
+        self, command_name, args, execution_id, stdout=None, stderr=None
+    ):
+        """Send to server a "still running" update for an in-flight command.
+
+        Mirrors `report_command_result`, but carries no return code: the
+        command has not finished, so there is no outcome to report yet.
+        """
+
+        msg = CustomScriptStatusMessage()
+        msg.file_name = (
+            args[0] if args and isinstance(args[0], (str, bytes)) else command_name
+        )
+        msg.execution_id = execution_id
+        msg.execution_status = CUSTOM_COMMAND_STATUS_RUNNING
         if stdout:
             msg.stdout = stdout
         if stderr:
