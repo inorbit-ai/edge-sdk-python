@@ -14,7 +14,7 @@ cd /path/to/edge-sdk-python
 pip install -e '.[video,telemetry]'
 cd inorbit_edge/tests/demo
 
-export INORBIT_CONNECTION_CONFIG_URL="https://control.inorbit.ai"
+export INORBIT_CONNECTION_CONFIG_URL="https://control.inorbit.ai/cloud_sdk_robot_config"
 export INORBIT_API_URL="https://api.inorbit.ai"
 export INORBIT_API_KEY="foobar123"
 export INORBIT_ROBOT_ID_PREFIX="$(hostname)"
@@ -74,6 +74,9 @@ willing to wait for a result:
 | --- | --- |
 | `slow_success` | reports progress, then succeeds |
 | `slow_failure` | reports progress, then fails with details |
+
+`cac.yaml` in this directory defines the `slow_success` action; set its scope
+and apply it to try the commands from the UI.
 
 Both take an optional `seconds` argument (default 20):
 

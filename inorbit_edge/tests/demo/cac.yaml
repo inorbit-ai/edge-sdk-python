@@ -1,0 +1,22 @@
+apiVersion: v0.1
+kind: ActionDefinition
+metadata:
+  id: slow-success
+  scope: account/[your_account_id]
+spec:
+  label: Slow Success
+  group: Demo
+  type: RunScript
+  lock: false
+  confirmation:
+    required: false
+  description: Reports progress for N seconds, then succeeds
+  arguments:
+    - name: filename
+      type: string
+      value: slow_success
+    - name: seconds
+      type: string
+      value: "30"
+      input:
+        control: text
