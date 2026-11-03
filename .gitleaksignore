@@ -1,4 +1,4 @@
-# Leaked keys checked 2026-11-03: not valid in staging or production (SOC2 card)
+# Leaked keys checked 2026-11-03: non-sensitive data
 cf32357e4470b27c0eb513d794a25d9fd16b3916:try.py:generic-api-key:29
 f8a4f3da6e0715f0d600f8054b0192c390607a2f:inorbit_edge/main.py:generic-api-key:21
 1c53a26e98249b391000ebf7eb5f917bfb3fdf69:inorbit_edge/main.py:generic-api-key:22
