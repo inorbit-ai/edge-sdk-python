@@ -39,6 +39,7 @@ from inorbit_edge.inorbit_pb2 import (
     Echo,
     KeyValueCustomElement,
     LaserMessage,
+    GpsFixMessage,
     LocationAndPoseMessage,
     MapMessage,
     MapRequest,
@@ -83,6 +84,8 @@ MQTT_SUBTOPIC_UTM_POSE = "ros/loc/pose"
 # this (offset) and the rest, as the agent does, so they keep millimeters instead of
 # steps of ~25 cm
 POSITION_OFFSET_STEP = 10000.0
+# Raw GPS fixes (latitude, longitude), as the agent's GPSAgentlet sends them
+MQTT_SUBTOPIC_GPS_FIX = "ros/loc/gps/fix"
 MQTT_SUBTOPIC_PATH = "ros/loc/path"
 MQTT_SUBTOPIC_LASER_CONFIG_BASE = "ros/loc/config/"
 MQTT_SUBTOPIC_ODOMETRY = "ros/odometry/data"
@@ -485,6 +488,10 @@ class RobotSession:
                 "min_time_between_calls": 1,  # seconds
             },
             "publish_key_values": {},  # this supports key-level throttling
+            "publish_gps_fix": {
+                "last_ts": 0,
+                "min_time_between_calls": 1,  # seconds
+            },
             "publish_odometry": {
                 "last_ts": 0,
                 "min_time_between_calls": 1,  # seconds
@@ -1517,6 +1524,50 @@ class RobotSession:
             latitude, longitude, yaw
         )
         self.publish_utm_pose(easting, northing, utm_yaw, frame_id, ts)
+
+    def publish_gps_fix(
+        self,
+        latitude,
+        longitude,
+        altitude=0.0,
+        accuracy_meters=None,
+        bearing=None,
+        ts=None,
+    ):
+        """Publish a raw GPS fix, as the agent's GPSAgentlet does.
+
+        The fix is stored as the robot's GPS data (position, accuracy). It is not a
+        pose: to show the robot on the outdoor map with its heading, use
+        ``publish_utm_pose`` or ``publish_geo_pose``. Note that InOrbit also draws
+        each fix as a pose in the UTM frame of its zone, with the bearing (or no
+        heading) as its orientation, so a robot sending both may jump between them.
+
+        Args:
+            latitude (float): degrees.
+            longitude (float): degrees.
+            altitude (float, optional): meters. Defaults to 0.
+            accuracy_meters (float, optional): horizontal accuracy, meters. Defaults to
+                None (unknown).
+            bearing (float, optional): direction of travel, degrees clockwise from
+                north (as gps_msgs/GPSFix track). Defaults to None (unknown).
+            ts (int, optional): Fix timestamp. Defaults to int(time() * 1000).
+        """
+        if not self._should_publish_message(method="publish_gps_fix"):
+            return None
+
+        msg = GpsFixMessage()
+        msg.ts = ts if ts else int(time.time() * 1000)
+        msg.latitude = latitude
+        msg.longitude = longitude
+        msg.altitude = altitude
+        if accuracy_meters is not None:
+            msg.has_accuracy = True
+            msg.accuracy_meters = accuracy_meters
+        if bearing is not None:
+            msg.has_bearing = True
+            msg.bearing = bearing
+
+        self.publish_protobuf(MQTT_SUBTOPIC_GPS_FIX, msg)
 
     @staticmethod
     def _split_position(value):

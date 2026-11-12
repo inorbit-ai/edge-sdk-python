@@ -1,14 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Tests for RobotSession.publish_utm_pose and publish_geo_pose."""
+"""Tests for RobotSession's outdoor methods: UTM and geo poses, GPS fixes."""
 
 from unittest.mock import MagicMock
 
 import pytest
 
 from inorbit_edge.geo import latlon_to_utm_pose
-from inorbit_edge.inorbit_pb2 import LocationAndPoseMessage, PoseMessage
+from inorbit_edge.inorbit_pb2 import (
+    GpsFixMessage,
+    LocationAndPoseMessage,
+    PoseMessage,
+)
 from inorbit_edge.robot import (
+    MQTT_SUBTOPIC_GPS_FIX,
     MQTT_SUBTOPIC_POSE,
     MQTT_SUBTOPIC_UTM_POSE,
     RobotSession,
@@ -80,3 +85,27 @@ def test_publish_geo_pose(robot_session):
     assert pose.offset_x + pose.pos_x == pytest.approx(easting, abs=0.001)
     assert pose.offset_y + pose.pos_y == pytest.approx(northing, abs=0.001)
     assert pose.yaw == pytest.approx(yaw, abs=1e-6)
+
+
+def test_publish_gps_fix(robot_session):
+    robot_session.publish_gps_fix(*SIM_DATUM, altitude=10.0, ts=1234)
+    topic, msg = published(robot_session)
+    assert topic == MQTT_SUBTOPIC_GPS_FIX
+    assert isinstance(msg, GpsFixMessage)
+    assert (msg.latitude, msg.longitude) == pytest.approx(SIM_DATUM)
+    assert msg.altitude == pytest.approx(10.0)
+    assert msg.ts == 1234
+    assert not msg.has_accuracy and not msg.has_bearing
+
+
+def test_publish_gps_fix_with_accuracy_and_bearing(robot_session):
+    robot_session.publish_gps_fix(*SIM_DATUM, accuracy_meters=0.02, bearing=90.0)
+    _, msg = published(robot_session)
+    assert msg.has_accuracy and msg.accuracy_meters == pytest.approx(0.02)
+    assert msg.has_bearing and msg.bearing == pytest.approx(90.0)
+
+
+def test_poses_send_no_gps_fix(robot_session):
+    robot_session.publish_geo_pose(*SIM_DATUM, 0.5)
+    topic, _ = published(robot_session)
+    assert topic == MQTT_SUBTOPIC_UTM_POSE
