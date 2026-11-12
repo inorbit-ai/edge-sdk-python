@@ -39,15 +39,19 @@ from inorbit_edge.inorbit_pb2 import (
     Echo,
     KeyValueCustomElement,
     LaserMessage,
+    GpsFixMessage,
     LocationAndPoseMessage,
     MapMessage,
     MapRequest,
     OdometryDataMessage,
     PathDataMessage,
     PathPoint,
+    PoseMessage,
+    PoseMessageData,
     RobotPath,
     SystemStatsMessage,
 )
+from inorbit_edge.geo import latlon_to_utm_pose
 from inorbit_edge.metrics import (
     attrs_from_self,
     publish_camera_frame_counter,
@@ -73,6 +77,15 @@ INORBIT_CLOUD_SDK_ROBOT_CONFIG_URL = "https://control.inorbit.ai/cloud_sdk_robot
 INORBIT_DEFAULT_API_URL = "https://api.inorbit.ai"
 
 MQTT_SUBTOPIC_POSE = "ros/loc/data2"
+# Poses in UTM frames (outdoor robots). InOrbit creates the robot's UTM map the first
+# time one arrives on this topic.
+MQTT_SUBTOPIC_UTM_POSE = "ros/loc/pose"
+# Protobuf positions are 32-bit floats: UTM coordinates are split into a multiple of
+# this (offset) and the rest, as the agent does, so they keep millimeters instead of
+# steps of ~25 cm
+POSITION_OFFSET_STEP = 10000.0
+# Raw GPS fixes (latitude, longitude), as the agent's GPSAgentlet sends them
+MQTT_SUBTOPIC_GPS_FIX = "ros/loc/gps/fix"
 MQTT_SUBTOPIC_PATH = "ros/loc/path"
 MQTT_SUBTOPIC_LASER_CONFIG_BASE = "ros/loc/config/"
 MQTT_SUBTOPIC_ODOMETRY = "ros/odometry/data"
@@ -475,6 +488,10 @@ class RobotSession:
                 "min_time_between_calls": 1,  # seconds
             },
             "publish_key_values": {},  # this supports key-level throttling
+            "publish_gps_fix": {
+                "last_ts": 0,
+                "min_time_between_calls": 1,  # seconds
+            },
             "publish_odometry": {
                 "last_ts": 0,
                 "min_time_between_calls": 1,  # seconds
@@ -1440,6 +1457,127 @@ class RobotSession:
             ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
         """
 
+        pose_ts = self._track_pose(x, y, yaw, frame_id, ts)
+
+        if not self._should_publish_message(method="publish_pose"):
+            return None
+
+        msg = LocationAndPoseMessage()
+        msg.ts = pose_ts
+        msg.pos_x = x
+        msg.pos_y = y
+        msg.yaw = yaw
+        msg.frame_id = frame_id
+
+        self.publish_protobuf(MQTT_SUBTOPIC_POSE, msg)
+
+    def publish_utm_pose(self, easting, northing, yaw, frame_id, ts=None):
+        """Publish the pose of an outdoor robot in a UTM frame.
+
+        InOrbit shows outdoor robots on UTM maps, one per zone, and creates the robot's
+        UTM map the first time a pose in its frame arrives: no spatial transformation or
+        map has to be configured for the robot. Robots that localize in their own map
+        frame can convert their poses with ``inorbit_edge.geo.MapDatum``.
+
+        It shares ``publish_pose``'s throttling, and its pose is the one used for
+        distances and waypoints.
+
+        Args:
+            easting (float): meters.
+            northing (float): meters (with the 10000 km false northing south of the
+                equator).
+            yaw (float): radians, counterclockwise from grid east.
+            frame_id (str): ``utm-<zone>``, or ``utm-<zone>-s`` south of the equator
+                (see ``inorbit_edge.geo.utm_frame_id``).
+            ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
+        """
+        pose_ts = self._track_pose(easting, northing, yaw, frame_id, ts)
+
+        if not self._should_publish_message(method="publish_pose"):
+            return None
+
+        data = PoseMessageData()
+        data.ts = pose_ts
+        data.pos_x, data.offset_x = self._split_position(easting)
+        data.pos_y, data.offset_y = self._split_position(northing)
+        data.yaw = yaw
+        data.frame_id = frame_id
+        msg = PoseMessage()
+        msg.poses.append(data)
+
+        self.publish_protobuf(MQTT_SUBTOPIC_UTM_POSE, msg)
+
+    def publish_geo_pose(self, latitude, longitude, yaw, ts=None):
+        """Publish the pose of an outdoor robot from its GPS position and heading.
+
+        The position is projected to the UTM frame of its zone and sent with
+        ``publish_utm_pose``. A GPS position alone has no heading: send the robot's
+        orientation (from its IMU, INS or localization), or its icon won't turn.
+
+        Args:
+            latitude (float): degrees, -80..84.
+            longitude (float): degrees.
+            yaw (float): radians, counterclockwise from east (ENU, as ROS).
+            ts (int, optional): Pose timestamp. Defaults to int(time() * 1000).
+        """
+        frame_id, easting, northing, utm_yaw = latlon_to_utm_pose(
+            latitude, longitude, yaw
+        )
+        self.publish_utm_pose(easting, northing, utm_yaw, frame_id, ts)
+
+    def publish_gps_fix(
+        self,
+        latitude,
+        longitude,
+        altitude=0.0,
+        accuracy_meters=None,
+        bearing=None,
+        ts=None,
+    ):
+        """Publish a raw GPS fix, as the agent's GPSAgentlet does.
+
+        The fix is stored as the robot's GPS data (position, accuracy). It is not a
+        pose: to show the robot on the outdoor map with its heading, use
+        ``publish_utm_pose`` or ``publish_geo_pose``. Note that InOrbit also draws
+        each fix as a pose in the UTM frame of its zone, with the bearing (or no
+        heading) as its orientation, so a robot sending both may jump between them.
+
+        Args:
+            latitude (float): degrees.
+            longitude (float): degrees.
+            altitude (float, optional): meters. Defaults to 0.
+            accuracy_meters (float, optional): horizontal accuracy, meters. Defaults to
+                None (unknown).
+            bearing (float, optional): direction of travel, degrees clockwise from
+                north (as gps_msgs/GPSFix track). Defaults to None (unknown).
+            ts (int, optional): Fix timestamp. Defaults to int(time() * 1000).
+        """
+        if not self._should_publish_message(method="publish_gps_fix"):
+            return None
+
+        msg = GpsFixMessage()
+        msg.ts = ts if ts else int(time.time() * 1000)
+        msg.latitude = latitude
+        msg.longitude = longitude
+        msg.altitude = altitude
+        if accuracy_meters is not None:
+            msg.has_accuracy = True
+            msg.accuracy_meters = accuracy_meters
+        if bearing is not None:
+            msg.has_bearing = True
+            msg.bearing = bearing
+
+        self.publish_protobuf(MQTT_SUBTOPIC_GPS_FIX, msg)
+
+    @staticmethod
+    def _split_position(value):
+        """(position, offset) for a coordinate, see POSITION_OFFSET_STEP."""
+        offset = round(value / POSITION_OFFSET_STEP) * POSITION_OFFSET_STEP
+        return value - offset, offset
+
+    def _track_pose(self, x, y, yaw, frame_id, ts):
+        """Stores the robot's current pose and accumulates its distance, before any
+        throttling. Returns the pose timestamp."""
         pose = Pose(frame_id=frame_id, x=x, y=y, theta=yaw)
         pose_ts = ts if ts else int(time.time() * 1000)
 
@@ -1457,21 +1595,9 @@ class RobotSession:
         )
         self._distance_accumulator.accumulate(pose, discard_delta=discard_delta)
 
-        # Store the pose before checking for throttling
         self._last_pose = pose
         self._last_pose_ts = pose_ts
-
-        if not self._should_publish_message(method="publish_pose"):
-            return None
-
-        msg = LocationAndPoseMessage()
-        msg.ts = pose_ts
-        msg.pos_x = x
-        msg.pos_y = y
-        msg.yaw = yaw
-        msg.frame_id = frame_id
-
-        self.publish_protobuf(MQTT_SUBTOPIC_POSE, msg)
+        return pose_ts
 
     def reached_waypoint(self, waypoint: Pose, tolerance: SpatialTolerance):
         if self._last_pose is None:
