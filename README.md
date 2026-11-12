@@ -90,7 +90,7 @@ the code.
 
 2. `make build`
 
-   This will run `tox` which will run all your tests in Python 3.10 - 3.13 as
+   This will run `tox` which will run all your tests in Python 3.11 - 3.13 as
    well as linting your code.
 
 3. `make clean`

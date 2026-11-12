@@ -1,9 +1,9 @@
 requests>=2.31,<3.0
 paho-mqtt>=2.1.0,<3.0
-pillow~=12.1.1
-pyaml>=23.12,<24.0
+pillow>=13.0,<14.0
+PyYAML>=6.0,<7.0
 pydantic>=2.6,<3.0
 pysocks>=1.7,<2.0
-protobuf~=5.29.6
+protobuf>=5.29.6,<8.0
 certifi>=2024.2
-rdp2~=1.1.2
+rdp2>=1.1.2,<2.0
