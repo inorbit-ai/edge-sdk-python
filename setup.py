@@ -40,7 +40,6 @@ setup(
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
         "Operating System :: POSIX :: Linux",
-        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
@@ -68,7 +67,7 @@ setup(
     #  package_dir={"": "src"},
     packages=find_packages(exclude=["tests", "*.tests", "*.tests.*"]),
     platforms=["Linux", "Mac OS-X", "Windows"],
-    python_requires=">=3.10, <3.14",
+    python_requires=">=3.11, <3.14",
     url=GITHUB_REPO,
     # Do not edit manually, always use bumpversion (see CONTRIBUTING.rst)
     version=VERSION,
